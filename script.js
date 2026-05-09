@@ -144,7 +144,7 @@ function doLogin(){
     user.lastLogin=new Date().toISOString();
     currentUser=user;
     errEl.classList.remove('show');
-    document.getElementById('auth-screen').classList.add('hidden');
+    const as=document.getElementById('auth-screen');if(as){as.style.display='none';}
     applyUserSession();
     init();
   } else {
@@ -213,15 +213,8 @@ function adminSaveUser(){
   const idx=USERS.findIndex(x=>String(x.id)===String(id)); if(idx<0) return;
   USERS[idx]={...USERS[idx],name,username:u,role,dept,initials:name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase()};
   if(p) USERS[idx].password=p;
-  if(typeof fbDb!=='undefined'&&fbDb){
-    const fsId=USERS[idx].firestoreId;
-    if(fsId){
-      const upd={name,username:u,role,dept,initials:USERS[idx].initials};
-      if(p) upd.password=p;
-      fbDb.collection('users').doc(fsId).update(upd).catch(e=>console.warn('User update failed:',e.message));
-    }
-  }
   cm('m-edituser');
+  // Update session if editing own account
   if(String(currentUser.id)===String(id)){currentUser=USERS[idx];applyUserSession();}
   renderUserPage();
   toast(`User "${name}" updated`,'s');
@@ -240,7 +233,7 @@ function doLogout(){
   currentUser=null;
   try{ sessionStorage.removeItem('mp_session'); }catch(e){}
   if(window._refreshInterval){ clearInterval(window._refreshInterval); window._refreshInterval=null; }
-  document.getElementById('auth-screen').classList.remove('hidden');
+  const as=document.getElementById('auth-screen');if(as){as.style.display='flex';}
   document.getElementById('l-user').value=''; document.getElementById('l-pass').value='';
   const errEl=document.getElementById('login-err'); if(errEl) errEl.classList.remove('show');
 }
@@ -606,36 +599,12 @@ function vTask(id){
   const editBtn=document.getElementById('det-edit');
   editBtn.style.display=canEdit?'':'none';
   editBtn.onclick=()=>{cm('m-det');eTask(id);};
-  // Mark complete button — staff and admin
-  const mft=document.querySelector('#m-det .mft');
-  if(mft&&canEdit){
-    const ex=document.getElementById('btn-mark-complete');
-    if(ex)ex.remove();
-    if(r.status!=='Completed'){
-      const btn=document.createElement('button');
-      btn.id='btn-mark-complete';
-      btn.className='btn btn-g';
-      btn.textContent='✓ Mark complete';
-      btn.onclick=()=>markJobComplete(id);
-      mft.insertBefore(btn,mft.lastElementChild);
-    }
-  }
   om('m-det');
-}
-
-function markJobComplete(id){
-  id=String(id);
-  const updates={status:'Completed',completion:getTODAY()};
-  fbUpdateJob(id,updates);
-  if(!FB_READY){const r=DATA.find(x=>String(x.id)===id);if(r)Object.assign(r,updates);}
-  cm('m-det');af();renderInProgress();
-  toast('Job marked as completed ✓','s');
 }
 
 function eTask(id){
   id=String(id);
-  const r=DATA.find(x=>String(x.id)===id);
-  if(!r){toast('Job not found — try refreshing.','e');return;}
+  const r=DATA.find(x=>String(x.id)===id);if(!r)return;
   eId=id;
   document.getElementById('em-dt').value=r.date;
   document.getElementById('em-lc').value=r.location;
@@ -651,8 +620,7 @@ function eTask(id){
 }
 
 function saveEdit(){
-  const r=DATA.find(x=>String(x.id)===String(eId));
-  if(!r){toast('Job not found — please reopen.','e');cm('m-edit');return;}
+  const r=DATA.find(x=>String(x.id)===String(eId));if(!r)return;
   const updates={
     date:document.getElementById('em-dt').value,
     requestor:document.getElementById('em-rq').value,
@@ -1155,7 +1123,7 @@ document.addEventListener('DOMContentLoaded', function() {
       if(user){
         currentUser=user;
         const authEl=document.getElementById('auth-screen');
-        if(authEl) authEl.classList.add('hidden');
+        if(authEl){authEl.style.display='none';}
         applyUserSession();
         init();
         return;
@@ -1163,26 +1131,17 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   } catch(e){ try{sessionStorage.removeItem('mp_session');}catch(_){} }
 
-  // Load Firestore users first, then show login
-  // Ensures newly registered accounts are available immediately
-  function showLogin(){
-    const authEl=document.getElementById('auth-screen');
-    if(authEl) authEl.classList.remove('hidden');
-  }
+  // Load persisted users from Firestore
   if(typeof fbDb!=='undefined'&&fbDb){
-    fbDb.collection('users').get()
-      .then(snap=>{
-        snap.forEach(doc=>{
-          const u={...doc.data(),firestoreId:doc.id};
-          if(!USERS.find(x=>x.username===u.username))USERS.push(u);
-        });
-        showLogin();
-      })
-      .catch(e=>{
-        console.warn('Could not load users from Firestore:',e.message);
-        showLogin(); // always show login even if Firestore fails
+    fbDb.collection('users').get().then(snap=>{
+      snap.forEach(doc=>{
+        const u={...doc.data(),firestoreId:doc.id};
+        if(!USERS.find(x=>x.username===u.username))USERS.push(u);
       });
-  } else {
-    showLogin();
+    }).catch(e=>console.warn('Could not load users:',e.message));
   }
+
+  // No saved session — show login screen
+  const authEl=document.getElementById('auth-screen');
+  if(authEl){authEl.style.display='flex';}
 });
