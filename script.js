@@ -174,7 +174,12 @@ function adminAddUser(){
   if(p.length<6){errEl.textContent='Password must be at least 6 characters.';errEl.classList.add('show');return;}
   if(USERS.find(x=>x.username===u)){errEl.textContent='Username already exists.';errEl.classList.add('show');return;}
   const initials=name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
-  USERS.push({id:nextUserId++,username:u,password:p,name,initials,role,dept,lastLogin:null});
+  const newUser={id:nextUserId++,username:u,password:p,name,initials,role,dept,lastLogin:null};
+  USERS.push(newUser);
+  // Save to Firestore so users persist after refresh
+  if(typeof fbDb!=='undefined'&&fbDb){
+    fbDb.collection('users').add(newUser).catch(e=>console.warn('User save failed:',e.message));
+  }
   cm('m-adduser');
   ['au-name','au-user','au-pass'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   renderUserPage();
@@ -194,7 +199,7 @@ function editUserModal(id){
 }
 
 function adminSaveUser(){
-  const id=document.getElementById('eu-id').value; // keep as string for comparison
+  const id=document.getElementById('eu-id').value;
   const name=document.getElementById('eu-name').value.trim();
   const u=document.getElementById('eu-user').value.trim();
   const p=document.getElementById('eu-pass').value;
@@ -345,7 +350,8 @@ function wc(k){return WTC[k]||PAL[Object.keys(SUBTYPES).indexOf(k)%PAL.length]||
 // ═══════════════════════════════════════════════
 // DATA
 // ═══════════════════════════════════════════════
-const TODAY='2026-05-06';
+function getTODAY(){return new Date().toISOString().slice(0,10);}
+const TODAY=getTODAY();
 let DATA=[
   {id:1,date:'2026-04-11',requestor:'HSK - Sakorn',handler:'Rayan Borabien',workType:'Plumbing_Hydraulics_Services',subType:'Shower',area:'Level_10',location:'Room 1015',details:'Shower head rusty — replaced.',status:'Completed',priority:'Medium',completion:'2026-04-11',createdBy:'requester'},
   {id:2,date:'2026-04-11',requestor:'HSK - Sakorn',handler:'Rayan Borabien',workType:'Flooring',subType:'Polish',area:'Level_8',location:'Room 810',details:'Full floor polish treatment applied.',status:'Completed',priority:'Low',completion:'2026-04-11',createdBy:'staff'},
@@ -570,7 +576,8 @@ function bTKpis(){
 // VIEW / EDIT / DELETE TASKS
 // ═══════════════════════════════════════════════
 function vTask(id){
-  const r=DATA.find(x=>x.id===id);if(!r)return;
+  id=String(id);
+  const r=DATA.find(x=>String(x.id)===id);if(!r)return;
   const canEdit=currentUser&&(currentUser.role==='admin'||currentUser.role==='staff');
   document.getElementById('det-body').innerHTML=`
     <div class="dg">
@@ -596,7 +603,8 @@ function vTask(id){
 }
 
 function eTask(id){
-  const r=DATA.find(x=>x.id===id);if(!r)return;
+  id=String(id);
+  const r=DATA.find(x=>String(x.id)===id);if(!r)return;
   eId=id;
   document.getElementById('em-dt').value=r.date;
   document.getElementById('em-lc').value=r.location;
@@ -612,24 +620,30 @@ function eTask(id){
 }
 
 function saveEdit(){
-  const r=DATA.find(x=>x.id===eId);if(!r)return;
-  r.date=document.getElementById('em-dt').value;
-  r.requestor=document.getElementById('em-rq').value;
-  r.handler=document.getElementById('em-hd').value;
-  r.workType=document.getElementById('em-wt').value;
-  r.subType=document.getElementById('em-st').value;
-  r.area=document.getElementById('em-ar').value;
-  r.location=document.getElementById('em-lc').value;
-  r.status=document.getElementById('em-ss').value;
-  r.priority=document.getElementById('em-pr').value;
-  r.details=document.getElementById('em-de').value;
-  if(r.status==='Completed'&&!r.completion)r.completion=TODAY;
+  const r=DATA.find(x=>String(x.id)===String(eId));if(!r)return;
+  const updates={
+    date:document.getElementById('em-dt').value,
+    requestor:document.getElementById('em-rq').value,
+    handler:document.getElementById('em-hd').value,
+    workType:document.getElementById('em-wt').value,
+    subType:document.getElementById('em-st').value,
+    area:document.getElementById('em-ar').value,
+    location:document.getElementById('em-lc').value,
+    status:document.getElementById('em-ss').value,
+    priority:document.getElementById('em-pr').value,
+    details:document.getElementById('em-de').value,
+  };
+  if(updates.status==='Completed'&&!r.completion)updates.completion=getTODAY();
+  fbUpdateJob(String(eId),updates);
+  if(!FB_READY)Object.assign(r,updates);
   cm('m-edit');af();rReady=false;fillDrops();toast('Task updated successfully');
 }
 
 function dTask(id){
+  id=String(id);
   if(!confirm('Delete this task? This action cannot be undone.'))return;
-  DATA=DATA.filter(x=>x.id!==id);fData=fData.filter(x=>x.id!==id);
+  fbDeleteJob(id);
+  if(!FB_READY){DATA=DATA.filter(x=>String(x.id)!==id);fData=fData.filter(x=>String(x.id)!==id);}
   fillDrops();bTKpis();rTbl();rReady=false;toast('Task deleted','i');
 }
 
@@ -1046,8 +1060,15 @@ function delArea(name){if(AREAS.length<=1){toast('At least one area must remain.
 function init(){
   const dtEl=document.getElementById('af-dt'); if(dtEl) dtEl.value=TODAY;
   const cdEl=document.getElementById('af-cd'); if(cdEl) cdEl.value=TODAY;
-  const tbDt=document.getElementById('tb-dt');
-  if(tbDt) tbDt.textContent=new Date(TODAY).toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+  function updateClock(){
+    const el=document.getElementById('tb-dt');if(!el)return;
+    const now=new Date();
+    el.textContent=now.toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short',year:'numeric'})
+      +' '+now.toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});
+  }
+  updateClock();
+  if(window._clockInterval)clearInterval(window._clockInterval);
+  window._clockInterval=setInterval(updateClock,1000);
   fillDrops();
   updateNavPills();
 
@@ -1109,6 +1130,16 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
   } catch(e){ try{sessionStorage.removeItem('mp_session');}catch(_){} }
+
+  // Load persisted users from Firestore
+  if(typeof fbDb!=='undefined'&&fbDb){
+    fbDb.collection('users').get().then(snap=>{
+      snap.forEach(doc=>{
+        const u={...doc.data(),firestoreId:doc.id};
+        if(!USERS.find(x=>x.username===u.username))USERS.push(u);
+      });
+    }).catch(e=>console.warn('Could not load users:',e.message));
+  }
 
   // No saved session — show login screen
   const authEl=document.getElementById('auth-screen');
