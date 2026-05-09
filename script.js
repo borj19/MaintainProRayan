@@ -214,14 +214,7 @@ function adminSaveUser(){
   const idx=USERS.findIndex(x=>String(x.id)===String(id)); if(idx<0) return;
   USERS[idx]={...USERS[idx],name,username:u,role,dept,initials:name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase()};
   if(p) USERS[idx].password=p;
-  if(typeof fbDb!=='undefined'&&fbDb){
-    const fsId=USERS[idx].firestoreId;
-    if(fsId){
-      const upd={name,username:u,role,dept,initials:USERS[idx].initials};
-      if(p)upd.password=p;
-      fbDb.collection('users').doc(fsId).update(upd).catch(e=>console.warn('User update failed:',e.message));
-    }
-  }
+  if(typeof fbDb!=='undefined'&&fbDb){const fsId=USERS[idx].firestoreId;if(fsId){const upd={name,username:u,role,dept,initials:USERS[idx].initials};if(p)upd.password=p;fbDb.collection('users').doc(fsId).update(upd).catch(e=>console.warn('User update failed:',e.message));}}
   cm('m-edituser');
   if(String(currentUser.id)===String(id)){currentUser=USERS[idx];applyUserSession();}
   renderUserPage();
@@ -452,7 +445,7 @@ function go(p,el){
   if(p==='users')         renderUserPage();
   if(p==='permissions')   renderPermissionsPage();
   if(p==='admin')         renderAdminPanels();
-  if(p==='rooms')         renderRoomsBoard();
+  if(p==='rooms'&&typeof renderRoomsBoard==='function') renderRoomsBoard();
 
   if(window.innerWidth<=768) closeMobileSB();
   syncMobileNav(p);
@@ -1129,7 +1122,7 @@ function init(){
       else if(p==='contractor') renderContractorPanel();
       else if(p==='tasks'){bTKpis();af();}
       else if(p==='request') renderRequestPage();
-      else if(p==='rooms') { if(typeof renderRoomsBoard==='function') renderRoomsBoard(); }
+      else if(p==='rooms'&&typeof renderRoomsBoard==='function') renderRoomsBoard();
     }
   },60000);
 }
