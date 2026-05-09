@@ -599,6 +599,28 @@ function vTask(id){
   const editBtn=document.getElementById('det-edit');
   editBtn.style.display=canEdit?'':'none';
   editBtn.onclick=()=>{cm('m-det');eTask(id);};
+  // Inject "Mark complete" button into modal footer for staff/admin
+  const mft=document.querySelector('#m-det .mft');
+  if(mft&&canEdit&&r.status!=='Completed'){
+    // Remove any existing mark-complete btn to avoid duplicates
+    const existing=document.getElementById('btn-mark-complete');
+    if(existing)existing.remove();
+    const btn=document.createElement('button');
+    btn.id='btn-mark-complete';
+    btn.className='btn btn-g';
+    btn.textContent='✓ Mark complete';
+    btn.onclick=()=>{
+      const updates={status:'Completed',completion:getTODAY()};
+      fbUpdateJob(id,updates);
+      if(!FB_READY){const jr=DATA.find(x=>String(x.id)===id);if(jr)Object.assign(jr,updates);}
+      cm('m-det');af();renderInProgress();
+      toast('Job marked as completed','s');
+    };
+    mft.insertBefore(btn,mft.lastElementChild);
+  } else {
+    const existing=document.getElementById('btn-mark-complete');
+    if(existing)existing.remove();
+  }
   om('m-det');
 }
 
@@ -765,9 +787,11 @@ function renderRequestPage(){
   ].map(x=>`<div class="request-status-card"><div class="rsc-label" style="color:${x.c}">${x.l}</div><div class="rsc-count" style="color:${x.c}">${x.v}</div><div class="rsc-sub">${x.s}</div></div>`).join('');
 
   // My requests list
+  // Show all jobs for requestors (match by name OR username), all statuses
+  // For admin/staff show all jobs so they can assign/manage
   const shown=u.role==='requester'
-    ?DATA.filter(r=>r.requestor===u.name&&(r.status==='Pending'||r.status==='In Progress'||r.status==='In Progress - Contractor'||r.status==='Completed'))
-    :DATA.filter(r=>r.status==='Pending');
+    ?DATA.filter(r=>r.requestor===u.name||r.createdBy===u.username)
+    :DATA;
   const list=document.getElementById('my-requests-list');
   const countBadge=document.getElementById('my-req-count');
   if(countBadge)countBadge.textContent=(u.role==='requester'?'My requests':'Pending requests')+' ('+shown.length+')';
@@ -797,29 +821,32 @@ function submitJobRequest(){
   const handler=AUTO_ASSIGN[wt]||HNDS[0];
   const req=currentUser.role==='requester'?currentUser.name:(REQS[0]||'Guest');
   const t={
-    id:nid++,date:TODAY,
+    id:nid++,date:getTODAY(),
     requestor:req,
     handler:handler,
     workType:wt,
     subType:document.getElementById('jq-st').value,
     area:document.getElementById('jq-ar').value,
     location:loc,details:det,
-    status:'In Progress', // auto move to In Progress with assigned handler
+    status:'In Progress',
     priority:document.getElementById('jq-pr').value,
     completion:'',
     createdBy:currentUser?currentUser.username:'guest'
   };
-  DATA.unshift(t);fillDrops();rReady=false;clrJQ();renderRequestPage();
-  toast(`Request #${t.id} submitted — assigned to ${handler}`);
+  fbAddJob(t);
+  if(!FB_READY){fillDrops();rReady=false;}
+  clrJQ();renderRequestPage();
+  toast(`Request submitted — assigned to ${handler}`);
 }
 
 function assignRequest(id){
-  const r=DATA.find(x=>x.id===id);if(!r)return;
-  const wt=r.workType;
-  r.handler=AUTO_ASSIGN[wt]||HNDS[0];
-  r.status='In Progress';
+  id=String(id);
+  const r=DATA.find(x=>String(x.id)===id);if(!r)return;
+  const updates={handler:AUTO_ASSIGN[r.workType]||HNDS[0],status:'In Progress'};
+  fbUpdateJob(id,updates);
+  if(!FB_READY)Object.assign(r,updates);
   fillDrops();renderRequestPage();rReady=false;
-  toast(`Request #${id} assigned to ${r.handler}`);
+  toast(`Request assigned to ${r.handler||HNDS[0]}`);
 }
 
 function clrJQ(){
