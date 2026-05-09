@@ -213,14 +213,12 @@ function adminSaveUser(){
   const idx=USERS.findIndex(x=>String(x.id)===String(id)); if(idx<0) return;
   USERS[idx]={...USERS[idx],name,username:u,role,dept,initials:name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase()};
   if(p) USERS[idx].password=p;
-  // Persist changes to Firestore
   if(typeof fbDb!=='undefined'&&fbDb){
     const fsId=USERS[idx].firestoreId;
     if(fsId){
       const upd={name,username:u,role,dept,initials:USERS[idx].initials};
       if(p) upd.password=p;
-      fbDb.collection('users').doc(fsId).update(upd)
-        .catch(e=>console.warn('User update failed:',e.message));
+      fbDb.collection('users').doc(fsId).update(upd).catch(e=>console.warn('User update failed:',e.message));
     }
   }
   cm('m-edituser');
@@ -608,11 +606,11 @@ function vTask(id){
   const editBtn=document.getElementById('det-edit');
   editBtn.style.display=canEdit?'':'none';
   editBtn.onclick=()=>{cm('m-det');eTask(id);};
-  // Mark complete button
+  // Mark complete button — staff and admin
   const mft=document.querySelector('#m-det .mft');
   if(mft&&canEdit){
     const ex=document.getElementById('btn-mark-complete');
-    if(ex) ex.remove();
+    if(ex)ex.remove();
     if(r.status!=='Completed'){
       const btn=document.createElement('button');
       btn.id='btn-mark-complete';
@@ -632,6 +630,7 @@ function markJobComplete(id){
   if(!FB_READY){const r=DATA.find(x=>String(x.id)===id);if(r)Object.assign(r,updates);}
   cm('m-det');af();renderInProgress();
   toast('Job marked as completed ✓','s');
+}
 
 function eTask(id){
   id=String(id);
@@ -653,7 +652,7 @@ function eTask(id){
 
 function saveEdit(){
   const r=DATA.find(x=>String(x.id)===String(eId));
-  if(!r){toast('Job not found — data may have refreshed. Please reopen.','e');cm('m-edit');return;}
+  if(!r){toast('Job not found — please reopen.','e');cm('m-edit');return;}
   const updates={
     date:document.getElementById('em-dt').value,
     requestor:document.getElementById('em-rq').value,
@@ -1164,24 +1163,26 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   } catch(e){ try{sessionStorage.removeItem('mp_session');}catch(_){} }
 
-  // Load Firestore users first, THEN show login screen
-  // This ensures newly registered accounts are available at login
-  async function loadUsersAndShowLogin(){
-    if(typeof fbDb!=='undefined'&&fbDb){
-      try{
-        const snap=await fbDb.collection('users').get();
-        snap.forEach(doc=>{
-          const u={...doc.data(),firestoreId:doc.id};
-          // Merge: add if not already in local array
-          if(!USERS.find(x=>x.username===u.username))USERS.push(u);
-        });
-        console.log('✅ Users loaded from Firestore:',USERS.length);
-      }catch(e){
-        console.warn('Could not load users from Firestore:',e.message);
-      }
-    }
+  // Load Firestore users first, then show login
+  // Ensures newly registered accounts are available immediately
+  function showLogin(){
     const authEl=document.getElementById('auth-screen');
     if(authEl) authEl.classList.remove('hidden');
   }
-  loadUsersAndShowLogin();
+  if(typeof fbDb!=='undefined'&&fbDb){
+    fbDb.collection('users').get()
+      .then(snap=>{
+        snap.forEach(doc=>{
+          const u={...doc.data(),firestoreId:doc.id};
+          if(!USERS.find(x=>x.username===u.username))USERS.push(u);
+        });
+        showLogin();
+      })
+      .catch(e=>{
+        console.warn('Could not load users from Firestore:',e.message);
+        showLogin(); // always show login even if Firestore fails
+      });
+  } else {
+    showLogin();
+  }
 });
