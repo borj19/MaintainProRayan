@@ -116,6 +116,7 @@ const PAGE_PERM = {
   users:       'manage_users',
   permissions: 'manage_permissions',
   admin:       'manage_fields',
+  rooms:       'view_all_tasks',
 };
 
 function switchAuthTab(tab){
@@ -276,6 +277,7 @@ function buildSidebarNav(){
     ['email',      'Email report',    '<rect x="1" y="3" width="14" height="10" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M1 5l7 5 7-5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>','Analytics','send_email'],
     ['users',      'Users',           '<circle cx="6" cy="5" r="2.5" stroke="currentColor" stroke-width="1.4"/><path d="M1 13c0-2.761 2.239-4 5-4s5 1.239 5 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="13" cy="5" r="2" stroke="currentColor" stroke-width="1.2"/><path d="M11.5 13c0-1.5 1-2.5 2-2.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>','Administration','manage_users','nb-users-count'],
     ['permissions','Permissions',     '<path d="M12 1l1.5 3L17 5l-2.5 2.5.5 3.5L12 9.5 9.5 11l.5-3.5L7.5 5l3.5-1L12 1z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="4" cy="12" r="2.5" stroke="currentColor" stroke-width="1.2"/>','Administration','manage_permissions'],
+    ['rooms',      'Rooms board',     '<rect x="1" y="1" width="6" height="4" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="9" y="1" width="6" height="4" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="1" y="7" width="6" height="4" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="9" y="7" width="6" height="4" rx="1" stroke="currentColor" stroke-width="1.4"/>','Jobs','view_all_tasks'],
     ['admin',      'Field mgmt',      '<circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.4"/><path d="M2 14c0-3.314 2.686-5 6-5s6 1.686 6 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M11 8l1 1 2-2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>','Administration','manage_fields'],
   ];
 
@@ -437,7 +439,7 @@ function go(p,el){
     inprogress:'In Progress — Task board',contractor:'My assigned jobs',
     request:'Job request portal',reports:'Reports & analytics',
     email:'Email report',users:'User management',
-    permissions:'Role permissions',admin:'Field management'};
+    permissions:'Role permissions',admin:'Field management',rooms:'Room maintenance board'};
   const ttl=document.getElementById('pg-ttl'); if(ttl) ttl.textContent=T[p]||p;
 
   if(p==='dash')          rDash();
@@ -450,6 +452,7 @@ function go(p,el){
   if(p==='users')         renderUserPage();
   if(p==='permissions')   renderPermissionsPage();
   if(p==='admin')         renderAdminPanels();
+  if(p==='rooms')         renderRoomsBoard();
 
   if(window.innerWidth<=768) closeMobileSB();
   syncMobileNav(p);
@@ -1126,6 +1129,7 @@ function init(){
       else if(p==='contractor') renderContractorPanel();
       else if(p==='tasks'){bTKpis();af();}
       else if(p==='request') renderRequestPage();
+      else if(p==='rooms') { if(typeof renderRoomsBoard==='function') renderRoomsBoard(); }
     }
   },60000);
 }
