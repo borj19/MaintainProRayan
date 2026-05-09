@@ -182,8 +182,7 @@ function adminAddUser(){
 }
 
 function editUserModal(id){
-  id=isNaN(id)?id:parseInt(id);
-  const u=USERS.find(x=>x.id==id); if(!u) return;
+  const u=USERS.find(x=>x.id===id); if(!u) return;
   document.getElementById('eu-id').value=u.id;
   document.getElementById('eu-name').value=u.name;
   document.getElementById('eu-user').value=u.username;
@@ -217,11 +216,10 @@ function adminSaveUser(){
 }
 
 function deleteUser(id){
-  id=isNaN(id)?id:parseInt(id);
-  if(id==currentUser.id){toast('You cannot delete your own account.','e');return;}
-  const u=USERS.find(x=>x.id==id);
+  if(id===currentUser.id){toast('You cannot delete your own account.','e');return;}
+  const u=USERS.find(x=>x.id===id);
   if(!confirm(`Delete account "${u?.name||id}"? This cannot be undone.`))return;
-  USERS=USERS.filter(x=>x.id!=id);
+  USERS=USERS.filter(x=>x.id!==id);
   renderUserPage();
   toast('User removed','i');
 }
@@ -539,9 +537,9 @@ function rTbl(){
     <td title="${r.details}" style="color:var(--t2)">${r.details}</td>
     <td>${sbadge(r.status)}</td><td>${pbadge(r.priority)}</td>
     <td><div style="display:flex;gap:3px">
-      <button class="btn btn-o btn-xs" onclick="vTask('${r.id}')" title="View" style="padding:3px 5px"><svg viewBox="0 0 16 16" fill="none" style="width:11px;height:11px"><circle cx="8" cy="8" r="5" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg></button>
-      ${isAdmin?`<button class="btn btn-o btn-xs" onclick="eTask('${r.id}')" title="Edit" style="padding:3px 5px"><svg viewBox="0 0 16 16" fill="none" style="width:11px;height:11px"><path d="M11 2l3 3-9 9H2v-3L11 2z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`:''}
-      ${currentUser&&currentUser.role==='admin'?`<button class="btn btn-r btn-xs" onclick="dTask('${r.id}')" title="Delete" style="padding:3px 5px"><svg viewBox="0 0 16 16" fill="none" style="width:11px;height:11px"><path d="M3 4h10M6 4V2h4v2M5 4v8h6V4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`:''}
+      <button class="btn btn-o btn-xs" onclick="vTask(${r.id})" title="View" style="padding:3px 5px"><svg viewBox="0 0 16 16" fill="none" style="width:11px;height:11px"><circle cx="8" cy="8" r="5" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg></button>
+      ${isAdmin?`<button class="btn btn-o btn-xs" onclick="eTask(${r.id})" title="Edit" style="padding:3px 5px"><svg viewBox="0 0 16 16" fill="none" style="width:11px;height:11px"><path d="M11 2l3 3-9 9H2v-3L11 2z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`:''}
+      ${currentUser&&currentUser.role==='admin'?`<button class="btn btn-r btn-xs" onclick="dTask(${r.id})" title="Delete" style="padding:3px 5px"><svg viewBox="0 0 16 16" fill="none" style="width:11px;height:11px"><path d="M3 4h10M6 4V2h4v2M5 4v8h6V4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`:''}
     </div></td>
   </tr>`).join(''):`<tr><td colspan="11" style="text-align:center;padding:36px;color:var(--t2)">No tasks match the current filters.</td></tr>`;
   document.getElementById('p-inf').textContent=`Page ${cPg} of ${pages} (${tot} tasks)`;
@@ -572,9 +570,7 @@ function bTKpis(){
 // VIEW / EDIT / DELETE TASKS
 // ═══════════════════════════════════════════════
 function vTask(id){
-  // id is always a string (Firestore doc id or local numeric id)
-  id = String(id);
-  const r=DATA.find(x=>String(x.id)===id);if(!r)return;
+  const r=DATA.find(x=>x.id===id);if(!r)return;
   const canEdit=currentUser&&(currentUser.role==='admin'||currentUser.role==='staff');
   document.getElementById('det-body').innerHTML=`
     <div class="dg">
@@ -600,8 +596,7 @@ function vTask(id){
 }
 
 function eTask(id){
-  id = String(id);
-  const r=DATA.find(x=>String(x.id)===id);if(!r)return;
+  const r=DATA.find(x=>x.id===id);if(!r)return;
   eId=id;
   document.getElementById('em-dt').value=r.date;
   document.getElementById('em-lc').value=r.location;
@@ -617,7 +612,8 @@ function eTask(id){
 }
 
 function saveEdit(){
-  const r=DATA.find(x=>String(x.id)===String(eId));if(!r)return;
+  const r=DATA.find(x=>x.id===eId);
+  if(!r)return;
   const updates={
     date:     document.getElementById('em-dt').value,
     requestor:document.getElementById('em-rq').value,
@@ -631,19 +627,17 @@ function saveEdit(){
     details:  document.getElementById('em-de').value,
   };
   if(updates.status==='Completed'&&!r.completion) updates.completion=TODAY;
-  fbUpdateJob(String(eId), updates);
-  if(!FB_READY){ Object.assign(r,updates); }
-  cm('m-edit');af();rReady=false;fillDrops();toast('Task updated successfully');
+  fbUpdateJob(eId, updates);
+  if(!FB_READY){ Object.assign(r, updates); }
+  cm('m-edit');
+  af();
+  rReady=false;
+  fillDrops();
+  toast('Task updated successfully');
 }
-
 function dTask(id){
-  id = String(id);
   if(!confirm('Delete this task? This action cannot be undone.'))return;
-  fbDeleteJob(id);
-  if(!FB_READY){
-    DATA=DATA.filter(x=>String(x.id)!==id);
-    fData=fData.filter(x=>String(x.id)!==id);
-  }
+  DATA=DATA.filter(x=>x.id!==id);fData=fData.filter(x=>x.id!==id);
   fillDrops();bTKpis();rTbl();rReady=false;toast('Task deleted','i');
 }
 
@@ -662,15 +656,15 @@ function addTask(){
     subType:document.getElementById('af-st').value,
     area:document.getElementById('af-ar').value,
     location:loc,details:det,
-    status:'In Progress',
+    status:'In Progress', // always In Progress on creation
     priority:document.getElementById('af-pr').value,
     completion:document.getElementById('af-cd').value||'',
     createdBy:currentUser?currentUser.role:'staff'
   };
-  fbAddJob(t);
-  rReady=false;clrAF();rAddSide();
-  if(!FB_READY){fillDrops();updateNavPills();}
-  toast(`Task added — marked In Progress`);
+  fbAddJob(t);rReady=false;clrAF();rAddSide();
+if(!FB_READY){fillDrops();}
+  document.getElementById('nb-count').textContent=DATA.length;
+  toast(`Task #${t.id} added — marked In Progress`);
 }
 function clrAF(){
   ['af-lc','af-de','af-cd'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
@@ -714,7 +708,7 @@ function renderInProgress(){
         <span class="kanban-count" style="background:${col.color}">${col.items.length}</span>
       </div>
       ${col.items.length?col.items.map(r=>`
-        <div class="kanban-card" onclick="vTask('${r.id}')">
+        <div class="kanban-card" onclick="vTask(${r.id})">
           <div class="kc-top">
             <span class="kc-id">#${r.id}</span>
             ${pbadge(r.priority)}
@@ -738,8 +732,8 @@ function renderInProgress(){
     <td>${r.area.replace(/_/g,' ')}</td><td>${r.location}</td>
     <td title="${r.details}" style="color:var(--t2)">${r.details}</td>
     <td>${sbadge(r.status)}</td><td>${pbadge(r.priority)}</td>
-    <td><button class="btn btn-o btn-xs" onclick="vTask('${r.id}')" style="padding:3px 5px"><svg viewBox="0 0 16 16" fill="none" style="width:11px;height:11px"><circle cx="8" cy="8" r="5" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg></button>
-    ${currentUser&&currentUser.role!=='requester'?`<button class="btn btn-o btn-xs" onclick="eTask('${r.id}')" style="padding:3px 5px;margin-left:3px"><svg viewBox="0 0 16 16" fill="none" style="width:11px;height:11px"><path d="M11 2l3 3-9 9H2v-3L11 2z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`:''}</td>
+    <td><button class="btn btn-o btn-xs" onclick="vTask(${r.id})" style="padding:3px 5px"><svg viewBox="0 0 16 16" fill="none" style="width:11px;height:11px"><circle cx="8" cy="8" r="5" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg></button>
+    ${currentUser&&currentUser.role!=='requester'?`<button class="btn btn-o btn-xs" onclick="eTask(${r.id})" style="padding:3px 5px;margin-left:3px"><svg viewBox="0 0 16 16" fill="none" style="width:11px;height:11px"><path d="M11 2l3 3-9 9H2v-3L11 2z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`:''}</td>
   </tr>`).join(''):`<tr><td colspan="11" style="text-align:center;padding:36px;color:var(--t2)">No active tasks at the moment.</td></tr>`;
 }
 
@@ -785,7 +779,7 @@ function renderRequestPage(){
       ${sbadge(r.status)}
       <span class="mri-area">${r.area.replace(/_/g,' ')} · ${r.location}</span>
       ${r.status!=='Pending'?`<span style="font-size:11px;color:var(--t2);margin-left:auto">Handler: ${r.handler}</span>`:''}
-      ${u.role==='admin'&&r.status==='Pending'?`<button class="btn btn-b btn-xs" onclick="assignRequest('${r.id}')" style="margin-left:auto">Assign</button>`:''}
+      ${u.role==='admin'&&r.status==='Pending'?`<button class="btn btn-b btn-xs" onclick="assignRequest(${r.id})" style="margin-left:auto">Assign</button>`:''}
     </div>
   </div>`).join('');
 }
@@ -810,10 +804,7 @@ function submitJobRequest(){
     completion:'',
     createdBy:currentUser?currentUser.username:'guest'
   };
-  DATA.unshift(t);
-  fbAddJob(t);
-  if(!FB_READY){fillDrops();rReady=false;}
-  clrJQ();renderRequestPage();
+  DATA.unshift(t);fillDrops();rReady=false;clrJQ();renderRequestPage();
   toast(`Request #${t.id} submitted — assigned to ${handler}`);
 }
 
@@ -834,9 +825,173 @@ function clrJQ(){
 
 // EMAIL (email page buttons)
 // ═══════════════════════════════════════════════
-function doEmail(){const em=document.getElementById('eml-to').value;if(!em||!em.includes('@')){toast('Please enter a valid email address.','e');return;}cm('m-email');toast(`Report sent to ${em}`);}
-function sendFromPage(){const em=document.getElementById('cfg-to').value;if(!em||!em.includes('@')){toast('Please enter a manager email address first.','e');return;}toast(`Report queued for ${em}`);}
-function prevRpt(){expPDF();}
+// ═══════════════════════════════════════════════
+// EMAIL REPORT SYSTEM — EmailJS
+// ═══════════════════════════════════════════════
+// Setup: https://emailjs.com (free, 200 emails/month)
+// Requires the EmailJS SDK in index.html <head>
+
+const EMAILJS_SERVICE_ID  = "YOUR_SERVICE_ID";   // e.g. "service_abc123"
+const EMAILJS_TEMPLATE_ID = "YOUR_TEMPLATE_ID";  // e.g. "template_xyz789"
+const EMAILJS_PUBLIC_KEY  = "YOUR_PUBLIC_KEY";   // from Account → API Keys
+
+// ── Build the plain-text task table for the email body ──
+function buildEmailTaskTable(data) {
+  if (!data.length) return "No tasks for this period.";
+  const lines = [
+    "Date       | Requestor        | Handler          | Work Type        | Location         | Status              | Priority",
+    "-----------|------------------|------------------|------------------|------------------|---------------------|----------",
+  ];
+  data.forEach(r => {
+    const pad = (s, n) => String(s || "—").substring(0, n).padEnd(n);
+    lines.push(
+      `${pad(r.date, 10)} | ${pad(r.requestor, 16)} | ${pad(r.handler, 16)} | ` +
+      `${pad((r.workType || "").replace(/_/g, " "), 16)} | ${pad(r.location, 16)} | ` +
+      `${pad(r.status, 20)} | ${r.priority}`
+    );
+  });
+  return lines.join("\n");
+}
+
+// ── Core send function (used by modal and email page) ──
+async function sendEmailReport({ toEmail, ccEmail, period, message, data }) {
+
+  // Guard: EmailJS not configured yet
+  if (EMAILJS_SERVICE_ID === "YOUR_SERVICE_ID") {
+    toast("EmailJS not configured — add your Service ID, Template ID and Public Key to script.js", "e");
+    return false;
+  }
+
+  // Guard: no recipient
+  if (!toEmail || !toEmail.includes("@")) {
+    toast("Please enter a valid recipient email address.", "e");
+    return false;
+  }
+
+  // Build summary stats
+  const comp   = data.filter(r => r.status === "Completed").length;
+  const ip     = data.filter(r => r.status === "In Progress" || r.status === "In Progress - Contractor").length;
+  const pend   = data.filter(r => r.status === "Pending").length;
+  const urg    = data.filter(r => r.priority === "Urgent").length;
+  const rate   = data.length ? Math.round(comp / data.length * 100) : 0;
+  const genDate = new Date().toLocaleString("en-AU", {
+    weekday: "long", day: "numeric", month: "long",
+    year: "numeric", hour: "2-digit", minute: "2-digit"
+  });
+
+  const params = {
+    to_email:     toEmail,
+    cc_email:     ccEmail || "",
+    period:       period,
+    generated:    genDate,
+    sender_name:  currentUser?.name || "Admin",
+    total:        String(data.length),
+    completed:    String(comp),
+    in_progress:  String(ip),
+    pending:      String(pend),
+    urgent:       String(urg),
+    rate:         String(rate),
+    message:      message || "Please find the maintenance report below.",
+    task_table:   buildEmailTaskTable(data),
+  };
+
+  try {
+    // Initialise EmailJS with your public key
+    emailjs.init(EMAILJS_PUBLIC_KEY);
+
+    const result = await emailjs.send(
+      EMAILJS_SERVICE_ID,
+      EMAILJS_TEMPLATE_ID,
+      params
+    );
+
+    if (result.status === 200) {
+      console.log("✅ Email sent to", toEmail);
+      return true;
+    } else {
+      console.warn("EmailJS unexpected status:", result.status, result.text);
+      return false;
+    }
+  } catch (err) {
+    console.error("EmailJS send error:", err);
+    // Common errors and what they mean
+    if (err.status === 400) toast("Email failed: Invalid template or parameters.", "e");
+    else if (err.status === 401) toast("Email failed: Invalid EmailJS public key.", "e");
+    else if (err.status === 429) toast("Email failed: Monthly limit reached (200 free emails).", "e");
+    else toast(`Email failed: ${err.text || err.message || "Unknown error"}`, "e");
+    return false;
+  }
+}
+
+// ── Get filtered report data (reuses reports.js filter state) ──
+function getEmailReportData(type) {
+  // type: "daily" | "weekly" | "all"
+  let d = DATA;
+  if (type === "daily")  d = DATA.filter(r => r.date === TODAY);
+  if (type === "weekly") {
+    const cut = new Date(TODAY); cut.setDate(cut.getDate() - 7);
+    d = DATA.filter(r => new Date(r.date) >= cut);
+  }
+  return d;
+}
+
+// ── Called from the email modal (quick send) ──
+async function doEmail() {
+  const toEmail = (document.getElementById("eml-to")?.value || "").trim();
+  const ccEmail = (document.getElementById("eml-cc")?.value || "").trim();
+  const type    = document.getElementById("eml-type")?.value || "all";
+  const msg     = (document.getElementById("eml-msg")?.value || "").trim();
+
+  const periodLabels = { daily: "Today", weekly: "Last 7 days", all: "All time" };
+  const data    = getEmailReportData(type);
+
+  // Show sending state
+  const btn = document.querySelector("#m-email .btn-g");
+  if (btn) { btn.textContent = "Sending…"; btn.disabled = true; }
+
+  const ok = await sendEmailReport({
+    toEmail, ccEmail,
+    period:  periodLabels[type] || "All time",
+    message: msg,
+    data,
+  });
+
+  if (btn) { btn.textContent = "Send report"; btn.disabled = false; }
+
+  if (ok) {
+    cm("m-email");
+    toast(`✅ Report emailed to ${toEmail}`, "s");
+  }
+}
+
+// ── Called from the email settings page (full send) ──
+async function sendFromPage() {
+  const toEmail = (document.getElementById("cfg-to")?.value || "").trim();
+  const ccEmail = (document.getElementById("cfg-cc")?.value || "").trim();
+  const type    = document.getElementById("cfg-type")?.value || "all";
+  const msg     = (document.getElementById("cfg-msg")?.value || "").trim();
+
+  const periodLabels = { daily: "Today", weekly: "Last 7 days", all: "All time" };
+  const data = getEmailReportData(type);
+
+  // Show sending state
+  const btn = document.querySelector("#page-email .btn-g");
+  if (btn) { btn.textContent = "Sending…"; btn.disabled = true; }
+
+  const ok = await sendEmailReport({
+    toEmail, ccEmail,
+    period:  periodLabels[type] || "All time",
+    message: msg,
+    data,
+  });
+
+  if (btn) { btn.textContent = "Send now"; btn.disabled = false; }
+
+  if (ok) toast(`✅ Report sent to ${toEmail}`, "s");
+}
+
+// ── Preview opens the PDF viewer ──
+function prevRpt() { expPDF(); }
 
 // ═══════════════════════════════════════════════
 // USER MANAGEMENT PAGE — full CRUD
@@ -867,11 +1022,11 @@ function renderUserPage(){
       </div>
     </div>
     <div class="user-card-actions" style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end">
-      <button class="btn btn-b btn-sm" onclick="editUserModal('${u.id}')">
+      <button class="btn btn-b btn-sm" onclick="editUserModal(${u.id})">
         <svg viewBox="0 0 14 14" fill="none"><path d="M9.5 1.5l3 3-8 8H1.5v-3l8-8z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         Edit
       </button>
-      ${u.id!==currentUser.id?`<button class="btn btn-r btn-sm" onclick="deleteUser('${u.id}')">
+      ${u.id!==currentUser.id?`<button class="btn btn-r btn-sm" onclick="deleteUser(${u.id})">
         <svg viewBox="0 0 14 14" fill="none"><path d="M2 3.5h10M5 3.5V2h4v1.5M4.5 3.5v7h5v-7" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         Remove
       </button>`:''}
@@ -923,8 +1078,8 @@ function renderContractorPanel(){
         <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
           <span style="font-size:10.5px;color:var(--t3)">Requested by ${j.requestor} · ${fd(j.date)}</span>
           <div style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap">
-            ${j.status!=='In Progress - Contractor'?`<button class="btn btn-a btn-sm" onclick="setContractorStatus('${j.id}','In Progress - Contractor')">Mark active</button>`:''}
-            <button class="btn btn-g btn-sm" onclick="setContractorStatus('${j.id}','Completed')">
+            ${j.status!=='In Progress - Contractor'?`<button class="btn btn-a btn-sm" onclick="setContractorStatus(${j.id},'In Progress - Contractor')">Mark active</button>`:''}
+            <button class="btn btn-g btn-sm" onclick="setContractorStatus(${j.id},'Completed')">
               <svg viewBox="0 0 14 14" fill="none"><path d="M2 7l4 4 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
               Mark complete
             </button>
