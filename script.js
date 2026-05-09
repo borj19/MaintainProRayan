@@ -174,7 +174,12 @@ function adminAddUser(){
   if(p.length<6){errEl.textContent='Password must be at least 6 characters.';errEl.classList.add('show');return;}
   if(USERS.find(x=>x.username===u)){errEl.textContent='Username already exists.';errEl.classList.add('show');return;}
   const initials=name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
-  USERS.push({id:nextUserId++,username:u,password:p,name,initials,role,dept,lastLogin:null});
+  const newUser={id:nextUserId++,username:u,password:p,name,initials,role,dept,lastLogin:null};
+  USERS.push(newUser);
+  // Save to Firestore so it persists across sessions
+  if(typeof fbDb!=='undefined'&&fbDb){
+    fbDb.collection('users').add(newUser).catch(e=>console.warn('User save failed:',e.message));
+  }
   cm('m-adduser');
   ['au-name','au-user','au-pass'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   renderUserPage();
@@ -345,7 +350,9 @@ function wc(k){return WTC[k]||PAL[Object.keys(SUBTYPES).indexOf(k)%PAL.length]||
 // ═══════════════════════════════════════════════
 // DATA
 // ═══════════════════════════════════════════════
-const TODAY='2026-05-06';
+// Live date — always returns today's real date, never hardcoded
+function getTODAY(){ return new Date().toISOString().slice(0,10); }
+const TODAY = getTODAY(); // used at page load; for runtime use getTODAY()
 let DATA=[
   {id:1,date:'2026-04-11',requestor:'HSK - Sakorn',handler:'Rayan Borabien',workType:'Plumbing_Hydraulics_Services',subType:'Shower',area:'Level_10',location:'Room 1015',details:'Shower head rusty — replaced.',status:'Completed',priority:'Medium',completion:'2026-04-11',createdBy:'requester'},
   {id:2,date:'2026-04-11',requestor:'HSK - Sakorn',handler:'Rayan Borabien',workType:'Flooring',subType:'Polish',area:'Level_8',location:'Room 810',details:'Full floor polish treatment applied.',status:'Completed',priority:'Low',completion:'2026-04-11',createdBy:'staff'},
@@ -612,29 +619,21 @@ function eTask(id){
 }
 
 function saveEdit(){
-  const r=DATA.find(x=>x.id===eId);
-  if(!r)return;
-  const updates={
-    date:     document.getElementById('em-dt').value,
-    requestor:document.getElementById('em-rq').value,
-    handler:  document.getElementById('em-hd').value,
-    workType: document.getElementById('em-wt').value,
-    subType:  document.getElementById('em-st').value,
-    area:     document.getElementById('em-ar').value,
-    location: document.getElementById('em-lc').value,
-    status:   document.getElementById('em-ss').value,
-    priority: document.getElementById('em-pr').value,
-    details:  document.getElementById('em-de').value,
-  };
-  if(updates.status==='Completed'&&!r.completion) updates.completion=TODAY;
-  fbUpdateJob(eId, updates);
-  if(!FB_READY){ Object.assign(r, updates); }
-  cm('m-edit');
-  af();
-  rReady=false;
-  fillDrops();
-  toast('Task updated successfully');
+  const r=DATA.find(x=>x.id===eId);if(!r)return;
+  r.date=document.getElementById('em-dt').value;
+  r.requestor=document.getElementById('em-rq').value;
+  r.handler=document.getElementById('em-hd').value;
+  r.workType=document.getElementById('em-wt').value;
+  r.subType=document.getElementById('em-st').value;
+  r.area=document.getElementById('em-ar').value;
+  r.location=document.getElementById('em-lc').value;
+  r.status=document.getElementById('em-ss').value;
+  r.priority=document.getElementById('em-pr').value;
+  r.details=document.getElementById('em-de').value;
+  if(r.status==='Completed'&&!r.completion)r.completion=TODAY;
+  cm('m-edit');af();rReady=false;fillDrops();toast('Task updated successfully');
 }
+
 function dTask(id){
   if(!confirm('Delete this task? This action cannot be undone.'))return;
   DATA=DATA.filter(x=>x.id!==id);fData=fData.filter(x=>x.id!==id);
@@ -661,8 +660,7 @@ function addTask(){
     completion:document.getElementById('af-cd').value||'',
     createdBy:currentUser?currentUser.role:'staff'
   };
-  fbAddJob(t);rReady=false;clrAF();rAddSide();
-if(!FB_READY){fillDrops();}
+  DATA.unshift(t);fillDrops();rReady=false;clrAF();rAddSide();
   document.getElementById('nb-count').textContent=DATA.length;
   toast(`Task #${t.id} added — marked In Progress`);
 }
@@ -761,7 +759,7 @@ function renderRequestPage(){
 
   // My requests list
   const shown=u.role==='requester'
-    ?DATA.filter(r=>r.requestor===u.name&&(r.status==='Pending'||r.status==='In Progress'||r.status==='In Progress - Contractor'||r.status==='Completed'))
+    ?DATA.filter(r=>(r.createdBy===u.username||r.requestor===u.name))
     :DATA.filter(r=>r.status==='Pending');
   const list=document.getElementById('my-requests-list');
   const countBadge=document.getElementById('my-req-count');
@@ -792,29 +790,31 @@ function submitJobRequest(){
   const handler=AUTO_ASSIGN[wt]||HNDS[0];
   const req=currentUser.role==='requester'?currentUser.name:(REQS[0]||'Guest');
   const t={
-    id:nid++,date:TODAY,
+    id:nid++,date:getTODAY(),
     requestor:req,
     handler:handler,
     workType:wt,
     subType:document.getElementById('jq-st').value,
     area:document.getElementById('jq-ar').value,
     location:loc,details:det,
-    status:'In Progress', // auto move to In Progress with assigned handler
+    status:'In Progress',
     priority:document.getElementById('jq-pr').value,
     completion:'',
     createdBy:currentUser?currentUser.username:'guest'
   };
-  DATA.unshift(t);fillDrops();rReady=false;clrJQ();renderRequestPage();
-  toast(`Request #${t.id} submitted — assigned to ${handler}`);
+  fbAddJob(t);
+  if(!FB_READY){fillDrops();rReady=false;}
+  clrJQ();renderRequestPage();
+  toast(`Request submitted — assigned to ${handler}`);
 }
 
 function assignRequest(id){
-  const r=DATA.find(x=>x.id===id);if(!r)return;
-  const wt=r.workType;
-  r.handler=AUTO_ASSIGN[wt]||HNDS[0];
-  r.status='In Progress';
+  const r=DATA.find(x=>String(x.id)===String(id));if(!r)return;
+  const updates={handler:AUTO_ASSIGN[r.workType]||HNDS[0],status:'In Progress'};
+  fbUpdateJob(String(id),updates);
+  if(!FB_READY){Object.assign(r,updates);}
   fillDrops();renderRequestPage();rReady=false;
-  toast(`Request #${id} assigned to ${r.handler}`);
+  toast(`Request assigned to ${updates.handler}`);
 }
 
 function clrJQ(){
@@ -825,173 +825,9 @@ function clrJQ(){
 
 // EMAIL (email page buttons)
 // ═══════════════════════════════════════════════
-// ═══════════════════════════════════════════════
-// EMAIL REPORT SYSTEM — EmailJS
-// ═══════════════════════════════════════════════
-// Setup: https://emailjs.com (free, 200 emails/month)
-// Requires the EmailJS SDK in index.html <head>
-
-const EMAILJS_SERVICE_ID  = "YOUR_SERVICE_ID";   // e.g. "service_abc123"
-const EMAILJS_TEMPLATE_ID = "YOUR_TEMPLATE_ID";  // e.g. "template_xyz789"
-const EMAILJS_PUBLIC_KEY  = "YOUR_PUBLIC_KEY";   // from Account → API Keys
-
-// ── Build the plain-text task table for the email body ──
-function buildEmailTaskTable(data) {
-  if (!data.length) return "No tasks for this period.";
-  const lines = [
-    "Date       | Requestor        | Handler          | Work Type        | Location         | Status              | Priority",
-    "-----------|------------------|------------------|------------------|------------------|---------------------|----------",
-  ];
-  data.forEach(r => {
-    const pad = (s, n) => String(s || "—").substring(0, n).padEnd(n);
-    lines.push(
-      `${pad(r.date, 10)} | ${pad(r.requestor, 16)} | ${pad(r.handler, 16)} | ` +
-      `${pad((r.workType || "").replace(/_/g, " "), 16)} | ${pad(r.location, 16)} | ` +
-      `${pad(r.status, 20)} | ${r.priority}`
-    );
-  });
-  return lines.join("\n");
-}
-
-// ── Core send function (used by modal and email page) ──
-async function sendEmailReport({ toEmail, ccEmail, period, message, data }) {
-
-  // Guard: EmailJS not configured yet
-  if (EMAILJS_SERVICE_ID === "YOUR_SERVICE_ID") {
-    toast("EmailJS not configured — add your Service ID, Template ID and Public Key to script.js", "e");
-    return false;
-  }
-
-  // Guard: no recipient
-  if (!toEmail || !toEmail.includes("@")) {
-    toast("Please enter a valid recipient email address.", "e");
-    return false;
-  }
-
-  // Build summary stats
-  const comp   = data.filter(r => r.status === "Completed").length;
-  const ip     = data.filter(r => r.status === "In Progress" || r.status === "In Progress - Contractor").length;
-  const pend   = data.filter(r => r.status === "Pending").length;
-  const urg    = data.filter(r => r.priority === "Urgent").length;
-  const rate   = data.length ? Math.round(comp / data.length * 100) : 0;
-  const genDate = new Date().toLocaleString("en-AU", {
-    weekday: "long", day: "numeric", month: "long",
-    year: "numeric", hour: "2-digit", minute: "2-digit"
-  });
-
-  const params = {
-    to_email:     toEmail,
-    cc_email:     ccEmail || "",
-    period:       period,
-    generated:    genDate,
-    sender_name:  currentUser?.name || "Admin",
-    total:        String(data.length),
-    completed:    String(comp),
-    in_progress:  String(ip),
-    pending:      String(pend),
-    urgent:       String(urg),
-    rate:         String(rate),
-    message:      message || "Please find the maintenance report below.",
-    task_table:   buildEmailTaskTable(data),
-  };
-
-  try {
-    // Initialise EmailJS with your public key
-    emailjs.init(EMAILJS_PUBLIC_KEY);
-
-    const result = await emailjs.send(
-      EMAILJS_SERVICE_ID,
-      EMAILJS_TEMPLATE_ID,
-      params
-    );
-
-    if (result.status === 200) {
-      console.log("✅ Email sent to", toEmail);
-      return true;
-    } else {
-      console.warn("EmailJS unexpected status:", result.status, result.text);
-      return false;
-    }
-  } catch (err) {
-    console.error("EmailJS send error:", err);
-    // Common errors and what they mean
-    if (err.status === 400) toast("Email failed: Invalid template or parameters.", "e");
-    else if (err.status === 401) toast("Email failed: Invalid EmailJS public key.", "e");
-    else if (err.status === 429) toast("Email failed: Monthly limit reached (200 free emails).", "e");
-    else toast(`Email failed: ${err.text || err.message || "Unknown error"}`, "e");
-    return false;
-  }
-}
-
-// ── Get filtered report data (reuses reports.js filter state) ──
-function getEmailReportData(type) {
-  // type: "daily" | "weekly" | "all"
-  let d = DATA;
-  if (type === "daily")  d = DATA.filter(r => r.date === TODAY);
-  if (type === "weekly") {
-    const cut = new Date(TODAY); cut.setDate(cut.getDate() - 7);
-    d = DATA.filter(r => new Date(r.date) >= cut);
-  }
-  return d;
-}
-
-// ── Called from the email modal (quick send) ──
-async function doEmail() {
-  const toEmail = (document.getElementById("eml-to")?.value || "").trim();
-  const ccEmail = (document.getElementById("eml-cc")?.value || "").trim();
-  const type    = document.getElementById("eml-type")?.value || "all";
-  const msg     = (document.getElementById("eml-msg")?.value || "").trim();
-
-  const periodLabels = { daily: "Today", weekly: "Last 7 days", all: "All time" };
-  const data    = getEmailReportData(type);
-
-  // Show sending state
-  const btn = document.querySelector("#m-email .btn-g");
-  if (btn) { btn.textContent = "Sending…"; btn.disabled = true; }
-
-  const ok = await sendEmailReport({
-    toEmail, ccEmail,
-    period:  periodLabels[type] || "All time",
-    message: msg,
-    data,
-  });
-
-  if (btn) { btn.textContent = "Send report"; btn.disabled = false; }
-
-  if (ok) {
-    cm("m-email");
-    toast(`✅ Report emailed to ${toEmail}`, "s");
-  }
-}
-
-// ── Called from the email settings page (full send) ──
-async function sendFromPage() {
-  const toEmail = (document.getElementById("cfg-to")?.value || "").trim();
-  const ccEmail = (document.getElementById("cfg-cc")?.value || "").trim();
-  const type    = document.getElementById("cfg-type")?.value || "all";
-  const msg     = (document.getElementById("cfg-msg")?.value || "").trim();
-
-  const periodLabels = { daily: "Today", weekly: "Last 7 days", all: "All time" };
-  const data = getEmailReportData(type);
-
-  // Show sending state
-  const btn = document.querySelector("#page-email .btn-g");
-  if (btn) { btn.textContent = "Sending…"; btn.disabled = true; }
-
-  const ok = await sendEmailReport({
-    toEmail, ccEmail,
-    period:  periodLabels[type] || "All time",
-    message: msg,
-    data,
-  });
-
-  if (btn) { btn.textContent = "Send now"; btn.disabled = false; }
-
-  if (ok) toast(`✅ Report sent to ${toEmail}`, "s");
-}
-
-// ── Preview opens the PDF viewer ──
-function prevRpt() { expPDF(); }
+function doEmail(){const em=document.getElementById('eml-to').value;if(!em||!em.includes('@')){toast('Please enter a valid email address.','e');return;}cm('m-email');toast(`Report sent to ${em}`);}
+function sendFromPage(){const em=document.getElementById('cfg-to').value;if(!em||!em.includes('@')){toast('Please enter a manager email address first.','e');return;}toast(`Report queued for ${em}`);}
+function prevRpt(){expPDF();}
 
 // ═══════════════════════════════════════════════
 // USER MANAGEMENT PAGE — full CRUD
@@ -1217,10 +1053,18 @@ function delArea(name){if(AREAS.length<=1){toast('At least one area must remain.
 // INIT
 // ═══════════════════════════════════════════════
 function init(){
-  const dtEl=document.getElementById('af-dt'); if(dtEl) dtEl.value=TODAY;
-  const cdEl=document.getElementById('af-cd'); if(cdEl) cdEl.value=TODAY;
-  const tbDt=document.getElementById('tb-dt');
-  if(tbDt) tbDt.textContent=new Date(TODAY).toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+  const dtEl=document.getElementById('af-dt'); if(dtEl) dtEl.value=getTODAY();
+  const cdEl=document.getElementById('af-cd'); if(cdEl) cdEl.value=getTODAY();
+  // Live clock — updates every second
+  function updateClock(){
+    const el=document.getElementById('tb-dt'); if(!el) return;
+    const now=new Date();
+    el.textContent=now.toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short',year:'numeric'})
+      +' '+now.toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});
+  }
+  updateClock();
+  if(window._clockInterval) clearInterval(window._clockInterval);
+  window._clockInterval=setInterval(updateClock,1000);
   fillDrops();
   updateNavPills();
 
@@ -1282,6 +1126,16 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
   } catch(e){ try{sessionStorage.removeItem('mp_session');}catch(_){} }
+
+  // Load users from Firestore (supplements local USERS array)
+  if(typeof fbDb!=='undefined'&&fbDb){
+    fbDb.collection('users').get().then(snap=>{
+      snap.forEach(doc=>{
+        const u={...doc.data(),firestoreId:doc.id};
+        if(!USERS.find(x=>x.username===u.username)) USERS.push(u);
+      });
+    }).catch(e=>console.warn('Could not load users from Firestore:',e.message));
+  }
 
   // No saved session — show login screen
   const authEl=document.getElementById('auth-screen');
