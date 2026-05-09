@@ -520,6 +520,5 @@ ${'<'+'/script>'}
   w.document.close();
   toast('PDF report opened — use Print → Save as PDF','s');
 }
-}
 
 // ═══════════════════════════════════════════════

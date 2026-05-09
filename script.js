@@ -182,7 +182,8 @@ function adminAddUser(){
 }
 
 function editUserModal(id){
-  const u=USERS.find(x=>x.id===id); if(!u) return;
+  id=isNaN(id)?id:parseInt(id);
+  const u=USERS.find(x=>x.id==id); if(!u) return;
   document.getElementById('eu-id').value=u.id;
   document.getElementById('eu-name').value=u.name;
   document.getElementById('eu-user').value=u.username;
@@ -216,10 +217,11 @@ function adminSaveUser(){
 }
 
 function deleteUser(id){
-  if(id===currentUser.id){toast('You cannot delete your own account.','e');return;}
-  const u=USERS.find(x=>x.id===id);
+  id=isNaN(id)?id:parseInt(id);
+  if(id==currentUser.id){toast('You cannot delete your own account.','e');return;}
+  const u=USERS.find(x=>x.id==id);
   if(!confirm(`Delete account "${u?.name||id}"? This cannot be undone.`))return;
-  USERS=USERS.filter(x=>x.id!==id);
+  USERS=USERS.filter(x=>x.id!=id);
   renderUserPage();
   toast('User removed','i');
 }
@@ -537,9 +539,9 @@ function rTbl(){
     <td title="${r.details}" style="color:var(--t2)">${r.details}</td>
     <td>${sbadge(r.status)}</td><td>${pbadge(r.priority)}</td>
     <td><div style="display:flex;gap:3px">
-      <button class="btn btn-o btn-xs" onclick="vTask(${r.id})" title="View" style="padding:3px 5px"><svg viewBox="0 0 16 16" fill="none" style="width:11px;height:11px"><circle cx="8" cy="8" r="5" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg></button>
-      ${isAdmin?`<button class="btn btn-o btn-xs" onclick="eTask(${r.id})" title="Edit" style="padding:3px 5px"><svg viewBox="0 0 16 16" fill="none" style="width:11px;height:11px"><path d="M11 2l3 3-9 9H2v-3L11 2z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`:''}
-      ${currentUser&&currentUser.role==='admin'?`<button class="btn btn-r btn-xs" onclick="dTask(${r.id})" title="Delete" style="padding:3px 5px"><svg viewBox="0 0 16 16" fill="none" style="width:11px;height:11px"><path d="M3 4h10M6 4V2h4v2M5 4v8h6V4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`:''}
+      <button class="btn btn-o btn-xs" onclick="vTask('${r.id}')" title="View" style="padding:3px 5px"><svg viewBox="0 0 16 16" fill="none" style="width:11px;height:11px"><circle cx="8" cy="8" r="5" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg></button>
+      ${isAdmin?`<button class="btn btn-o btn-xs" onclick="eTask('${r.id}')" title="Edit" style="padding:3px 5px"><svg viewBox="0 0 16 16" fill="none" style="width:11px;height:11px"><path d="M11 2l3 3-9 9H2v-3L11 2z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`:''}
+      ${currentUser&&currentUser.role==='admin'?`<button class="btn btn-r btn-xs" onclick="dTask('${r.id}')" title="Delete" style="padding:3px 5px"><svg viewBox="0 0 16 16" fill="none" style="width:11px;height:11px"><path d="M3 4h10M6 4V2h4v2M5 4v8h6V4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`:''}
     </div></td>
   </tr>`).join(''):`<tr><td colspan="11" style="text-align:center;padding:36px;color:var(--t2)">No tasks match the current filters.</td></tr>`;
   document.getElementById('p-inf').textContent=`Page ${cPg} of ${pages} (${tot} tasks)`;
@@ -570,7 +572,9 @@ function bTKpis(){
 // VIEW / EDIT / DELETE TASKS
 // ═══════════════════════════════════════════════
 function vTask(id){
-  const r=DATA.find(x=>x.id===id);if(!r)return;
+  // id is always a string (Firestore doc id or local numeric id)
+  id = String(id);
+  const r=DATA.find(x=>String(x.id)===id);if(!r)return;
   const canEdit=currentUser&&(currentUser.role==='admin'||currentUser.role==='staff');
   document.getElementById('det-body').innerHTML=`
     <div class="dg">
@@ -596,7 +600,8 @@ function vTask(id){
 }
 
 function eTask(id){
-  const r=DATA.find(x=>x.id===id);if(!r)return;
+  id = String(id);
+  const r=DATA.find(x=>String(x.id)===id);if(!r)return;
   eId=id;
   document.getElementById('em-dt').value=r.date;
   document.getElementById('em-lc').value=r.location;
@@ -612,8 +617,7 @@ function eTask(id){
 }
 
 function saveEdit(){
-  const r=DATA.find(x=>x.id===eId);
-  if(!r)return;
+  const r=DATA.find(x=>String(x.id)===String(eId));if(!r)return;
   const updates={
     date:     document.getElementById('em-dt').value,
     requestor:document.getElementById('em-rq').value,
@@ -627,17 +631,19 @@ function saveEdit(){
     details:  document.getElementById('em-de').value,
   };
   if(updates.status==='Completed'&&!r.completion) updates.completion=TODAY;
-  fbUpdateJob(eId, updates);
-  if(!FB_READY){ Object.assign(r, updates); }
-  cm('m-edit');
-  af();
-  rReady=false;
-  fillDrops();
-  toast('Task updated successfully');
+  fbUpdateJob(String(eId), updates);
+  if(!FB_READY){ Object.assign(r,updates); }
+  cm('m-edit');af();rReady=false;fillDrops();toast('Task updated successfully');
 }
+
 function dTask(id){
+  id = String(id);
   if(!confirm('Delete this task? This action cannot be undone.'))return;
-  DATA=DATA.filter(x=>x.id!==id);fData=fData.filter(x=>x.id!==id);
+  fbDeleteJob(id);
+  if(!FB_READY){
+    DATA=DATA.filter(x=>String(x.id)!==id);
+    fData=fData.filter(x=>String(x.id)!==id);
+  }
   fillDrops();bTKpis();rTbl();rReady=false;toast('Task deleted','i');
 }
 
@@ -656,15 +662,15 @@ function addTask(){
     subType:document.getElementById('af-st').value,
     area:document.getElementById('af-ar').value,
     location:loc,details:det,
-    status:'In Progress', // always In Progress on creation
+    status:'In Progress',
     priority:document.getElementById('af-pr').value,
     completion:document.getElementById('af-cd').value||'',
     createdBy:currentUser?currentUser.role:'staff'
   };
-  fbAddJob(t);rReady=false;clrAF();rAddSide();
-if(!FB_READY){fillDrops();}
-  document.getElementById('nb-count').textContent=DATA.length;
-  toast(`Task #${t.id} added — marked In Progress`);
+  fbAddJob(t);
+  rReady=false;clrAF();rAddSide();
+  if(!FB_READY){fillDrops();updateNavPills();}
+  toast(`Task added — marked In Progress`);
 }
 function clrAF(){
   ['af-lc','af-de','af-cd'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
@@ -708,7 +714,7 @@ function renderInProgress(){
         <span class="kanban-count" style="background:${col.color}">${col.items.length}</span>
       </div>
       ${col.items.length?col.items.map(r=>`
-        <div class="kanban-card" onclick="vTask(${r.id})">
+        <div class="kanban-card" onclick="vTask('${r.id}')">
           <div class="kc-top">
             <span class="kc-id">#${r.id}</span>
             ${pbadge(r.priority)}
@@ -732,8 +738,8 @@ function renderInProgress(){
     <td>${r.area.replace(/_/g,' ')}</td><td>${r.location}</td>
     <td title="${r.details}" style="color:var(--t2)">${r.details}</td>
     <td>${sbadge(r.status)}</td><td>${pbadge(r.priority)}</td>
-    <td><button class="btn btn-o btn-xs" onclick="vTask(${r.id})" style="padding:3px 5px"><svg viewBox="0 0 16 16" fill="none" style="width:11px;height:11px"><circle cx="8" cy="8" r="5" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg></button>
-    ${currentUser&&currentUser.role!=='requester'?`<button class="btn btn-o btn-xs" onclick="eTask(${r.id})" style="padding:3px 5px;margin-left:3px"><svg viewBox="0 0 16 16" fill="none" style="width:11px;height:11px"><path d="M11 2l3 3-9 9H2v-3L11 2z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`:''}</td>
+    <td><button class="btn btn-o btn-xs" onclick="vTask('${r.id}')" style="padding:3px 5px"><svg viewBox="0 0 16 16" fill="none" style="width:11px;height:11px"><circle cx="8" cy="8" r="5" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg></button>
+    ${currentUser&&currentUser.role!=='requester'?`<button class="btn btn-o btn-xs" onclick="eTask('${r.id}')" style="padding:3px 5px;margin-left:3px"><svg viewBox="0 0 16 16" fill="none" style="width:11px;height:11px"><path d="M11 2l3 3-9 9H2v-3L11 2z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`:''}</td>
   </tr>`).join(''):`<tr><td colspan="11" style="text-align:center;padding:36px;color:var(--t2)">No active tasks at the moment.</td></tr>`;
 }
 
@@ -779,7 +785,7 @@ function renderRequestPage(){
       ${sbadge(r.status)}
       <span class="mri-area">${r.area.replace(/_/g,' ')} · ${r.location}</span>
       ${r.status!=='Pending'?`<span style="font-size:11px;color:var(--t2);margin-left:auto">Handler: ${r.handler}</span>`:''}
-      ${u.role==='admin'&&r.status==='Pending'?`<button class="btn btn-b btn-xs" onclick="assignRequest(${r.id})" style="margin-left:auto">Assign</button>`:''}
+      ${u.role==='admin'&&r.status==='Pending'?`<button class="btn btn-b btn-xs" onclick="assignRequest('${r.id}')" style="margin-left:auto">Assign</button>`:''}
     </div>
   </div>`).join('');
 }
@@ -804,7 +810,10 @@ function submitJobRequest(){
     completion:'',
     createdBy:currentUser?currentUser.username:'guest'
   };
-  DATA.unshift(t);fillDrops();rReady=false;clrJQ();renderRequestPage();
+  DATA.unshift(t);
+  fbAddJob(t);
+  if(!FB_READY){fillDrops();rReady=false;}
+  clrJQ();renderRequestPage();
   toast(`Request #${t.id} submitted — assigned to ${handler}`);
 }
 
@@ -858,11 +867,11 @@ function renderUserPage(){
       </div>
     </div>
     <div class="user-card-actions" style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end">
-      <button class="btn btn-b btn-sm" onclick="editUserModal(${u.id})">
+      <button class="btn btn-b btn-sm" onclick="editUserModal('${u.id}')">
         <svg viewBox="0 0 14 14" fill="none"><path d="M9.5 1.5l3 3-8 8H1.5v-3l8-8z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         Edit
       </button>
-      ${u.id!==currentUser.id?`<button class="btn btn-r btn-sm" onclick="deleteUser(${u.id})">
+      ${u.id!==currentUser.id?`<button class="btn btn-r btn-sm" onclick="deleteUser('${u.id}')">
         <svg viewBox="0 0 14 14" fill="none"><path d="M2 3.5h10M5 3.5V2h4v1.5M4.5 3.5v7h5v-7" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         Remove
       </button>`:''}
@@ -914,8 +923,8 @@ function renderContractorPanel(){
         <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
           <span style="font-size:10.5px;color:var(--t3)">Requested by ${j.requestor} · ${fd(j.date)}</span>
           <div style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap">
-            ${j.status!=='In Progress - Contractor'?`<button class="btn btn-a btn-sm" onclick="setContractorStatus(${j.id},'In Progress - Contractor')">Mark active</button>`:''}
-            <button class="btn btn-g btn-sm" onclick="setContractorStatus(${j.id},'Completed')">
+            ${j.status!=='In Progress - Contractor'?`<button class="btn btn-a btn-sm" onclick="setContractorStatus('${j.id}','In Progress - Contractor')">Mark active</button>`:''}
+            <button class="btn btn-g btn-sm" onclick="setContractorStatus('${j.id}','Completed')">
               <svg viewBox="0 0 14 14" fill="none"><path d="M2 7l4 4 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
               Mark complete
             </button>
