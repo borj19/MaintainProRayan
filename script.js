@@ -116,6 +116,7 @@ const PAGE_PERM = {
   users:       'manage_users',
   permissions: 'manage_permissions',
   admin:       'manage_fields',
+  rooms:       'view_all_tasks',
 };
 
 function switchAuthTab(tab){
@@ -269,6 +270,7 @@ function buildSidebarNav(){
     ['email',      'Email report',    '<rect x="1" y="3" width="14" height="10" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M1 5l7 5 7-5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>','Analytics','send_email'],
     ['users',      'Users',           '<circle cx="6" cy="5" r="2.5" stroke="currentColor" stroke-width="1.4"/><path d="M1 13c0-2.761 2.239-4 5-4s5 1.239 5 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="13" cy="5" r="2" stroke="currentColor" stroke-width="1.2"/><path d="M11.5 13c0-1.5 1-2.5 2-2.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>','Administration','manage_users','nb-users-count'],
     ['permissions','Permissions',     '<path d="M12 1l1.5 3L17 5l-2.5 2.5.5 3.5L12 9.5 9.5 11l.5-3.5L7.5 5l3.5-1L12 1z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="4" cy="12" r="2.5" stroke="currentColor" stroke-width="1.2"/>','Administration','manage_permissions'],
+    ['rooms',      'Rooms board',     '<rect x="1" y="1" width="6" height="4" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="9" y="1" width="6" height="4" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="1" y="7" width="6" height="4" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="9" y="7" width="6" height="4" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="1" y="13" width="14" height="2" rx="1" fill="currentColor" opacity=".4"/>','Jobs','view_all_tasks'],
     ['admin',      'Field mgmt',      '<circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.4"/><path d="M2 14c0-3.314 2.686-5 6-5s6 1.686 6 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M11 8l1 1 2-2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>','Administration','manage_fields'],
   ];
 
@@ -430,7 +432,8 @@ function go(p,el){
     inprogress:'In Progress — Task board',contractor:'My assigned jobs',
     request:'Job request portal',reports:'Reports & analytics',
     email:'Email report',users:'User management',
-    permissions:'Role permissions',admin:'Field management'};
+    permissions:'Role permissions',admin:'Field management',
+    rooms:'Room maintenance board'};
   const ttl=document.getElementById('pg-ttl'); if(ttl) ttl.textContent=T[p]||p;
 
   if(p==='dash')          rDash();
@@ -443,6 +446,7 @@ function go(p,el){
   if(p==='users')         renderUserPage();
   if(p==='permissions')   renderPermissionsPage();
   if(p==='admin')         renderAdminPanels();
+  if(p==='rooms')         renderRoomsBoard();
 
   if(window.innerWidth<=768) closeMobileSB();
   syncMobileNav(p);
@@ -599,28 +603,6 @@ function vTask(id){
   const editBtn=document.getElementById('det-edit');
   editBtn.style.display=canEdit?'':'none';
   editBtn.onclick=()=>{cm('m-det');eTask(id);};
-  // Inject "Mark complete" button into modal footer for staff/admin
-  const mft=document.querySelector('#m-det .mft');
-  if(mft&&canEdit&&r.status!=='Completed'){
-    // Remove any existing mark-complete btn to avoid duplicates
-    const existing=document.getElementById('btn-mark-complete');
-    if(existing)existing.remove();
-    const btn=document.createElement('button');
-    btn.id='btn-mark-complete';
-    btn.className='btn btn-g';
-    btn.textContent='✓ Mark complete';
-    btn.onclick=()=>{
-      const updates={status:'Completed',completion:getTODAY()};
-      fbUpdateJob(id,updates);
-      if(!FB_READY){const jr=DATA.find(x=>String(x.id)===id);if(jr)Object.assign(jr,updates);}
-      cm('m-det');af();renderInProgress();
-      toast('Job marked as completed','s');
-    };
-    mft.insertBefore(btn,mft.lastElementChild);
-  } else {
-    const existing=document.getElementById('btn-mark-complete');
-    if(existing)existing.remove();
-  }
   om('m-det');
 }
 
@@ -787,11 +769,9 @@ function renderRequestPage(){
   ].map(x=>`<div class="request-status-card"><div class="rsc-label" style="color:${x.c}">${x.l}</div><div class="rsc-count" style="color:${x.c}">${x.v}</div><div class="rsc-sub">${x.s}</div></div>`).join('');
 
   // My requests list
-  // Show all jobs for requestors (match by name OR username), all statuses
-  // For admin/staff show all jobs so they can assign/manage
   const shown=u.role==='requester'
-    ?DATA.filter(r=>r.requestor===u.name||r.createdBy===u.username)
-    :DATA;
+    ?DATA.filter(r=>r.requestor===u.name&&(r.status==='Pending'||r.status==='In Progress'||r.status==='In Progress - Contractor'||r.status==='Completed'))
+    :DATA.filter(r=>r.status==='Pending');
   const list=document.getElementById('my-requests-list');
   const countBadge=document.getElementById('my-req-count');
   if(countBadge)countBadge.textContent=(u.role==='requester'?'My requests':'Pending requests')+' ('+shown.length+')';
@@ -821,32 +801,29 @@ function submitJobRequest(){
   const handler=AUTO_ASSIGN[wt]||HNDS[0];
   const req=currentUser.role==='requester'?currentUser.name:(REQS[0]||'Guest');
   const t={
-    id:nid++,date:getTODAY(),
+    id:nid++,date:TODAY,
     requestor:req,
     handler:handler,
     workType:wt,
     subType:document.getElementById('jq-st').value,
     area:document.getElementById('jq-ar').value,
     location:loc,details:det,
-    status:'In Progress',
+    status:'In Progress', // auto move to In Progress with assigned handler
     priority:document.getElementById('jq-pr').value,
     completion:'',
     createdBy:currentUser?currentUser.username:'guest'
   };
-  fbAddJob(t);
-  if(!FB_READY){fillDrops();rReady=false;}
-  clrJQ();renderRequestPage();
-  toast(`Request submitted — assigned to ${handler}`);
+  DATA.unshift(t);fillDrops();rReady=false;clrJQ();renderRequestPage();
+  toast(`Request #${t.id} submitted — assigned to ${handler}`);
 }
 
 function assignRequest(id){
-  id=String(id);
-  const r=DATA.find(x=>String(x.id)===id);if(!r)return;
-  const updates={handler:AUTO_ASSIGN[r.workType]||HNDS[0],status:'In Progress'};
-  fbUpdateJob(id,updates);
-  if(!FB_READY)Object.assign(r,updates);
+  const r=DATA.find(x=>x.id===id);if(!r)return;
+  const wt=r.workType;
+  r.handler=AUTO_ASSIGN[wt]||HNDS[0];
+  r.status='In Progress';
   fillDrops();renderRequestPage();rReady=false;
-  toast(`Request assigned to ${r.handler||HNDS[0]}`);
+  toast(`Request #${id} assigned to ${r.handler}`);
 }
 
 function clrJQ(){
@@ -1127,6 +1104,7 @@ function init(){
       else if(p==='contractor') renderContractorPanel();
       else if(p==='tasks'){bTKpis();af();}
       else if(p==='request') renderRequestPage();
+      else if(p==='rooms') renderRoomsBoard();
     }
   },60000);
 }
