@@ -174,12 +174,7 @@ function adminAddUser(){
   if(p.length<6){errEl.textContent='Password must be at least 6 characters.';errEl.classList.add('show');return;}
   if(USERS.find(x=>x.username===u)){errEl.textContent='Username already exists.';errEl.classList.add('show');return;}
   const initials=name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
-  const newUser={id:nextUserId++,username:u,password:p,name,initials,role,dept,lastLogin:null};
-  USERS.push(newUser);
-  // Save to Firestore so it persists across sessions
-  if(typeof fbDb!=='undefined'&&fbDb){
-    fbDb.collection('users').add(newUser).catch(e=>console.warn('User save failed:',e.message));
-  }
+  USERS.push({id:nextUserId++,username:u,password:p,name,initials,role,dept,lastLogin:null});
   cm('m-adduser');
   ['au-name','au-user','au-pass'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   renderUserPage();
@@ -350,9 +345,7 @@ function wc(k){return WTC[k]||PAL[Object.keys(SUBTYPES).indexOf(k)%PAL.length]||
 // ═══════════════════════════════════════════════
 // DATA
 // ═══════════════════════════════════════════════
-// Live date — always returns today's real date, never hardcoded
-function getTODAY(){ return new Date().toISOString().slice(0,10); }
-const TODAY = getTODAY(); // used at page load; for runtime use getTODAY()
+const TODAY='2026-05-06';
 let DATA=[
   {id:1,date:'2026-04-11',requestor:'HSK - Sakorn',handler:'Rayan Borabien',workType:'Plumbing_Hydraulics_Services',subType:'Shower',area:'Level_10',location:'Room 1015',details:'Shower head rusty — replaced.',status:'Completed',priority:'Medium',completion:'2026-04-11',createdBy:'requester'},
   {id:2,date:'2026-04-11',requestor:'HSK - Sakorn',handler:'Rayan Borabien',workType:'Flooring',subType:'Polish',area:'Level_8',location:'Room 810',details:'Full floor polish treatment applied.',status:'Completed',priority:'Low',completion:'2026-04-11',createdBy:'staff'},
@@ -544,9 +537,9 @@ function rTbl(){
     <td title="${r.details}" style="color:var(--t2)">${r.details}</td>
     <td>${sbadge(r.status)}</td><td>${pbadge(r.priority)}</td>
     <td><div style="display:flex;gap:3px">
-      <button class="btn btn-o btn-xs" onclick="vTask(${r.id})" title="View" style="padding:3px 5px"><svg viewBox="0 0 16 16" fill="none" style="width:11px;height:11px"><circle cx="8" cy="8" r="5" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg></button>
-      ${isAdmin?`<button class="btn btn-o btn-xs" onclick="eTask(${r.id})" title="Edit" style="padding:3px 5px"><svg viewBox="0 0 16 16" fill="none" style="width:11px;height:11px"><path d="M11 2l3 3-9 9H2v-3L11 2z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`:''}
-      ${currentUser&&currentUser.role==='admin'?`<button class="btn btn-r btn-xs" onclick="dTask(${r.id})" title="Delete" style="padding:3px 5px"><svg viewBox="0 0 16 16" fill="none" style="width:11px;height:11px"><path d="M3 4h10M6 4V2h4v2M5 4v8h6V4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`:''}
+      <button class="btn btn-o btn-xs" onclick="vTask('${r.id}')" title="View" style="padding:3px 5px"><svg viewBox="0 0 16 16" fill="none" style="width:11px;height:11px"><circle cx="8" cy="8" r="5" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg></button>
+      ${isAdmin?`<button class="btn btn-o btn-xs" onclick="eTask('${r.id}')" title="Edit" style="padding:3px 5px"><svg viewBox="0 0 16 16" fill="none" style="width:11px;height:11px"><path d="M11 2l3 3-9 9H2v-3L11 2z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`:''}
+      ${currentUser&&currentUser.role==='admin'?`<button class="btn btn-r btn-xs" onclick="dTask('${r.id}')" title="Delete" style="padding:3px 5px"><svg viewBox="0 0 16 16" fill="none" style="width:11px;height:11px"><path d="M3 4h10M6 4V2h4v2M5 4v8h6V4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`:''}
     </div></td>
   </tr>`).join(''):`<tr><td colspan="11" style="text-align:center;padding:36px;color:var(--t2)">No tasks match the current filters.</td></tr>`;
   document.getElementById('p-inf').textContent=`Page ${cPg} of ${pages} (${tot} tasks)`;
@@ -706,7 +699,7 @@ function renderInProgress(){
         <span class="kanban-count" style="background:${col.color}">${col.items.length}</span>
       </div>
       ${col.items.length?col.items.map(r=>`
-        <div class="kanban-card" onclick="vTask(${r.id})">
+        <div class="kanban-card" onclick="vTask('${r.id}')">
           <div class="kc-top">
             <span class="kc-id">#${r.id}</span>
             ${pbadge(r.priority)}
@@ -730,8 +723,8 @@ function renderInProgress(){
     <td>${r.area.replace(/_/g,' ')}</td><td>${r.location}</td>
     <td title="${r.details}" style="color:var(--t2)">${r.details}</td>
     <td>${sbadge(r.status)}</td><td>${pbadge(r.priority)}</td>
-    <td><button class="btn btn-o btn-xs" onclick="vTask(${r.id})" style="padding:3px 5px"><svg viewBox="0 0 16 16" fill="none" style="width:11px;height:11px"><circle cx="8" cy="8" r="5" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg></button>
-    ${currentUser&&currentUser.role!=='requester'?`<button class="btn btn-o btn-xs" onclick="eTask(${r.id})" style="padding:3px 5px;margin-left:3px"><svg viewBox="0 0 16 16" fill="none" style="width:11px;height:11px"><path d="M11 2l3 3-9 9H2v-3L11 2z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`:''}</td>
+    <td><button class="btn btn-o btn-xs" onclick="vTask('${r.id}')" style="padding:3px 5px"><svg viewBox="0 0 16 16" fill="none" style="width:11px;height:11px"><circle cx="8" cy="8" r="5" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg></button>
+    ${currentUser&&currentUser.role!=='requester'?`<button class="btn btn-o btn-xs" onclick="eTask('${r.id}')" style="padding:3px 5px;margin-left:3px"><svg viewBox="0 0 16 16" fill="none" style="width:11px;height:11px"><path d="M11 2l3 3-9 9H2v-3L11 2z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`:''}</td>
   </tr>`).join(''):`<tr><td colspan="11" style="text-align:center;padding:36px;color:var(--t2)">No active tasks at the moment.</td></tr>`;
 }
 
@@ -759,7 +752,7 @@ function renderRequestPage(){
 
   // My requests list
   const shown=u.role==='requester'
-    ?DATA.filter(r=>(r.createdBy===u.username||r.requestor===u.name))
+    ?DATA.filter(r=>r.requestor===u.name&&(r.status==='Pending'||r.status==='In Progress'||r.status==='In Progress - Contractor'||r.status==='Completed'))
     :DATA.filter(r=>r.status==='Pending');
   const list=document.getElementById('my-requests-list');
   const countBadge=document.getElementById('my-req-count');
@@ -777,7 +770,7 @@ function renderRequestPage(){
       ${sbadge(r.status)}
       <span class="mri-area">${r.area.replace(/_/g,' ')} · ${r.location}</span>
       ${r.status!=='Pending'?`<span style="font-size:11px;color:var(--t2);margin-left:auto">Handler: ${r.handler}</span>`:''}
-      ${u.role==='admin'&&r.status==='Pending'?`<button class="btn btn-b btn-xs" onclick="assignRequest(${r.id})" style="margin-left:auto">Assign</button>`:''}
+      ${u.role==='admin'&&r.status==='Pending'?`<button class="btn btn-b btn-xs" onclick="assignRequest('${r.id}')" style="margin-left:auto">Assign</button>`:''}
     </div>
   </div>`).join('');
 }
@@ -790,31 +783,29 @@ function submitJobRequest(){
   const handler=AUTO_ASSIGN[wt]||HNDS[0];
   const req=currentUser.role==='requester'?currentUser.name:(REQS[0]||'Guest');
   const t={
-    id:nid++,date:getTODAY(),
+    id:nid++,date:TODAY,
     requestor:req,
     handler:handler,
     workType:wt,
     subType:document.getElementById('jq-st').value,
     area:document.getElementById('jq-ar').value,
     location:loc,details:det,
-    status:'In Progress',
+    status:'In Progress', // auto move to In Progress with assigned handler
     priority:document.getElementById('jq-pr').value,
     completion:'',
     createdBy:currentUser?currentUser.username:'guest'
   };
-  fbAddJob(t);
-  if(!FB_READY){fillDrops();rReady=false;}
-  clrJQ();renderRequestPage();
-  toast(`Request submitted — assigned to ${handler}`);
+  DATA.unshift(t);fillDrops();rReady=false;clrJQ();renderRequestPage();
+  toast(`Request #${t.id} submitted — assigned to ${handler}`);
 }
 
 function assignRequest(id){
-  const r=DATA.find(x=>String(x.id)===String(id));if(!r)return;
-  const updates={handler:AUTO_ASSIGN[r.workType]||HNDS[0],status:'In Progress'};
-  fbUpdateJob(String(id),updates);
-  if(!FB_READY){Object.assign(r,updates);}
+  const r=DATA.find(x=>x.id===id);if(!r)return;
+  const wt=r.workType;
+  r.handler=AUTO_ASSIGN[wt]||HNDS[0];
+  r.status='In Progress';
   fillDrops();renderRequestPage();rReady=false;
-  toast(`Request assigned to ${updates.handler}`);
+  toast(`Request #${id} assigned to ${r.handler}`);
 }
 
 function clrJQ(){
@@ -858,11 +849,11 @@ function renderUserPage(){
       </div>
     </div>
     <div class="user-card-actions" style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end">
-      <button class="btn btn-b btn-sm" onclick="editUserModal(${u.id})">
+      <button class="btn btn-b btn-sm" onclick="editUserModal('${u.id}')">
         <svg viewBox="0 0 14 14" fill="none"><path d="M9.5 1.5l3 3-8 8H1.5v-3l8-8z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         Edit
       </button>
-      ${u.id!==currentUser.id?`<button class="btn btn-r btn-sm" onclick="deleteUser(${u.id})">
+      ${u.id!==currentUser.id?`<button class="btn btn-r btn-sm" onclick="deleteUser('${u.id}')">
         <svg viewBox="0 0 14 14" fill="none"><path d="M2 3.5h10M5 3.5V2h4v1.5M4.5 3.5v7h5v-7" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         Remove
       </button>`:''}
@@ -914,8 +905,8 @@ function renderContractorPanel(){
         <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
           <span style="font-size:10.5px;color:var(--t3)">Requested by ${j.requestor} · ${fd(j.date)}</span>
           <div style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap">
-            ${j.status!=='In Progress - Contractor'?`<button class="btn btn-a btn-sm" onclick="setContractorStatus(${j.id},'In Progress - Contractor')">Mark active</button>`:''}
-            <button class="btn btn-g btn-sm" onclick="setContractorStatus(${j.id},'Completed')">
+            ${j.status!=='In Progress - Contractor'?`<button class="btn btn-a btn-sm" onclick="setContractorStatus('${j.id}','In Progress - Contractor')">Mark active</button>`:''}
+            <button class="btn btn-g btn-sm" onclick="setContractorStatus('${j.id}','Completed')">
               <svg viewBox="0 0 14 14" fill="none"><path d="M2 7l4 4 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
               Mark complete
             </button>
@@ -1053,18 +1044,10 @@ function delArea(name){if(AREAS.length<=1){toast('At least one area must remain.
 // INIT
 // ═══════════════════════════════════════════════
 function init(){
-  const dtEl=document.getElementById('af-dt'); if(dtEl) dtEl.value=getTODAY();
-  const cdEl=document.getElementById('af-cd'); if(cdEl) cdEl.value=getTODAY();
-  // Live clock — updates every second
-  function updateClock(){
-    const el=document.getElementById('tb-dt'); if(!el) return;
-    const now=new Date();
-    el.textContent=now.toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short',year:'numeric'})
-      +' '+now.toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});
-  }
-  updateClock();
-  if(window._clockInterval) clearInterval(window._clockInterval);
-  window._clockInterval=setInterval(updateClock,1000);
+  const dtEl=document.getElementById('af-dt'); if(dtEl) dtEl.value=TODAY;
+  const cdEl=document.getElementById('af-cd'); if(cdEl) cdEl.value=TODAY;
+  const tbDt=document.getElementById('tb-dt');
+  if(tbDt) tbDt.textContent=new Date(TODAY).toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
   fillDrops();
   updateNavPills();
 
@@ -1126,16 +1109,6 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
   } catch(e){ try{sessionStorage.removeItem('mp_session');}catch(_){} }
-
-  // Load users from Firestore (supplements local USERS array)
-  if(typeof fbDb!=='undefined'&&fbDb){
-    fbDb.collection('users').get().then(snap=>{
-      snap.forEach(doc=>{
-        const u={...doc.data(),firestoreId:doc.id};
-        if(!USERS.find(x=>x.username===u.username)) USERS.push(u);
-      });
-    }).catch(e=>console.warn('Could not load users from Firestore:',e.message));
-  }
 
   // No saved session — show login screen
   const authEl=document.getElementById('auth-screen');
