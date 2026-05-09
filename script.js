@@ -612,24 +612,29 @@ function eTask(id){
 }
 
 function saveEdit(){
-  const updates = {
-  date:     document.getElementById('em-dt').value,
-  requestor:document.getElementById('em-rq').value,
-  handler:  document.getElementById('em-hd').value,
-  workType: document.getElementById('em-wt').value,
-  subType:  document.getElementById('em-st').value,
-  area:     document.getElementById('em-ar').value,
-  location: document.getElementById('em-lc').value,
-  status:   document.getElementById('em-ss').value,
-  priority: document.getElementById('em-pr').value,
-  details:  document.getElementById('em-de').value,
-};
-if(updates.status==='Completed'&&!r.completion) updates.completion=TODAY;
-fbUpdateJob(eId, updates);
-if(!FB_READY){Object.assign(r,updates);}
-cm('m-edit');af();rReady=false;fillDrops();toast('Task updated successfully');
+  const r=DATA.find(x=>x.id===eId);
+  if(!r)return;
+  const updates={
+    date:     document.getElementById('em-dt').value,
+    requestor:document.getElementById('em-rq').value,
+    handler:  document.getElementById('em-hd').value,
+    workType: document.getElementById('em-wt').value,
+    subType:  document.getElementById('em-st').value,
+    area:     document.getElementById('em-ar').value,
+    location: document.getElementById('em-lc').value,
+    status:   document.getElementById('em-ss').value,
+    priority: document.getElementById('em-pr').value,
+    details:  document.getElementById('em-de').value,
+  };
+  if(updates.status==='Completed'&&!r.completion) updates.completion=TODAY;
+  fbUpdateJob(eId, updates);
+  if(!FB_READY){ Object.assign(r, updates); }
+  cm('m-edit');
+  af();
+  rReady=false;
+  fillDrops();
+  toast('Task updated successfully');
 }
-
 function dTask(id){
   if(!confirm('Delete this task? This action cannot be undone.'))return;
   DATA=DATA.filter(x=>x.id!==id);fData=fData.filter(x=>x.id!==id);
