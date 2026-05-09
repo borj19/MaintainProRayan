@@ -135,25 +135,45 @@ function selectRole(role){
   });
 }
 
-function doLogin(){
-  const u=document.getElementById('l-user').value.trim();
-  const p=document.getElementById('l-pass').value;
-  const errEl=document.getElementById('login-err');
-  if(!u||!p){errEl.textContent='Please enter your username and password.';errEl.classList.add('show');return;}
-  const user=USERS.find(x=>x.username===u&&x.password===p);
-  if(user){
-    user.lastLogin=new Date().toISOString();
-    currentUser=user;
-    errEl.classList.remove('show');
-    document.getElementById('auth-screen').style.display='none';
-    applyUserSession();
-    init();
+async function doLogin(){
+  const email = document.getElementById('l-user').value.trim();
+  const pass  = document.getElementById('l-pass').value;
+  const errEl = document.getElementById('login-err');
+  errEl.classList.remove('show');
+  if(!email||!pass){errEl.textContent='Please enter your email and password.';errEl.classList.add('show');return;}
+
+  const btn = document.querySelector('#auth-login-form .auth-btn');
+  if(btn){btn.textContent='Signing in…';btn.disabled=true;}
+
+  if(FB_READY){
+    // ── Firebase Auth login (works on all devices) ──
+    try{
+      const cred = await fbAuth.signInWithEmailAndPassword(email, pass);
+      // onAuthStateChanged in firebase.js handles the rest
+    } catch(e){
+      errEl.textContent = e.code==='auth/user-not-found'||e.code==='auth/wrong-password'||e.code==='auth/invalid-credential'
+        ? 'Incorrect email or password. Please try again.'
+        : 'Login failed: '+e.message;
+      errEl.classList.add('show');
+      document.getElementById('l-pass').value='';
+      document.getElementById('l-pass').focus();
+    }
   } else {
-    errEl.textContent='Incorrect username or password. Please try again.';
-    errEl.classList.add('show');
-    document.getElementById('l-pass').value='';
-    document.getElementById('l-pass').focus();
+    // ── Demo fallback (no Firebase) ──
+    const user=USERS.find(x=>(x.email===email||x.username===email)&&x.password===pass);
+    if(user){
+      currentUser=user;
+      document.getElementById('auth-screen').style.display='none';
+      applyUserSession();
+      window._appStarted=true;
+      init();
+    } else {
+      errEl.textContent='Incorrect email or password.';
+      errEl.classList.add('show');
+      document.getElementById('l-pass').value='';
+    }
   }
+  if(btn){btn.textContent='Sign in';btn.disabled=false;}
 }
 
 function doRegister(){
@@ -163,28 +183,59 @@ function doRegister(){
   errEl.classList.add('show');
 }
 
-function adminAddUser(){
-  const name=document.getElementById('au-name').value.trim();
-  const u=document.getElementById('au-user').value.trim();
-  const p=document.getElementById('au-pass').value;
-  const role=document.getElementById('au-role').value;
-  const dept=document.getElementById('au-dept')?.value.trim()||'';
-  const errEl=document.getElementById('au-err');
+async function adminAddUser(){
+  const name  = document.getElementById('au-name').value.trim();
+  const email = document.getElementById('au-user').value.trim(); // now email
+  const p     = document.getElementById('au-pass').value;
+  const role  = document.getElementById('au-role').value;
+  const dept  = document.getElementById('au-dept')?.value.trim()||'';
+  const errEl = document.getElementById('au-err');
   errEl.classList.remove('show');
-  if(!name||!u||!p){errEl.textContent='All fields are required.';errEl.classList.add('show');return;}
+  if(!name||!email||!p){errEl.textContent='All fields are required.';errEl.classList.add('show');return;}
+  if(!email.includes('@')){errEl.textContent='Please enter a valid email address.';errEl.classList.add('show');return;}
   if(p.length<6){errEl.textContent='Password must be at least 6 characters.';errEl.classList.add('show');return;}
-  if(USERS.find(x=>x.username===u)){errEl.textContent='Username already exists.';errEl.classList.add('show');return;}
+
   const initials=name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
-  const newUser={id:nextUserId++,username:u,password:p,name,initials,role,dept,lastLogin:null};
-  USERS.push(newUser);
-  // Save to Firestore so users persist after refresh
-  if(typeof fbDb!=='undefined'&&fbDb){
-    fbDb.collection('users').add(newUser).catch(e=>console.warn('User save failed:',e.message));
+  const btn=document.querySelector('#m-adduser .btn-g');
+  if(btn){btn.textContent='Creating…';btn.disabled=true;}
+
+  if(FB_READY&&fbAuth){
+    // Create Firebase Auth account — works on all devices
+    try{
+      // Use secondary app to avoid signing out current admin
+      const secondApp=firebase.initializeApp(FIREBASE_CONFIG,'secondary'+Date.now());
+      const secondAuth=secondApp.auth();
+      const cred=await secondAuth.createUserWithEmailAndPassword(email,p);
+      const uid=cred.user.uid;
+      await secondAuth.signOut();
+      secondApp.delete();
+
+      // Save profile to Firestore
+      const profile={uid,email,name,initials,role,dept,lastLogin:null,createdAt:getTODAY()};
+      await fbDb.collection('users').doc(uid).set(profile);
+
+      // Add to local USERS array
+      USERS.push({id:uid,...profile});
+      cm('m-adduser');
+      ['au-name','au-user','au-pass'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+      renderUserPage();
+      toast(`Account "${name}" created — they can now log in with ${email}`,'s');
+    } catch(e){
+      errEl.textContent=e.code==='auth/email-already-in-use'
+        ?'This email is already registered.'
+        :'Error: '+e.message;
+      errEl.classList.add('show');
+    }
+  } else {
+    // Demo fallback
+    const newUser={id:nextUserId++,username:email,email,password:p,name,initials,role,dept,lastLogin:null};
+    USERS.push(newUser);
+    cm('m-adduser');
+    ['au-name','au-user','au-pass'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+    renderUserPage();
+    toast(`User "${name}" created`,'s');
   }
-  cm('m-adduser');
-  ['au-name','au-user','au-pass'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  renderUserPage();
-  toast(`User "${name}" (${ROLE_LABELS[role]}) created`,'s');
+  if(btn){btn.textContent='Create account';btn.disabled=false;}
 }
 
 function editUserModal(id){
@@ -214,8 +265,8 @@ function adminSaveUser(){
   const idx=USERS.findIndex(x=>String(x.id)===String(id)); if(idx<0) return;
   USERS[idx]={...USERS[idx],name,username:u,role,dept,initials:name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase()};
   if(p) USERS[idx].password=p;
-  if(typeof fbDb!=='undefined'&&fbDb){const fsId=USERS[idx].firestoreId;if(fsId){const upd={name,username:u,role,dept,initials:USERS[idx].initials};if(p)upd.password=p;fbDb.collection('users').doc(fsId).update(upd).catch(e=>console.warn('User update failed:',e.message));}}
   cm('m-edituser');
+  // Update session if editing own account
   if(String(currentUser.id)===String(id)){currentUser=USERS[idx];applyUserSession();}
   renderUserPage();
   toast(`User "${name}" updated`,'s');
@@ -232,11 +283,14 @@ function deleteUser(id){
 
 function doLogout(){
   currentUser=null;
+  window._appStarted=false;
   try{ sessionStorage.removeItem('mp_session'); }catch(e){}
   if(window._refreshInterval){ clearInterval(window._refreshInterval); window._refreshInterval=null; }
-  document.getElementById('auth-screen').style.display='flex';
-  document.getElementById('l-user').value=''; document.getElementById('l-pass').value='';
-  const errEl=document.getElementById('login-err'); if(errEl) errEl.classList.remove('show');
+  if(typeof fbAuth!=='undefined'&&fbAuth) fbAuth.signOut();
+  const a=document.getElementById('auth-screen');if(a)a.style.display='flex';
+  const lu=document.getElementById('l-user');if(lu)lu.value='';
+  const lp=document.getElementById('l-pass');if(lp)lp.value='';
+  const le=document.getElementById('login-err');if(le)le.classList.remove('show');
 }
 
 function applyUserSession(){
@@ -270,7 +324,7 @@ function buildSidebarNav(){
     ['email',      'Email report',    '<rect x="1" y="3" width="14" height="10" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M1 5l7 5 7-5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>','Analytics','send_email'],
     ['users',      'Users',           '<circle cx="6" cy="5" r="2.5" stroke="currentColor" stroke-width="1.4"/><path d="M1 13c0-2.761 2.239-4 5-4s5 1.239 5 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="13" cy="5" r="2" stroke="currentColor" stroke-width="1.2"/><path d="M11.5 13c0-1.5 1-2.5 2-2.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>','Administration','manage_users','nb-users-count'],
     ['permissions','Permissions',     '<path d="M12 1l1.5 3L17 5l-2.5 2.5.5 3.5L12 9.5 9.5 11l.5-3.5L7.5 5l3.5-1L12 1z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="4" cy="12" r="2.5" stroke="currentColor" stroke-width="1.2"/>','Administration','manage_permissions'],
-    ['rooms',      'Rooms board',     '<rect x="1" y="1" width="6" height="4" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="9" y="1" width="6" height="4" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="1" y="7" width="6" height="4" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="9" y="7" width="6" height="4" rx="1" stroke="currentColor" stroke-width="1.4"/>','Jobs','view_all_tasks'],
+    ['rooms',      'Rooms board','<rect x="1" y="1" width="6" height="4" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="9" y="1" width="6" height="4" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="1" y="7" width="6" height="4" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="9" y="7" width="6" height="4" rx="1" stroke="currentColor" stroke-width="1.4"/>','Jobs','view_all_tasks'],
     ['admin',      'Field mgmt',      '<circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.4"/><path d="M2 14c0-3.314 2.686-5 6-5s6 1.686 6 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M11 8l1 1 2-2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>','Administration','manage_fields'],
   ];
 
@@ -1137,34 +1191,8 @@ document.addEventListener('DOMContentLoaded', function() {
   if(lPass) lPass.addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
   if(lUser) lUser.addEventListener('keydown', e=>{ if(e.key==='Enter' && lPass) lPass.focus(); });
 
-  // Try to restore session from sessionStorage (prevents logout on refresh)
-  try {
-    const saved=sessionStorage.getItem('mp_session');
-    if(saved){
-      const s=JSON.parse(saved);
-      const user=USERS.find(u=>u.id===s.id && u.username===s.username);
-      if(user){
-        currentUser=user;
-        const authEl=document.getElementById('auth-screen');
-        if(authEl){authEl.style.display='none';}
-        applyUserSession();
-        init();
-        return;
-      }
-    }
-  } catch(e){ try{sessionStorage.removeItem('mp_session');}catch(_){} }
-
-  // Load persisted users from Firestore
-  if(typeof fbDb!=='undefined'&&fbDb){
-    fbDb.collection('users').get().then(snap=>{
-      snap.forEach(doc=>{
-        const u={...doc.data(),firestoreId:doc.id};
-        if(!USERS.find(x=>x.username===u.username))USERS.push(u);
-      });
-    }).catch(e=>console.warn('Could not load users:',e.message));
-  }
-
-  // No saved session — show login screen
-  const authEl=document.getElementById('auth-screen');
-  if(authEl){authEl.style.display='flex';}
+  // Session restore is handled by firebase.js onAuthStateChanged
+  // which runs automatically on every page load for all devices
+  // No action needed here — firebase.js will show login or restore session
+  window._appStarted = false;
 });
