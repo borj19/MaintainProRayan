@@ -144,7 +144,7 @@ function doLogin(){
     user.lastLogin=new Date().toISOString();
     currentUser=user;
     errEl.classList.remove('show');
-    const as=document.getElementById('auth-screen');if(as){as.style.display='none';}
+    document.getElementById('auth-screen').style.display='none';
     applyUserSession();
     init();
   } else {
@@ -213,8 +213,15 @@ function adminSaveUser(){
   const idx=USERS.findIndex(x=>String(x.id)===String(id)); if(idx<0) return;
   USERS[idx]={...USERS[idx],name,username:u,role,dept,initials:name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase()};
   if(p) USERS[idx].password=p;
+  if(typeof fbDb!=='undefined'&&fbDb){
+    const fsId=USERS[idx].firestoreId;
+    if(fsId){
+      const upd={name,username:u,role,dept,initials:USERS[idx].initials};
+      if(p)upd.password=p;
+      fbDb.collection('users').doc(fsId).update(upd).catch(e=>console.warn('User update failed:',e.message));
+    }
+  }
   cm('m-edituser');
-  // Update session if editing own account
   if(String(currentUser.id)===String(id)){currentUser=USERS[idx];applyUserSession();}
   renderUserPage();
   toast(`User "${name}" updated`,'s');
@@ -233,7 +240,7 @@ function doLogout(){
   currentUser=null;
   try{ sessionStorage.removeItem('mp_session'); }catch(e){}
   if(window._refreshInterval){ clearInterval(window._refreshInterval); window._refreshInterval=null; }
-  const as=document.getElementById('auth-screen');if(as){as.style.display='flex';}
+  document.getElementById('auth-screen').style.display='flex';
   document.getElementById('l-user').value=''; document.getElementById('l-pass').value='';
   const errEl=document.getElementById('login-err'); if(errEl) errEl.classList.remove('show');
 }
@@ -599,7 +606,26 @@ function vTask(id){
   const editBtn=document.getElementById('det-edit');
   editBtn.style.display=canEdit?'':'none';
   editBtn.onclick=()=>{cm('m-det');eTask(id);};
+  const mft=document.querySelector('#m-det .mft');
+  if(mft&&canEdit){
+    const ex=document.getElementById('btn-mark-complete');if(ex)ex.remove();
+    if(r.status!=='Completed'){
+      const btn=document.createElement('button');
+      btn.id='btn-mark-complete';btn.className='btn btn-g';btn.textContent='✓ Mark complete';
+      btn.onclick=()=>markJobComplete(id);
+      mft.insertBefore(btn,mft.lastElementChild);
+    }
+  }
   om('m-det');
+}
+
+function markJobComplete(id){
+  id=String(id);
+  const updates={status:'Completed',completion:getTODAY()};
+  fbUpdateJob(id,updates);
+  if(!FB_READY){const r=DATA.find(x=>String(x.id)===id);if(r)Object.assign(r,updates);}
+  cm('m-det');af();renderInProgress();
+  toast('Job marked as completed ✓','s');
 }
 
 function eTask(id){
