@@ -182,7 +182,7 @@ function adminAddUser(){
 }
 
 function editUserModal(id){
-  const u=USERS.find(x=>x.id===id); if(!u) return;
+  const u=USERS.find(x=>String(x.id)===String(id)); if(!u) return;
   document.getElementById('eu-id').value=u.id;
   document.getElementById('eu-name').value=u.name;
   document.getElementById('eu-user').value=u.username;
@@ -194,7 +194,7 @@ function editUserModal(id){
 }
 
 function adminSaveUser(){
-  const id=parseInt(document.getElementById('eu-id').value);
+  const id=document.getElementById('eu-id').value; // keep as string for comparison
   const name=document.getElementById('eu-name').value.trim();
   const u=document.getElementById('eu-user').value.trim();
   const p=document.getElementById('eu-pass').value;
@@ -203,23 +203,23 @@ function adminSaveUser(){
   const errEl=document.getElementById('eu-err');
   errEl.classList.remove('show');
   if(!name||!u){errEl.textContent='Name and username are required.';errEl.classList.add('show');return;}
-  const dup=USERS.find(x=>x.username===u&&x.id!==id);
+  const dup=USERS.find(x=>x.username===u&&String(x.id)!==String(id));
   if(dup){errEl.textContent='Username already taken.';errEl.classList.add('show');return;}
-  const idx=USERS.findIndex(x=>x.id===id); if(idx<0) return;
+  const idx=USERS.findIndex(x=>String(x.id)===String(id)); if(idx<0) return;
   USERS[idx]={...USERS[idx],name,username:u,role,dept,initials:name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase()};
   if(p) USERS[idx].password=p;
   cm('m-edituser');
   // Update session if editing own account
-  if(currentUser.id===id){currentUser=USERS[idx];applyUserSession();}
+  if(String(currentUser.id)===String(id)){currentUser=USERS[idx];applyUserSession();}
   renderUserPage();
   toast(`User "${name}" updated`,'s');
 }
 
 function deleteUser(id){
-  if(id===currentUser.id){toast('You cannot delete your own account.','e');return;}
-  const u=USERS.find(x=>x.id===id);
+  if(String(id)===String(currentUser.id)){toast('You cannot delete your own account.','e');return;}
+  const u=USERS.find(x=>String(x.id)===String(id));
   if(!confirm(`Delete account "${u?.name||id}"? This cannot be undone.`))return;
-  USERS=USERS.filter(x=>x.id!==id);
+  USERS=USERS.filter(x=>String(x.id)!==String(id));
   renderUserPage();
   toast('User removed','i');
 }
@@ -570,8 +570,7 @@ function bTKpis(){
 // VIEW / EDIT / DELETE TASKS
 // ═══════════════════════════════════════════════
 function vTask(id){
-  id=String(id);
-  const r=DATA.find(x=>String(x.id)===id);if(!r)return;
+  const r=DATA.find(x=>x.id===id);if(!r)return;
   const canEdit=currentUser&&(currentUser.role==='admin'||currentUser.role==='staff');
   document.getElementById('det-body').innerHTML=`
     <div class="dg">
@@ -597,8 +596,7 @@ function vTask(id){
 }
 
 function eTask(id){
-  id=String(id);
-  const r=DATA.find(x=>String(x.id)===id);if(!r)return;
+  const r=DATA.find(x=>x.id===id);if(!r)return;
   eId=id;
   document.getElementById('em-dt').value=r.date;
   document.getElementById('em-lc').value=r.location;
@@ -614,30 +612,24 @@ function eTask(id){
 }
 
 function saveEdit(){
-  const r=DATA.find(x=>String(x.id)===String(eId));if(!r)return;
-  const updates={
-    date:document.getElementById('em-dt').value,
-    requestor:document.getElementById('em-rq').value,
-    handler:document.getElementById('em-hd').value,
-    workType:document.getElementById('em-wt').value,
-    subType:document.getElementById('em-st').value,
-    area:document.getElementById('em-ar').value,
-    location:document.getElementById('em-lc').value,
-    status:document.getElementById('em-ss').value,
-    priority:document.getElementById('em-pr').value,
-    details:document.getElementById('em-de').value,
-  };
-  if(updates.status==='Completed'&&!r.completion)updates.completion=getTODAY();
-  fbUpdateJob(String(eId),updates);
-  if(!FB_READY)Object.assign(r,updates);
+  const r=DATA.find(x=>x.id===eId);if(!r)return;
+  r.date=document.getElementById('em-dt').value;
+  r.requestor=document.getElementById('em-rq').value;
+  r.handler=document.getElementById('em-hd').value;
+  r.workType=document.getElementById('em-wt').value;
+  r.subType=document.getElementById('em-st').value;
+  r.area=document.getElementById('em-ar').value;
+  r.location=document.getElementById('em-lc').value;
+  r.status=document.getElementById('em-ss').value;
+  r.priority=document.getElementById('em-pr').value;
+  r.details=document.getElementById('em-de').value;
+  if(r.status==='Completed'&&!r.completion)r.completion=TODAY;
   cm('m-edit');af();rReady=false;fillDrops();toast('Task updated successfully');
 }
 
 function dTask(id){
-  id=String(id);
   if(!confirm('Delete this task? This action cannot be undone.'))return;
-  fbDeleteJob(id);
-  if(!FB_READY){DATA=DATA.filter(x=>String(x.id)!==id);fData=fData.filter(x=>String(x.id)!==id);}
+  DATA=DATA.filter(x=>x.id!==id);fData=fData.filter(x=>x.id!==id);
   fillDrops();bTKpis();rTbl();rReady=false;toast('Task deleted','i');
 }
 
