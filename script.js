@@ -116,7 +116,6 @@ const PAGE_PERM = {
   users:       'manage_users',
   permissions: 'manage_permissions',
   admin:       'manage_fields',
-  rooms:       'view_all_tasks',
 };
 
 function switchAuthTab(tab){
@@ -214,8 +213,17 @@ function adminSaveUser(){
   const idx=USERS.findIndex(x=>String(x.id)===String(id)); if(idx<0) return;
   USERS[idx]={...USERS[idx],name,username:u,role,dept,initials:name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase()};
   if(p) USERS[idx].password=p;
+  // Persist changes to Firestore
+  if(typeof fbDb!=='undefined'&&fbDb){
+    const fsId=USERS[idx].firestoreId;
+    if(fsId){
+      const upd={name,username:u,role,dept,initials:USERS[idx].initials};
+      if(p) upd.password=p;
+      fbDb.collection('users').doc(fsId).update(upd)
+        .catch(e=>console.warn('User update failed:',e.message));
+    }
+  }
   cm('m-edituser');
-  // Update session if editing own account
   if(String(currentUser.id)===String(id)){currentUser=USERS[idx];applyUserSession();}
   renderUserPage();
   toast(`User "${name}" updated`,'s');
@@ -270,7 +278,6 @@ function buildSidebarNav(){
     ['email',      'Email report',    '<rect x="1" y="3" width="14" height="10" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M1 5l7 5 7-5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>','Analytics','send_email'],
     ['users',      'Users',           '<circle cx="6" cy="5" r="2.5" stroke="currentColor" stroke-width="1.4"/><path d="M1 13c0-2.761 2.239-4 5-4s5 1.239 5 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="13" cy="5" r="2" stroke="currentColor" stroke-width="1.2"/><path d="M11.5 13c0-1.5 1-2.5 2-2.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>','Administration','manage_users','nb-users-count'],
     ['permissions','Permissions',     '<path d="M12 1l1.5 3L17 5l-2.5 2.5.5 3.5L12 9.5 9.5 11l.5-3.5L7.5 5l3.5-1L12 1z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="4" cy="12" r="2.5" stroke="currentColor" stroke-width="1.2"/>','Administration','manage_permissions'],
-    ['rooms',      'Rooms board',     '<rect x="1" y="1" width="6" height="4" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="9" y="1" width="6" height="4" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="1" y="7" width="6" height="4" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="9" y="7" width="6" height="4" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="1" y="13" width="14" height="2" rx="1" fill="currentColor" opacity=".4"/>','Jobs','view_all_tasks'],
     ['admin',      'Field mgmt',      '<circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.4"/><path d="M2 14c0-3.314 2.686-5 6-5s6 1.686 6 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M11 8l1 1 2-2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>','Administration','manage_fields'],
   ];
 
@@ -432,8 +439,7 @@ function go(p,el){
     inprogress:'In Progress — Task board',contractor:'My assigned jobs',
     request:'Job request portal',reports:'Reports & analytics',
     email:'Email report',users:'User management',
-    permissions:'Role permissions',admin:'Field management',
-    rooms:'Room maintenance board'};
+    permissions:'Role permissions',admin:'Field management'};
   const ttl=document.getElementById('pg-ttl'); if(ttl) ttl.textContent=T[p]||p;
 
   if(p==='dash')          rDash();
@@ -446,7 +452,6 @@ function go(p,el){
   if(p==='users')         renderUserPage();
   if(p==='permissions')   renderPermissionsPage();
   if(p==='admin')         renderAdminPanels();
-  if(p==='rooms')         renderRoomsBoard();
 
   if(window.innerWidth<=768) closeMobileSB();
   syncMobileNav(p);
@@ -603,12 +608,35 @@ function vTask(id){
   const editBtn=document.getElementById('det-edit');
   editBtn.style.display=canEdit?'':'none';
   editBtn.onclick=()=>{cm('m-det');eTask(id);};
+  // Mark complete button
+  const mft=document.querySelector('#m-det .mft');
+  if(mft&&canEdit){
+    const ex=document.getElementById('btn-mark-complete');
+    if(ex) ex.remove();
+    if(r.status!=='Completed'){
+      const btn=document.createElement('button');
+      btn.id='btn-mark-complete';
+      btn.className='btn btn-g';
+      btn.textContent='✓ Mark complete';
+      btn.onclick=()=>markJobComplete(id);
+      mft.insertBefore(btn,mft.lastElementChild);
+    }
+  }
   om('m-det');
 }
 
+function markJobComplete(id){
+  id=String(id);
+  const updates={status:'Completed',completion:getTODAY()};
+  fbUpdateJob(id,updates);
+  if(!FB_READY){const r=DATA.find(x=>String(x.id)===id);if(r)Object.assign(r,updates);}
+  cm('m-det');af();renderInProgress();
+  toast('Job marked as completed ✓','s');
+
 function eTask(id){
   id=String(id);
-  const r=DATA.find(x=>String(x.id)===id);if(!r)return;
+  const r=DATA.find(x=>String(x.id)===id);
+  if(!r){toast('Job not found — try refreshing.','e');return;}
   eId=id;
   document.getElementById('em-dt').value=r.date;
   document.getElementById('em-lc').value=r.location;
@@ -624,7 +652,8 @@ function eTask(id){
 }
 
 function saveEdit(){
-  const r=DATA.find(x=>String(x.id)===String(eId));if(!r)return;
+  const r=DATA.find(x=>String(x.id)===String(eId));
+  if(!r){toast('Job not found — data may have refreshed. Please reopen.','e');cm('m-edit');return;}
   const updates={
     date:document.getElementById('em-dt').value,
     requestor:document.getElementById('em-rq').value,
@@ -1104,7 +1133,6 @@ function init(){
       else if(p==='contractor') renderContractorPanel();
       else if(p==='tasks'){bTKpis();af();}
       else if(p==='request') renderRequestPage();
-      else if(p==='rooms') renderRoomsBoard();
     }
   },60000);
 }
@@ -1136,17 +1164,24 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   } catch(e){ try{sessionStorage.removeItem('mp_session');}catch(_){} }
 
-  // Load persisted users from Firestore
-  if(typeof fbDb!=='undefined'&&fbDb){
-    fbDb.collection('users').get().then(snap=>{
-      snap.forEach(doc=>{
-        const u={...doc.data(),firestoreId:doc.id};
-        if(!USERS.find(x=>x.username===u.username))USERS.push(u);
-      });
-    }).catch(e=>console.warn('Could not load users:',e.message));
+  // Load Firestore users first, THEN show login screen
+  // This ensures newly registered accounts are available at login
+  async function loadUsersAndShowLogin(){
+    if(typeof fbDb!=='undefined'&&fbDb){
+      try{
+        const snap=await fbDb.collection('users').get();
+        snap.forEach(doc=>{
+          const u={...doc.data(),firestoreId:doc.id};
+          // Merge: add if not already in local array
+          if(!USERS.find(x=>x.username===u.username))USERS.push(u);
+        });
+        console.log('✅ Users loaded from Firestore:',USERS.length);
+      }catch(e){
+        console.warn('Could not load users from Firestore:',e.message);
+      }
+    }
+    const authEl=document.getElementById('auth-screen');
+    if(authEl) authEl.classList.remove('hidden');
   }
-
-  // No saved session — show login screen
-  const authEl=document.getElementById('auth-screen');
-  if(authEl) authEl.classList.remove('hidden');
+  loadUsersAndShowLogin();
 });
