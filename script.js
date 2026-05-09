@@ -570,7 +570,8 @@ function bTKpis(){
 // VIEW / EDIT / DELETE TASKS
 // ═══════════════════════════════════════════════
 function vTask(id){
-  const r=DATA.find(x=>x.id===id);if(!r)return;
+  id=String(id);
+  const r=DATA.find(x=>String(x.id)===id);if(!r)return;
   const canEdit=currentUser&&(currentUser.role==='admin'||currentUser.role==='staff');
   document.getElementById('det-body').innerHTML=`
     <div class="dg">
@@ -596,7 +597,8 @@ function vTask(id){
 }
 
 function eTask(id){
-  const r=DATA.find(x=>x.id===id);if(!r)return;
+  id=String(id);
+  const r=DATA.find(x=>String(x.id)===id);if(!r)return;
   eId=id;
   document.getElementById('em-dt').value=r.date;
   document.getElementById('em-lc').value=r.location;
@@ -612,24 +614,30 @@ function eTask(id){
 }
 
 function saveEdit(){
-  const r=DATA.find(x=>x.id===eId);if(!r)return;
-  r.date=document.getElementById('em-dt').value;
-  r.requestor=document.getElementById('em-rq').value;
-  r.handler=document.getElementById('em-hd').value;
-  r.workType=document.getElementById('em-wt').value;
-  r.subType=document.getElementById('em-st').value;
-  r.area=document.getElementById('em-ar').value;
-  r.location=document.getElementById('em-lc').value;
-  r.status=document.getElementById('em-ss').value;
-  r.priority=document.getElementById('em-pr').value;
-  r.details=document.getElementById('em-de').value;
-  if(r.status==='Completed'&&!r.completion)r.completion=TODAY;
+  const r=DATA.find(x=>String(x.id)===String(eId));if(!r)return;
+  const updates={
+    date:document.getElementById('em-dt').value,
+    requestor:document.getElementById('em-rq').value,
+    handler:document.getElementById('em-hd').value,
+    workType:document.getElementById('em-wt').value,
+    subType:document.getElementById('em-st').value,
+    area:document.getElementById('em-ar').value,
+    location:document.getElementById('em-lc').value,
+    status:document.getElementById('em-ss').value,
+    priority:document.getElementById('em-pr').value,
+    details:document.getElementById('em-de').value,
+  };
+  if(updates.status==='Completed'&&!r.completion)updates.completion=getTODAY();
+  fbUpdateJob(String(eId),updates);
+  if(!FB_READY)Object.assign(r,updates);
   cm('m-edit');af();rReady=false;fillDrops();toast('Task updated successfully');
 }
 
 function dTask(id){
+  id=String(id);
   if(!confirm('Delete this task? This action cannot be undone.'))return;
-  DATA=DATA.filter(x=>x.id!==id);fData=fData.filter(x=>x.id!==id);
+  fbDeleteJob(id);
+  if(!FB_READY){DATA=DATA.filter(x=>String(x.id)!==id);fData=fData.filter(x=>String(x.id)!==id);}
   fillDrops();bTKpis();rTbl();rReady=false;toast('Task deleted','i');
 }
 
