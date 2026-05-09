@@ -54,7 +54,7 @@
     <div class="auth-card">
       <div class="auth-brand">
         <div class="auth-brand-ico">
-          <svg viewBox="0 0 20 20" fill="none"><rect x="2" y="2" width="6" height="6" rx="1.5" fill="currentColor"/><rect x="12" y="2" width="6#b#bod" height="6" rx="1.5" fill="currentColor"/><rect x="2" y="12" width="6" height="6" rx="1.5" fill="currentColor"/><rect x="12" y="12" width="6" height="6" rx="1.5" fill="currentColor" opacity=".5"/></svg>
+          <svg viewBox="0 0 20 20" fill="none"><rect x="2" y="2" width="6" height="6" rx="1.5" fill="currentColor"/><rect x="12" y="2" width="6" height="6" rx="1.5" fill="currentColor"/><rect x="2" y="12" width="6" height="6" rx="1.5" fill="currentColor"/><rect x="12" y="12" width="6" height="6" rx="1.5" fill="currentColor" opacity=".5"/></svg>
         </div>
         <div class="auth-brand-text">
           <div class="name">MaintainPro</div>
@@ -77,8 +77,8 @@
       <div id="auth-login-form">
         <div class="auth-err" id="login-err">Incorrect username or password. Please try again.</div>
         <div class="auth-fc">
-          <label class="auth-lbl">Username</label>
-          <input type="text" class="auth-inp" id="l-user" placeholder="Enter your username" autocomplete="username">
+          <label class="auth-lbl">Email address</label>
+          <input type="email" class="auth-inp" id="l-user" placeholder="Enter your email" autocomplete="email">
         </div>
         <div class="auth-fc">
           <label class="auth-lbl">Password</label>
@@ -88,7 +88,7 @@
           <svg viewBox="0 0 16 16" fill="none"><path d="M10 2h3a1 1 0 011 1v10a1 1 0 01-1 1h-3M7 11l4-3-4-3M11 8H2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           Sign in
         </button>
-        <div class="auth-note">Demo: <strong>admin / admin123</strong> &nbsp;·&nbsp; Staff: <strong>staff / staff123</strong><br>Requestor: <strong>requester / req123</strong></div>
+        <div class="auth-note">Admin: <strong>admin@hotel.com / admin123</strong><br>Staff: <strong>rayan@hotel.com / staff123</strong> &nbsp;·&nbsp; Requestor: <strong>sakorn@hotel.com / req123</strong></div>
       </div>
 
       <!-- REGISTER FORM — admin creates accounts only -->
@@ -177,7 +177,7 @@
 <div class="auth-err" id="au-err" style="margin-bottom:12px"></div>
 <div class="fg">
 <div class="fc ff"><label class="fl">Full name</label><input type="text" id="au-name" class="fi" placeholder="Full name"></div>
-<div class="fc"><label class="fl">Username</label><input type="text" id="au-user" class="fi" placeholder="Username"></div>
+<div class="fc"><label class="fl">Email address</label><input type="email" id="au-user" class="fi" placeholder="user@hotel.com"></div>
 <div class="fc"><label class="fl">Password</label><input type="password" id="au-pass" class="fi" placeholder="Min 6 characters"></div>
 <div class="fc"><label class="fl">Role</label>
 <select id="au-role" class="fi">
@@ -671,13 +671,13 @@
 
   <!-- ══ CONTRACTOR PANEL ══ -->
   <div id="page-contractor" class="page"></div>
-  <!-- ══ ROOMS BOARD ══ -->
-  <div id="page-rooms" class="page"></div>
+
   <!-- ══ PERMISSIONS ══ -->
   <div id="page-permissions" class="page"></div>
 
 
-
+  <!-- ══ ROOMS BOARD ══ -->
+  <div id="page-rooms" class="page"></div>
 
   </div><!-- #body -->
 </div><!-- #main -->
