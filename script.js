@@ -938,8 +938,107 @@ function clrJQ(){
 
 // EMAIL (email page buttons)
 // ═══════════════════════════════════════════════
-function doEmail(){const em=document.getElementById('eml-to').value;if(!em||!em.includes('@')){toast('Please enter a valid email address.','e');return;}cm('m-email');toast(`Report sent to ${em}`);}
-function sendFromPage(){const em=document.getElementById('cfg-to').value;if(!em||!em.includes('@')){toast('Please enter a manager email address first.','e');return;}toast(`Report queued for ${em}`);}
+
+// ── EmailJS credentials ──────────────────────
+const EJS_SERVICE  = 'service_cw4vy2r';
+const EJS_TEMPLATE = 'template_0igvo38';
+const EJS_KEY      = 't6dPnscFxMpBYLJ3wIeQ-';
+
+// Initialise EmailJS once
+(function(){ try{ emailjs.init(EJS_KEY); }catch(e){ console.warn('EmailJS init failed:',e.message); } })();
+
+// ── Build email template params from data ────
+function buildEmailParams(toEmail, ccEmail, periodType, customMsg){
+  // Filter data by period
+  let d = DATA;
+  const now = new Date(TODAY);
+  if(periodType==='daily')       d = DATA.filter(r=>r.date===TODAY);
+  else if(periodType==='weekly'){ const cut=new Date(now);cut.setDate(cut.getDate()-7);d=DATA.filter(r=>new Date(r.date)>=cut); }
+
+  const total     = d.length;
+  const completed = d.filter(r=>r.status==='Completed').length;
+  const inProg    = d.filter(r=>r.status==='In Progress'||r.status==='In Progress - Contractor').length;
+  const pending   = d.filter(r=>r.status==='Pending').length;
+  const urgent    = d.filter(r=>r.priority==='Urgent').length;
+  const rate      = total ? Math.round(completed/total*100) : 0;
+  const periodLabel = periodType==='daily'?'Today':periodType==='weekly'?'Last 7 days':'All time';
+  const genDate   = new Date().toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+
+  // Build plain-text task table for the email
+  const taskRows = d.slice(0,50).map((r,i)=>
+    `${i+1}. [${r.date}] ${r.requestor} → ${r.handler} | ${r.workType.replace(/_/g,' ')} | ${r.location||'—'} | ${r.status} | ${r.priority}`
+  ).join('\n');
+  const taskTable = total
+    ? taskRows + (total>50 ? `\n\n... and ${total-50} more tasks. Export CSV for full list.` : '')
+    : 'No tasks for this period.';
+
+  return {
+    to_email:    toEmail,
+    email:       toEmail,       // reply-to in template
+    name:        currentUser?.name || 'MaintainPro',
+    sender_name: currentUser?.name || 'MaintainPro',
+    period:      periodLabel,
+    generated:   genDate,
+    total:       String(total),
+    completed:   String(completed),
+    in_progress: String(inProg),
+    pending:     String(pending),
+    urgent:      String(urgent),
+    rate:        String(rate),
+    message:     customMsg || '—',
+    task_table:  taskTable,
+    ...(ccEmail ? { cc: ccEmail } : {}),
+  };
+}
+
+// ── Modal "Send report" button ───────────────
+async function doEmail(){
+  const em  = document.getElementById('eml-to').value.trim();
+  const cc  = document.getElementById('eml-cc').value.trim();
+  const typ = document.getElementById('eml-type').value;
+  const msg = document.getElementById('eml-msg').value.trim();
+
+  if(!em||!em.includes('@')){ toast('Please enter a valid email address.','e'); return; }
+
+  const btn = document.querySelector('#m-email .btn-g');
+  if(btn){ btn.textContent='Sending…'; btn.disabled=true; }
+
+  try{
+    const params = buildEmailParams(em, cc, typ, msg);
+    await emailjs.send(EJS_SERVICE, EJS_TEMPLATE, params);
+    cm('m-email');
+    toast(`✅ Report sent to ${em}`,'s');
+  } catch(err){
+    console.error('EmailJS send failed:',err);
+    toast('Failed to send email. Check your connection and try again.','e');
+  } finally{
+    if(btn){ btn.textContent='Send report'; btn.disabled=false; }
+  }
+}
+
+// ── Email page "Send now" button ─────────────
+async function sendFromPage(){
+  const em  = document.getElementById('cfg-to').value.trim();
+  const cc  = document.getElementById('cfg-cc').value.trim();
+  const typ = document.getElementById('cfg-type').value;
+  const msg = document.getElementById('cfg-msg').value.trim();
+
+  if(!em||!em.includes('@')){ toast('Please enter a manager email address first.','e'); return; }
+
+  const btn = document.querySelector('#page-email .btn-g');
+  if(btn){ btn.textContent='Sending…'; btn.disabled=true; }
+
+  try{
+    const params = buildEmailParams(em, cc, typ, msg);
+    await emailjs.send(EJS_SERVICE, EJS_TEMPLATE, params);
+    toast(`✅ Report sent to ${em}`,'s');
+  } catch(err){
+    console.error('EmailJS send failed:',err);
+    toast('Failed to send email. Check your connection and try again.','e');
+  } finally{
+    if(btn){ btn.textContent='Send now'; btn.disabled=false; }
+  }
+}
 function prevRpt(){expPDF();}
 
 // ═══════════════════════════════════════════════
