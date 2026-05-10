@@ -259,8 +259,20 @@ function adminSaveUser(){
   const dup=USERS.find(x=>x.username===u&&String(x.id)!==String(id));
   if(dup){errEl.textContent='Username already taken.';errEl.classList.add('show');return;}
   const idx=USERS.findIndex(x=>String(x.id)===String(id)); if(idx<0) return;
-  USERS[idx]={...USERS[idx],name,username:u,role,dept,initials:name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase()};
+  const initials=name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+  const updates={name,username:u,role,dept,initials,email:u};
+  USERS[idx]={...USERS[idx],...updates};
   if(p) USERS[idx].password=p;
+  // Save changes to Firestore so they persist across devices
+  if(typeof fbDb!=='undefined'&&fbDb){
+    const fsId=USERS[idx].firestoreId||USERS[idx].uid||id;
+    fbDb.collection('users').doc(String(fsId)).update(updates)
+      .then(()=>console.log('User updated in Firestore'))
+      .catch(e=>{
+        console.error('User update failed:',e.message);
+        toast('Failed to save changes to database.','e');
+      });
+  }
   cm('m-edituser');
   // Update session if editing own account
   if(String(currentUser.id)===String(id)){currentUser=USERS[idx];applyUserSession();}
@@ -272,6 +284,12 @@ function deleteUser(id){
   if(String(id)===String(currentUser.id)){toast('You cannot delete your own account.','e');return;}
   const u=USERS.find(x=>String(x.id)===String(id));
   if(!confirm(`Delete account "${u?.name||id}"? This cannot be undone.`))return;
+  // Delete from Firestore so it's removed across all devices
+  if(typeof fbDb!=='undefined'&&fbDb&&u){
+    const fsId=u.firestoreId||u.uid||id;
+    fbDb.collection('users').doc(String(fsId)).delete()
+      .catch(e=>console.warn('Firestore delete failed:',e.message));
+  }
   USERS=USERS.filter(x=>String(x.id)!==String(id));
   renderUserPage();
   toast('User removed','i');
