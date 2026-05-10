@@ -898,30 +898,36 @@ function submitJobRequest(){
   const handler=AUTO_ASSIGN[wt]||HNDS[0];
   const req=currentUser.role==='requester'?currentUser.name:(REQS[0]||'Guest');
   const t={
-    id:nid++,date:TODAY,
+    id:nid++,date:getTODAY(),
     requestor:req,
     handler:handler,
     workType:wt,
     subType:document.getElementById('jq-st').value,
     area:document.getElementById('jq-ar').value,
     location:loc,details:det,
-    status:'In Progress', // auto move to In Progress with assigned handler
+    status:'In Progress',
     priority:document.getElementById('jq-pr').value,
     completion:'',
     createdBy:    currentUser?(currentUser.email||currentUser.username||'guest'):'guest',
     createdByUid: currentUser?(currentUser.uid||currentUser.id||''):''
   };
-  DATA.unshift(t);fillDrops();rReady=false;clrJQ();renderRequestPage();
-  toast(`Request #${t.id} submitted — assigned to ${handler}`);
+  fbAddJob(t);
+  if(!FB_READY){fillDrops();rReady=false;}
+  clrJQ();renderRequestPage();
+  toast(`Request submitted — assigned to ${handler}`);
 }
 
 function assignRequest(id){
-  const r=DATA.find(x=>x.id===id);if(!r)return;
-  const wt=r.workType;
-  r.handler=AUTO_ASSIGN[wt]||HNDS[0];
-  r.status='In Progress';
+  id=String(id);
+  const r=DATA.find(x=>String(x.id)===id);if(!r)return;
+  const updates={
+    handler:AUTO_ASSIGN[r.workType]||HNDS[0],
+    status:'In Progress'
+  };
+  fbUpdateJob(id,updates);
+  if(!FB_READY) Object.assign(r,updates);
   fillDrops();renderRequestPage();rReady=false;
-  toast(`Request #${id} assigned to ${r.handler}`);
+  toast(`Request assigned to ${updates.handler}`);
 }
 
 function clrJQ(){
