@@ -942,7 +942,7 @@ function clrJQ(){
 // ── EmailJS credentials ──────────────────────
 const EJS_SERVICE  = 'service_cw4vy2r';
 const EJS_TEMPLATE = 'template_0igvo38';
-const EJS_KEY      = 't6dPnscFxMpBYLJ3wIeQ-';
+const EJS_KEY      = 'hLesnjx-SaT9SBUTQ';
 
 // Initialise EmailJS once
 (function(){ try{ emailjs.init(EJS_KEY); }catch(e){ console.warn('EmailJS init failed:',e.message); } })();
