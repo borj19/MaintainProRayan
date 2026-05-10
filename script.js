@@ -236,7 +236,7 @@ function editUserModal(id){
   const u=USERS.find(x=>String(x.id)===String(id)); if(!u) return;
   document.getElementById('eu-id').value=u.id;
   document.getElementById('eu-name').value=u.name;
-  document.getElementById('eu-user').value=u.username;
+  document.getElementById('eu-user').value=u.email||u.username||'';
   document.getElementById('eu-pass').value='';
   document.getElementById('eu-role').value=u.role;
   document.getElementById('eu-dept').value=u.dept||'';
@@ -906,7 +906,7 @@ function renderUserPage(){
         ${u.lastLogin?`<span style="font-size:9.5px;color:var(--t3);margin-left:4px">● Online recently</span>`:''}
       </div>
       <div class="user-card-meta">
-        @${u.username} · ${u.dept||'—'} ·
+        ${u.email||'@'+u.username} · ${u.dept||'—'} ·
         <span class="role-badge rb-${u.role==='admin'?'admin':u.role==='staff'?'staff':u.role==='contractor'?'req':'req'}"
           style="background:${ROLE_COLORS[u.role]}22;color:${ROLE_COLORS[u.role]}">${ROLE_LABELS[u.role]||u.role}</span>
       </div>
