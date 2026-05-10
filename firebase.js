@@ -29,28 +29,44 @@ function initFirebase() {
     FB_READY = true;
     console.log('✅ Firebase connected — maintainpro-87ed1');
 
-    // ── Real-time jobs listener ──────────────────
-    fbDb.collection('jobs')
-      .orderBy('date','desc')
-      .onSnapshot(snap => {
-        DATA = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        nid  = DATA.length + 1;
-        if (typeof fillDrops        === 'function') fillDrops();
-        if (typeof updateNavPills   === 'function') updateNavPills();
-        if (typeof renderActivePage === 'function') renderActivePage();
-        if (typeof refreshRoomsIfVisible === 'function') refreshRoomsIfVisible();
-      }, err => console.warn('Firestore jobs error:', err.message));
+    // Listeners (jobs + users) start AFTER login to avoid permission errors
+    let _jobsUnsub = null;
+    let _usersUnsub = null;
 
-    // Real-time users listener — refreshes user list across all devices
-    fbDb.collection('users').onSnapshot(snap => {
-      USERS = snap.docs.map(d => ({ id: d.id, firestoreId: d.id, ...d.data() }));
-      // If user management page is currently open, re-render it
-      const userPage = document.getElementById('page-users');
-      if (userPage && userPage.classList.contains('on')
-          && typeof renderUserPage === 'function') {
-        renderUserPage();
-      }
-    }, err => console.warn('Firestore users error:', err.message));
+    function startListeners() {
+      if (_jobsUnsub || _usersUnsub) return; // already started
+
+      // Real-time jobs listener
+      _jobsUnsub = fbDb.collection('jobs')
+        .orderBy('date','desc')
+        .onSnapshot(snap => {
+          DATA = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+          nid = DATA.length + 1;
+          if (typeof fillDrops        === 'function') fillDrops();
+          if (typeof updateNavPills   === 'function') updateNavPills();
+          if (typeof renderActivePage === 'function') renderActivePage();
+          if (typeof refreshRoomsIfVisible === 'function') refreshRoomsIfVisible();
+        }, err => console.warn('Firestore jobs error:', err.message));
+
+      // Real-time users listener
+      _usersUnsub = fbDb.collection('users').onSnapshot(snap => {
+        USERS = snap.docs.map(d => ({ id: d.id, firestoreId: d.id, ...d.data() }));
+        // Refill dropdowns since requestor list now comes from users
+        if (typeof fillDrops === 'function') fillDrops();
+        const userPage = document.getElementById('page-users');
+        if (userPage && userPage.classList.contains('on')
+            && typeof renderUserPage === 'function') {
+          renderUserPage();
+        }
+      }, err => console.warn('Firestore users error:', err.message));
+    }
+
+    function stopListeners() {
+      if (_jobsUnsub)  { _jobsUnsub();  _jobsUnsub  = null; }
+      if (_usersUnsub) { _usersUnsub(); _usersUnsub = null; }
+    }
+    window.startFbListeners = startListeners;
+    window.stopFbListeners  = stopListeners;
 
     // ── Auth state listener ──────────────────────
     // Runs on every page load — restores session automatically
@@ -58,6 +74,8 @@ function initFirebase() {
     fbAuth.onAuthStateChanged(async fbUser => {
       if (fbUser) {
         try {
+          // Start listeners now that user is authenticated
+          startListeners();
           const snap = await fbDb.collection('users').doc(fbUser.uid).get();
           if (snap.exists) {
             currentUser = { uid: fbUser.uid, email: fbUser.email, ...snap.data() };
@@ -77,8 +95,9 @@ function initFirebase() {
           showAuthScreen();
         }
       } else {
-        // No Firebase user logged in — show login screen
-        if (!window._appStarted) showAuthScreen();
+        // No Firebase user logged in — stop listeners and show login
+        stopListeners();
+        showAuthScreen();
       }
     });
 

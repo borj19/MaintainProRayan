@@ -6,7 +6,7 @@
 // ═══════════════════════════════════════════════
 // THEME
 // ═══════════════════════════════════════════════
-let darkMode = true;
+let darkMode = false;
 function toggleTheme(){
   darkMode=!darkMode;
   document.documentElement.setAttribute('data-theme',darkMode?'dark':'light');
@@ -15,7 +15,23 @@ function toggleTheme(){
   // Re-render charts with new colours if visible
   if(document.getElementById('page-dash').classList.contains('on'))rDash();
   if(document.getElementById('page-reports').classList.contains('on'))renderR();
+  // Persist user's theme choice across sessions
+  try{ localStorage.setItem('mp_theme',darkMode?'dark':'light'); }catch(e){}
 }
+
+// Load saved theme on startup — defaults to light if nothing saved
+(function loadSavedTheme(){
+  try{
+    const saved=localStorage.getItem('mp_theme');
+    if(saved){
+      darkMode=(saved==='dark');
+      document.documentElement.setAttribute('data-theme',saved);
+    } else {
+      darkMode=false; // default light
+      document.documentElement.setAttribute('data-theme','light');
+    }
+  }catch(e){}
+})();
 
 // ═══════════════════════════════════════════════
 // ROLE-BASED ACCESS CONTROL — FULL SYSTEM
@@ -402,7 +418,12 @@ let SUBTYPES={
   Other:['Other']
 };
 let AREAS=['Basement_2','Basement_1','Ground Floor','Level_1','Level_2','Level_3','Level_4','Level_5','Level_6','Level_7','Level_8','Level_9','Level_10','Level_11','Level_12','Level_13','Level_14','Level_15','Level_16','Level_17','Level_18'];
-let REQS=['HSK - Sakorn','HSK - Yati','HSK - Sinta','HSK - Karma','MT - Terry','FO - Shaun','FO - Roan','FO - Kwan','FO - Emma','FO - Amol','F&B - Robin','RT - Remy'];
+// REQS is now derived from registered users with role==='requester'
+// No static dummy data — driven entirely by Firebase Auth + Firestore
+let REQS = [];
+function refreshReqsFromUsers(){
+  REQS = USERS.filter(u=>u.role==='requester').map(u=>u.name).filter(Boolean);
+}
 let HNDS=['Rayan Borabien','Josh Branson','Terry Allen','Contractor'];
 // Auto-assign map: work type → handler
 const AUTO_ASSIGN={
@@ -527,6 +548,7 @@ function gSrch(q){setF('fsrch',q);go('tasks',document.getElementById('nb-tasks')
 // POPULATE DROPDOWNS
 // ═══════════════════════════════════════════════
 function fillDrops(){
+  if(typeof refreshReqsFromUsers==='function') refreshReqsFromUsers();
   function f(id,arr){const s=document.getElementById(id);if(!s)return;const cur=s.value;while(s.children.length>1)s.removeChild(s.lastChild);arr.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v.replace(/_/g,' ');s.appendChild(o)});s.value=cur;}
   f('far',AREAS.slice().sort());
   f('fwt',Object.keys(SUBTYPES).sort());
@@ -837,9 +859,16 @@ function renderRequestPage(){
   ].map(x=>`<div class="request-status-card"><div class="rsc-label" style="color:${x.c}">${x.l}</div><div class="rsc-count" style="color:${x.c}">${x.v}</div><div class="rsc-sub">${x.s}</div></div>`).join('');
 
   // My requests list
-  const shown=u.role==='requester'
-    ?DATA.filter(r=>r.requestor===u.name&&(r.status==='Pending'||r.status==='In Progress'||r.status==='In Progress - Contractor'||r.status==='Completed'))
-    :DATA.filter(r=>r.status==='Pending');
+  // Requestor sees all jobs they submitted — match by name, email, OR username
+  // Admin/staff see all pending requests for assignment
+  const shown = u.role==='requester'
+    ? DATA.filter(r=>
+        r.requestor===u.name ||
+        r.createdBy===u.email ||
+        r.createdBy===u.username ||
+        r.createdByUid===u.uid
+      )
+    : DATA.filter(r=>r.status==='Pending');
   const list=document.getElementById('my-requests-list');
   const countBadge=document.getElementById('my-req-count');
   if(countBadge)countBadge.textContent=(u.role==='requester'?'My requests':'Pending requests')+' ('+shown.length+')';
@@ -879,7 +908,8 @@ function submitJobRequest(){
     status:'In Progress', // auto move to In Progress with assigned handler
     priority:document.getElementById('jq-pr').value,
     completion:'',
-    createdBy:currentUser?currentUser.username:'guest'
+    createdBy:    currentUser?(currentUser.email||currentUser.username||'guest'):'guest',
+    createdByUid: currentUser?(currentUser.uid||currentUser.id||''):''
   };
   DATA.unshift(t);fillDrops();rReady=false;clrJQ();renderRequestPage();
   toast(`Request #${t.id} submitted — assigned to ${handler}`);
@@ -1115,8 +1145,8 @@ function addSubType(wt,inp){const val=inp.value.trim();if(!val)return;if(SUBTYPE
 function delSubType(wt,sub){if(SUBTYPES[wt].length<=1){toast('At least one sub type must remain.','e');return;}SUBTYPES[wt]=SUBTYPES[wt].filter(s=>s!==sub);renderAdminPanels();rReady=false;toast('Sub type removed','i');}
 
 function renderRequestors(){document.getElementById('rq-count').textContent=REQS.length+' requestors';document.getElementById('rq-list').innerHTML=REQS.map(r=>`<li class="field-item"><span class="field-item-label">${r}</span><div class="field-item-actions"><button class="field-delete-btn" onclick="delRequestor('${r.replace(/'/g,"\\'")}')"><svg viewBox="0 0 16 16" fill="none"><path d="M3 4h10M6 4V2h4v2M5 4v8h6V4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div></li>`).join('');}
-function addRequestor(){const inp=document.getElementById('rq-new');const val=inp.value.trim();if(!val){toast('Please enter a requestor name.','e');return;}if(REQS.includes(val)){toast('Already exists.','e');return;}REQS.push(val);inp.value='';fillDrops();renderAdminPanels();rReady=false;toast(`Requestor "${val}" added`);}
-function delRequestor(name){if(REQS.length<=1){toast('At least one requestor must remain.','e');return;}if(!confirm(`Remove requestor "${name}"?`))return;REQS=REQS.filter(r=>r!==name);fillDrops();renderAdminPanels();rReady=false;toast('Requestor removed','i');}
+function addRequestor(){toast('Requestors are added by creating user accounts with the Requestor role.','i');}
+function delRequestor(name){toast('Requestors are managed via the Users page. Delete the user account to remove a requestor.','i');}
 
 function renderHandlers(){document.getElementById('hd-count').textContent=HNDS.length+' handlers';document.getElementById('hd-list').innerHTML=HNDS.map(h=>`<li class="field-item"><span class="field-item-label">${h}</span><div class="field-item-actions"><button class="field-delete-btn" onclick="delHandler('${h.replace(/'/g,"\\'")}')"><svg viewBox="0 0 16 16" fill="none"><path d="M3 4h10M6 4V2h4v2M5 4v8h6V4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div></li>`).join('');}
 function addHandler(){const inp=document.getElementById('hd-new');const val=inp.value.trim();if(!val){toast('Please enter a handler name.','e');return;}if(HNDS.includes(val)){toast('Already exists.','e');return;}HNDS.push(val);inp.value='';fillDrops();renderAdminPanels();rReady=false;toast(`Handler "${val}" added`);}
