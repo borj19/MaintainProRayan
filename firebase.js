@@ -41,6 +41,17 @@ function initFirebase() {
         if (typeof refreshRoomsIfVisible === 'function') refreshRoomsIfVisible();
       }, err => console.warn('Firestore jobs error:', err.message));
 
+    // Real-time users listener — refreshes user list across all devices
+    fbDb.collection('users').onSnapshot(snap => {
+      USERS = snap.docs.map(d => ({ id: d.id, firestoreId: d.id, ...d.data() }));
+      // If user management page is currently open, re-render it
+      const userPage = document.getElementById('page-users');
+      if (userPage && userPage.classList.contains('on')
+          && typeof renderUserPage === 'function') {
+        renderUserPage();
+      }
+    }, err => console.warn('Firestore users error:', err.message));
+
     // ── Auth state listener ──────────────────────
     // Runs on every page load — restores session automatically
     // Works across all devices and browsers

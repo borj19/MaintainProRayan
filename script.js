@@ -208,8 +208,9 @@ async function adminAddUser(){
       const profile={uid,email,name,initials,role,dept,lastLogin:null,createdAt:getTODAY()};
       await fbDb.collection('users').doc(uid).set(profile);
 
-      // Add to local USERS array
-      USERS.push({id:uid,...profile});
+      // Add to local USERS array — include both id and firestoreId for compatibility
+      // The onSnapshot listener will also pick this up but we add immediately for instant UI
+      USERS.push({id:uid,firestoreId:uid,username:email,...profile});
       cm('m-adduser');
       ['au-name','au-user','au-pass'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
       renderUserPage();
@@ -236,6 +237,7 @@ function editUserModal(id){
   const u=USERS.find(x=>String(x.id)===String(id)); if(!u) return;
   document.getElementById('eu-id').value=u.id;
   document.getElementById('eu-name').value=u.name;
+  // Prefer email; fall back to username; never show 'undefined'
   document.getElementById('eu-user').value=u.email||u.username||'';
   document.getElementById('eu-pass').value='';
   document.getElementById('eu-role').value=u.role;
@@ -906,7 +908,7 @@ function renderUserPage(){
         ${u.lastLogin?`<span style="font-size:9.5px;color:var(--t3);margin-left:4px">● Online recently</span>`:''}
       </div>
       <div class="user-card-meta">
-        ${u.email||'@'+u.username} · ${u.dept||'—'} ·
+        ${u.email||(u.username?'@'+u.username:'(no email)')} · ${u.dept||'—'} ·
         <span class="role-badge rb-${u.role==='admin'?'admin':u.role==='staff'?'staff':u.role==='contractor'?'req':'req'}"
           style="background:${ROLE_COLORS[u.role]}22;color:${ROLE_COLORS[u.role]}">${ROLE_LABELS[u.role]||u.role}</span>
       </div>
