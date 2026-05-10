@@ -68,11 +68,6 @@
         </div>
       </div>
 
-      <div class="auth-tabs">
-        <button class="auth-tab on" id="atab-login" onclick="switchAuthTab('login')">Sign in</button>
-        <button class="auth-tab" id="atab-register" onclick="switchAuthTab('register')">Register</button>
-      </div>
-
       <!-- LOGIN FORM -->
       <div id="auth-login-form">
         <div class="auth-err" id="login-err">Incorrect username or password. Please try again.</div>
@@ -88,37 +83,7 @@
           <svg viewBox="0 0 16 16" fill="none"><path d="M10 2h3a1 1 0 011 1v10a1 1 0 01-1 1h-3M7 11l4-3-4-3M11 8H2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           Sign in
         </button>
-        <div class="auth-note">Admin: <strong>admin@hotel.com / admin123</strong><br>Staff: <strong>rayan@hotel.com / staff123</strong> &nbsp;·&nbsp; Requestor: <strong>sakorn@hotel.com / req123</strong></div>
-      </div>
-
-      <!-- REGISTER FORM — admin creates accounts only -->
-      <div id="auth-register-form" style="display:none">
-        <div class="auth-err" id="reg-err" style="display:flex!important;align-items:flex-start;gap:8px;font-size:12px">
-          <svg viewBox="0 0 16 16" fill="none" style="width:14px;height:14px;flex-shrink:0;margin-top:1px"><rect x="4" y="7" width="8" height="7" rx="1" stroke="currentColor" stroke-width="1.4"/><path d="M4 7V5a4 4 0 018 0v2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-          Public registration is disabled. Contact your administrator to create an account.
-        </div>
-        <div style="margin-top:14px;padding:14px;background:var(--s1);border-radius:var(--r);border:1px solid var(--b1)">
-          <div style="font-size:11.5px;font-weight:700;color:var(--t0);margin-bottom:10px">Demo accounts:</div>
-          <div style="display:flex;flex-direction:column;gap:6px">
-            <div style="display:flex;align-items:center;gap:10px;padding:7px 10px;background:var(--s0);border-radius:var(--r);border:1px solid var(--b0)">
-              <span style="font-size:9px;font-weight:700;color:var(--red);text-transform:uppercase;width:64px;flex-shrink:0">Admin</span>
-              <span style="font-size:11.5px;font-family:var(--mono);color:var(--t0)">admin / admin123</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:10px;padding:7px 10px;background:var(--s0);border-radius:var(--r);border:1px solid var(--b0)">
-              <span style="font-size:9px;font-weight:700;color:var(--blue);text-transform:uppercase;width:64px;flex-shrink:0">Staff</span>
-              <span style="font-size:11.5px;font-family:var(--mono);color:var(--t0)">staff / staff123</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:10px;padding:7px 10px;background:var(--s0);border-radius:var(--r);border:1px solid var(--b0)">
-              <span style="font-size:9px;font-weight:700;color:var(--amber);text-transform:uppercase;width:64px;flex-shrink:0">Contractor</span>
-              <span style="font-size:11.5px;font-family:var(--mono);color:var(--t0)">contractor / cont123</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:10px;padding:7px 10px;background:var(--s0);border-radius:var(--r);border:1px solid var(--b0)">
-              <span style="font-size:9px;font-weight:700;color:var(--cyan);text-transform:uppercase;width:64px;flex-shrink:0">Requestor</span>
-              <span style="font-size:11.5px;font-family:var(--mono);color:var(--t0)">requester / req123</span>
-            </div>
-          </div>
-        </div>
-        <button class="auth-btn" style="margin-top:14px;background:var(--b2)" onclick="switchAuthTab('login')">← Back to sign in</button>
+        <div class="auth-note" style="margin-top:18px;text-align:center;font-size:11px;color:var(--t3);opacity:.85">All rights reserved 2026 — Designed and Created by Rayan</div>
       </div>
     </div>
   </div>

@@ -74,16 +74,10 @@ let ROLE_PERMS = {
 };
 
 // ── User database ─────────────────────────────
-let USERS = [
-  {id:1,username:'admin',    password:'admin123',  name:'Hotel Manager',    initials:'HM',role:'admin',      dept:'Management',  lastLogin:null},
-  {id:2,username:'staff',    password:'staff123',  name:'Rayan Borabien',   initials:'RB',role:'staff',      dept:'Maintenance', lastLogin:null},
-  {id:3,username:'staff2',   password:'staff123',  name:'Josh Branson',     initials:'JB',role:'staff',      dept:'Maintenance', lastLogin:null},
-  {id:4,username:'terry',    password:'staff123',  name:'Terry Allen',      initials:'TA',role:'staff',      dept:'Maintenance', lastLogin:null},
-  {id:5,username:'contractor',password:'cont123',  name:'Contractor Team',  initials:'CT',role:'contractor', dept:'External',    lastLogin:null},
-  {id:6,username:'requester',password:'req123',    name:'HSK - Sakorn',     initials:'SK',role:'requester',  dept:'Housekeeping',lastLogin:null},
-  {id:7,username:'requester2',password:'req123',   name:'FO - Shaun',       initials:'SH',role:'requester',  dept:'Front Office', lastLogin:null},
-];
-let nextUserId = 8;
+// User accounts are managed entirely via Firebase Auth + Firestore
+// Local USERS array is populated from Firestore on login
+let USERS = [];
+let nextUserId = 1;
 let currentUser = null;
 let regSelectedRole = 'staff';
 
@@ -408,26 +402,8 @@ function wc(k){return WTC[k]||PAL[Object.keys(SUBTYPES).indexOf(k)%PAL.length]||
 // ═══════════════════════════════════════════════
 function getTODAY(){return new Date().toISOString().slice(0,10);}
 const TODAY=getTODAY();
-let DATA=[
-  {id:1,date:'2026-04-11',requestor:'HSK - Sakorn',handler:'Rayan Borabien',workType:'Plumbing_Hydraulics_Services',subType:'Shower',area:'Level_10',location:'Room 1015',details:'Shower head rusty — replaced.',status:'Completed',priority:'Medium',completion:'2026-04-11',createdBy:'requester'},
-  {id:2,date:'2026-04-11',requestor:'HSK - Sakorn',handler:'Rayan Borabien',workType:'Flooring',subType:'Polish',area:'Level_8',location:'Room 810',details:'Full floor polish treatment applied.',status:'Completed',priority:'Low',completion:'2026-04-11',createdBy:'staff'},
-  {id:3,date:'2026-04-11',requestor:'HSK - Sakorn',handler:'Rayan Borabien',workType:'Flooring',subType:'Polish',area:'Level_12',location:'Room 1208',details:'Full floor polish treatment applied.',status:'Completed',priority:'Low',completion:'2026-04-11',createdBy:'staff'},
-  {id:4,date:'2026-04-11',requestor:'HSK - Yati',handler:'Rayan Borabien',workType:'Flooring',subType:'Polish',area:'Level_4',location:'Room 415',details:'Full floor polish treatment applied.',status:'Completed',priority:'Low',completion:'2026-04-11',createdBy:'staff'},
-  {id:5,date:'2026-04-11',requestor:'HSK - Sakorn',handler:'Rayan Borabien',workType:'Flooring',subType:'Polish',area:'Level_11',location:'Room 1102',details:'Full floor polish treatment applied.',status:'Completed',priority:'Low',completion:'2026-04-11',createdBy:'staff'},
-  {id:6,date:'2026-04-11',requestor:'HSK - Sakorn',handler:'Rayan Borabien',workType:'Plumbing_Hydraulics_Services',subType:'Shower',area:'Level_9',location:'Room 915',details:'Shower head rusty — replaced.',status:'Completed',priority:'Medium',completion:'2026-04-11',createdBy:'staff'},
-  {id:7,date:'2026-04-11',requestor:'HSK - Sinta',handler:'Rayan Borabien',workType:'Beds',subType:'Gliders',area:'Basement_2',location:'HK Storage 1',details:'Replaced baby cot gliders (set of 4).',status:'Completed',priority:'Low',completion:'2026-04-11',createdBy:'staff'},
-  {id:8,date:'2026-04-11',requestor:'HSK - Sakorn',handler:'Rayan Borabien',workType:'Plumbing_Hydraulics_Services',subType:'Basin',area:'Level_11',location:'Room 1108',details:'Removed basin and bathtub stains.',status:'Completed',priority:'Medium',completion:'2026-04-11',createdBy:'staff'},
-  {id:9,date:'2026-04-11',requestor:'HSK - Sakorn',handler:'Rayan Borabien',workType:'Plumbing_Hydraulics_Services',subType:'Basin',area:'Level_13',location:'Room 1311',details:'Removed basin and bathtub stains.',status:'Completed',priority:'Medium',completion:'2026-04-11',createdBy:'staff'},
-  {id:10,date:'2026-04-11',requestor:'HSK - Sakorn',handler:'Rayan Borabien',workType:'Door_Hardware',subType:'Other',area:'Level_8',location:'Room 809',details:'Missing door stopper — installed replacement.',status:'Completed',priority:'Low',completion:'2026-04-11',createdBy:'staff'},
-  {id:11,date:'2026-04-11',requestor:'HSK - Yati',handler:'Rayan Borabien',workType:'Electrical_Works',subType:'Light Switch',area:'Level_6',location:'Room 614',details:'Light switch cover missing — replaced.',status:'Completed',priority:'Medium',completion:'2026-04-11',createdBy:'staff'},
-  {id:12,date:'2026-04-11',requestor:'RT - Remy',handler:'Josh Branson',workType:'Fixtures_Furnishings_Fittings',subType:'Ottoman',area:'Level_18',location:'Rooftop Bar',details:'Ottoman upholstery repaired.',status:'Completed',priority:'Low',completion:'2026-04-11',createdBy:'staff'},
-  {id:13,date:'2026-04-11',requestor:'RT - Remy',handler:'Josh Branson',workType:'Fixtures_Furnishings_Fittings',subType:'Ottoman',area:'Level_18',location:'Rooftop Bar',details:'Ottoman upholstery repaired — unit 2.',status:'Completed',priority:'Low',completion:'2026-04-11',createdBy:'staff'},
-  {id:14,date:TODAY,requestor:'HSK - Sakorn',handler:'Rayan Borabien',workType:'AC',subType:'Leaking',area:'Level_7',location:'Room 712',details:'AC unit leaking — requires inspection and seal replacement.',status:'In Progress',priority:'High',completion:'',createdBy:'requester'},
-  {id:15,date:TODAY,requestor:'FO - Shaun',handler:'Josh Branson',workType:'Door_Hardware',subType:'Door lock faulty',area:'Level_5',location:'Room 503',details:'Door lock not engaging properly — guest unable to secure room.',status:'In Progress',priority:'Urgent',completion:'',createdBy:'requester'},
-  {id:16,date:TODAY,requestor:'FO - Emma',handler:'Contractor',workType:'Pest_Control',subType:'Sightings',area:'Ground Floor',location:'Restaurant',details:'Cockroach sightings reported near kitchen entrance.',status:'In Progress - Contractor',priority:'Urgent',completion:'',createdBy:'staff'},
-  {id:17,date:TODAY,requestor:'MT - Terry',handler:'Terry Allen',workType:'Cleaning',subType:'P-Trap',area:'Basement_1',location:'Laundry Room',details:'Drainage slow — P-trap blockage suspected.',status:'In Progress',priority:'Medium',completion:'',createdBy:'staff'},
-];
-let nid=18,fData=[...DATA],sKey=null,sDir=1,cPg=1,eId=null;
+let DATA=[]; // jobs loaded from Firestore in real-time
+let nid=1,fData=[...DATA],sKey=null,sDir=1,cPg=1,eId=null;
 const PGS=12,chs={};
 let aR=new Set(),aW=new Set(),rReady=false;
 let dashFilter='all';
