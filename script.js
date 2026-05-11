@@ -601,6 +601,18 @@ function fillDrops(){
   // Job request form
   const jqWt=document.getElementById('jq-wt');if(jqWt){jqWt.innerHTML=Object.keys(SUBTYPES).map(v=>`<option>${v}</option>`).join('');jqus();}
   const jqAr=document.getElementById('jq-ar');if(jqAr)jqAr.innerHTML=AREAS.map(v=>`<option>${v}</option>`).join('');
+  // Requestor dropdown — all registered users; hidden for requester role (auto-fills their name)
+  const jqRq=document.getElementById('jq-rq');
+  const jqRqWrap=document.getElementById('jq-rq-wrap');
+  if(jqRq){
+    const isReqRole=currentUser&&currentUser.role==='requester';
+    if(jqRqWrap)jqRqWrap.style.display=isReqRole?'none':'';
+    if(!isReqRole){
+      const allUsers=USERS.filter(u=>u.name).map(u=>u.name);
+      const curVal=jqRq.value;
+      jqRq.innerHTML='<option value="">— Select requestor —</option>'+allUsers.map(n=>`<option value="${n}" ${n===curVal?'selected':''}>${n}</option>`).join('');
+    }
+  }
 
   // Update in-progress pill
   const ipCount=DATA.filter(r=>r.status==='In Progress'||r.status==='In Progress - Contractor').length;
@@ -884,7 +896,13 @@ function renderRequestPage(){
     :`Managing job requests. Pending requests can be assigned and actioned from here.`;
 
   // Stats
-  const myReqs=u.role==='requester'?DATA.filter(r=>r.requestor===u.name):DATA;
+  const myReqs=u.role==='requester'
+    ? DATA.filter(r=>
+        r.requestor===u.name ||
+        (u.email && r.createdBy===u.email) ||
+        (u.uid && r.createdByUid===u.uid)
+      )
+    : DATA;
   const pending=myReqs.filter(r=>r.status==='Pending').length;
   const inprog=myReqs.filter(r=>r.status==='In Progress'||r.status==='In Progress - Contractor').length;
   const done=myReqs.filter(r=>r.status==='Completed').length;
@@ -901,11 +919,12 @@ function renderRequestPage(){
   const shown = u.role==='requester'
     ? DATA.filter(r=>
         r.requestor===u.name ||
-        r.createdBy===u.email ||
-        r.createdBy===u.username ||
-        r.createdByUid===u.uid
+        (u.email && r.createdBy===u.email) ||
+        (u.username && r.createdBy===u.username) ||
+        (u.uid && r.createdByUid===u.uid) ||
+        (u.id && r.createdByUid===String(u.id))
       )
-    : DATA.filter(r=>r.status==='Pending');
+    : DATA; // admin/staff see all jobs in "My requests" panel
   const list=document.getElementById('my-requests-list');
   const countBadge=document.getElementById('my-req-count');
   if(countBadge)countBadge.textContent=(u.role==='requester'?'My requests':'Pending requests')+' ('+shown.length+')';
@@ -933,7 +952,12 @@ function submitJobRequest(){
   if(!loc||!det){toast('Please fill in all required fields.','e');return;}
   const wt=document.getElementById('jq-wt').value;
   const handler=AUTO_ASSIGN[wt]||HNDS[0];
-  const req=currentUser.role==='requester'?currentUser.name:(REQS[0]||'Guest');
+  const isRequester=currentUser.role==='requester';
+  const jqRqEl=document.getElementById('jq-rq');
+  const req=isRequester
+    ? currentUser.name
+    : (jqRqEl&&jqRqEl.value ? jqRqEl.value : (USERS[0]?USERS[0].name:'Guest'));
+  if(!isRequester&&(!jqRqEl||!jqRqEl.value)){toast('Please select a requestor.','e');return;}
   const t={
     id:nid++,date:getTODAY(),
     requestor:req,
@@ -969,6 +993,7 @@ function assignRequest(id){
 
 function clrJQ(){
   ['jq-lc','jq-de'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const jqRq=document.getElementById('jq-rq');if(jqRq)jqRq.value='';
 }
 
 // ═══════════════════════════════════════════════
