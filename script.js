@@ -36,15 +36,22 @@ function toggleTheme(){
 // ═══════════════════════════════════════════════
 // LOADING SCREEN
 // ═══════════════════════════════════════════════
+let _lsShownAt=0;
 function showLoadingScreen(){
   const ls=document.getElementById('loading-screen');
   if(ls){ls.classList.remove('hidden','fade-out');ls.style.display='flex';}
+  _lsShownAt=Date.now();
 }
 function hideLoadingScreen(){
   const ls=document.getElementById('loading-screen');
   if(!ls)return;
-  ls.classList.add('fade-out');
-  setTimeout(()=>{ls.classList.add('hidden');ls.style.display='none';},520);
+  const elapsed=Date.now()-_lsShownAt;
+  const MIN=5000;
+  const wait=Math.max(0,MIN-elapsed);
+  setTimeout(()=>{
+    ls.classList.add('fade-out');
+    setTimeout(()=>{ls.classList.add('hidden');ls.style.display='none';},520);
+  },wait);
 }
 // Hide on page load — only show after login
 (function(){
@@ -202,7 +209,7 @@ async function doLogin(){
         window._appStarted=true;
         init();
         hideLoadingScreen();
-      },1800);
+      },5000);
     } else {
       errEl.textContent='Incorrect email or password.';
       errEl.classList.add('show');
@@ -289,6 +296,7 @@ function editUserModal(id){
 }
 
 function adminSaveUser(){
+  if(!confirm('Save changes to this user account?'))return;
   const id=document.getElementById('eu-id').value;
   const name=document.getElementById('eu-name').value.trim();
   const u=document.getElementById('eu-user').value.trim();
@@ -338,6 +346,7 @@ function deleteUser(id){
 }
 
 function doLogout(){
+  if(!confirm('Are you sure you want to sign out?'))return;
   currentUser=null;
   window._appStarted=false;
   try{ sessionStorage.removeItem('mp_session'); }catch(e){}
@@ -741,6 +750,7 @@ function eTask(id){
 }
 
 function saveEdit(){
+  if(!confirm('Save changes to this task?'))return;
   const r=DATA.find(x=>String(x.id)===String(eId));if(!r)return;
   const updates={
     date:document.getElementById('em-dt').value,

@@ -9,32 +9,32 @@
    DESIGN TOKENS — DARK (default)
 ═══════════════════════════════════════════════ */
 :root,[data-theme="dark"]{
-  --bg:       #021a1f;
-  --s0:       #032028;
-  --s1:       #04272f;
-  --s2:       #063038;
-  --s3:       #0a3d47;
-  --b0:       #0e4d59;
-  --b1:       #156070;
-  --b2:       #1d7a8a;
-  --b3:       #2596a8;
+  --bg:       #0a0f0a;
+  --s0:       #0f1510;
+  --s1:       #131a13;
+  --s2:       #192019;
+  --s3:       #1f281f;
+  --b0:       #243024;
+  --b1:       #2e3d2e;
+  --b2:       #374837;
+  --b3:       #445644;
 
-  --g:        #00bcd4;
-  --g2:       #26d0e4;
-  --g3:       rgba(0,188,212,.10);
-  --g4:       rgba(0,188,212,.20);
+  --g:        #4caf50;
+  --g2:       #66bb6a;
+  --g3:       rgba(76,175,80,.10);
+  --g4:       rgba(76,175,80,.20);
 
-  --cyan:     #80deea;
+  --cyan:     #26c6da;
   --amber:    #ffb300;
   --red:      #ef5350;
   --blue:     #42a5f5;
   --purple:   #ab47bc;
   --indigo:   #5c6bc0;
 
-  --t0:       #e0f7fa;
-  --t1:       #80deea;
-  --t2:       #4db6c8;
-  --t3:       #1e7a8a;
+  --t0:       #e8f5e9;
+  --t1:       #a5c8a7;
+  --t2:       #6a8f6c;
+  --t3:       #3d5c3f;
 
   --r:        7px;
   --r2:       11px;
@@ -49,7 +49,7 @@
   --shadow-lg:0 8px 32px rgba(0,0,0,.6), 0 2px 8px rgba(0,0,0,.4);
   --modal-bg: rgba(0,0,0,.82);
 
-  --glow:     0 0 0 3px rgba(0,188,212,.22);
+  --glow:     0 0 0 3px rgba(76,175,80,.18);
   --transition: .18s cubic-bezier(.4,0,.2,1);
 }
 
@@ -57,37 +57,37 @@
    DESIGN TOKENS — LIGHT
 ═══════════════════════════════════════════════ */
 [data-theme="light"]{
-  --bg:       #e8f4f8;
+  --bg:       #f4f7f4;
   --s0:       #ffffff;
-  --s1:       #f0f9fb;
-  --s2:       #dff2f6;
-  --s3:       #cceaf0;
-  --b0:       #b2d8e2;
-  --b1:       #90c5d4;
-  --b2:       #68afbf;
-  --b3:       #4096aa;
+  --s1:       #f9fbf9;
+  --s2:       #eef3ee;
+  --s3:       #e4ece4;
+  --b0:       #d4e0d4;
+  --b1:       #c0d0c0;
+  --b2:       #a8bfa8;
+  --b3:       #8aaa8a;
 
-  --g:        #0097a7;
-  --g2:       #00bcd4;
-  --g3:       rgba(0,151,167,.09);
-  --g4:       rgba(0,151,167,.18);
+  --g:        #388e3c;
+  --g2:       #4caf50;
+  --g3:       rgba(56,142,60,.09);
+  --g4:       rgba(56,142,60,.18);
 
-  --cyan:     #006978;
+  --cyan:     #00838f;
   --amber:    #e65100;
   --red:      #c62828;
   --blue:     #1565c0;
   --purple:   #6a1b9a;
   --indigo:   #283593;
 
-  --t0:       #00363f;
-  --t1:       #00525e;
-  --t2:       #006f7f;
-  --t3:       #5aa5b3;
+  --t0:       #1a2e1a;
+  --t1:       #2e4a2e;
+  --t2:       #4a6b4a;
+  --t3:       #7a9e7a;
 
   --shadow:   0 1px 6px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
   --shadow-lg:0 4px 20px rgba(0,0,0,.12), 0 1px 4px rgba(0,0,0,.08);
   --modal-bg: rgba(0,0,0,.52);
-  --glow:     0 0 0 3px rgba(0,151,167,.18);
+  --glow:     0 0 0 3px rgba(56,142,60,.15);
 }
 
 /* ═══════════════════════════════════════════════
@@ -1180,9 +1180,9 @@ textarea.fi{resize:vertical;min-height:76px}
   .kpi-lbl{font-size:9px}
   #body{padding:10px 10px 76px!important}
 
-  #auth-screen{padding:0;align-items:flex-end}
-  .auth-wrap{padding:0;width:100%}
-  .auth-card{border-radius:20px 20px 0 0;padding:26px 20px 38px}
+  #auth-screen{padding:16px;align-items:center}
+  .auth-wrap{padding:0;width:100%;max-width:440px}
+  .auth-card{border-radius:20px;padding:26px 20px 38px}
 
   #topbar{padding:0 12px;gap:6px;height:50px}
   #pg-ttl{font-size:13.5px}
@@ -1212,7 +1212,7 @@ textarea.fi{resize:vertical;min-height:76px}
 #loading-screen{
   position:fixed;inset:0;z-index:99999;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  background:linear-gradient(145deg,#021a1f 0%,#032a33 40%,#053d4a 100%);
+  background:linear-gradient(145deg,#0a0f0a 0%,#0f1a10 40%,#131e13 100%);
   transition:opacity .5s ease, visibility .5s ease;
 }
 #loading-screen.fade-out{opacity:0;visibility:hidden;pointer-events:none}
@@ -1233,7 +1233,7 @@ textarea.fi{resize:vertical;min-height:76px}
 .ls-glow-ring{
   position:absolute;inset:-18px;
   border-radius:50%;
-  background:radial-gradient(circle,rgba(0,188,212,.18) 0%,transparent 70%);
+  background:radial-gradient(circle,rgba(76,175,80,.18) 0%,transparent 70%);
   animation:lsPulse 2s ease-in-out infinite;
 }
 @keyframes lsPulse{
@@ -1252,7 +1252,7 @@ textarea.fi{resize:vertical;min-height:76px}
 .ls-name{
   font-family:'DM Sans',system-ui,sans-serif;
   font-size:28px;font-weight:800;letter-spacing:-.04em;
-  background:linear-gradient(135deg,#80deea 0%,#00bcd4 50%,#00838f 100%);
+  background:linear-gradient(135deg,#a5d6a7 0%,#4caf50 50%,#2e7d32 100%);
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
   text-shadow:none;
   margin-bottom:4px;
@@ -1260,19 +1260,19 @@ textarea.fi{resize:vertical;min-height:76px}
 .ls-sub{
   font-family:'DM Sans',system-ui,sans-serif;
   font-size:11px;font-weight:500;letter-spacing:.22em;text-transform:uppercase;
-  color:#4db6c8;opacity:.8;
+  color:#6a8f6c;opacity:.9;
 }
 
 /* Loading bar */
 .ls-bar-wrap{
   width:180px;height:3px;
-  background:rgba(0,188,212,.12);
+  background:rgba(76,175,80,.12);
   border-radius:99px;overflow:hidden;
   position:relative;
 }
 .ls-bar{
   height:100%;border-radius:99px;
-  background:linear-gradient(90deg,#00bcd4,#80deea,#00bcd4);
+  background:linear-gradient(90deg,#4caf50,#a5d6a7,#4caf50);
   background-size:200% 100%;
   animation:lsBar 1.4s ease-in-out infinite;
   width:100%;
@@ -1284,6 +1284,6 @@ textarea.fi{resize:vertical;min-height:76px}
 
 .ls-text{
   font-family:'DM Sans',system-ui,sans-serif;
-  font-size:11px;color:#4db6c8;letter-spacing:.12em;
+  font-size:11px;color:#6a8f6c;letter-spacing:.12em;
   text-transform:uppercase;margin-top:14px;opacity:.7;
 }

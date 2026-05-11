@@ -20,32 +20,28 @@
 <div id="loading-screen">
   <div class="ls-logo">
     <div class="ls-glow-ring"></div>
-    <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" width="110" height="110">
+    <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
       <defs>
-        <linearGradient id="lsF" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#26d0e4"/><stop offset="100%" stop-color="#005f6e"/></linearGradient>
-        <linearGradient id="lsT" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#b2ebf2"/><stop offset="100%" stop-color="#00bcd4"/></linearGradient>
-        <linearGradient id="lsR" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#00bcd4"/><stop offset="100%" stop-color="#003d4a"/></linearGradient>
-        <filter id="lsGlow"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-        <filter id="lsGlow2"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <linearGradient id="lsBg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#43a047"/><stop offset="100%" stop-color="#1b5e20"/></linearGradient>
+        <linearGradient id="lsShine" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ffffff" stop-opacity=".28"/><stop offset="100%" stop-color="#ffffff" stop-opacity="0"/></linearGradient>
+        <radialGradient id="lsGlowBg" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#4caf50" stop-opacity=".35"/><stop offset="100%" stop-color="#4caf50" stop-opacity="0"/></radialGradient>
+        <filter id="lsDrop"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <filter id="lsText"><feGaussianBlur stdDeviation="1.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
       </defs>
-      <!-- Shadow/depth layer -->
-      <polygon points="15,37 50,18 85,37 85,72 50,91 15,72" fill="#001a20" opacity=".5" transform="translate(3,5)"/>
-      <!-- Main face -->
-      <polygon points="15,37 50,18 85,37 85,72 50,91 15,72" fill="url(#lsF)" filter="url(#lsGlow)"/>
-      <!-- Top facet -->
-      <polygon points="15,37 50,18 85,37 50,56" fill="url(#lsT)" opacity=".95"/>
-      <!-- Right facet -->
-      <polygon points="85,37 50,56 50,91 85,72" fill="url(#lsR)" opacity=".9"/>
-      <!-- Left facet edge -->
-      <polygon points="15,37 50,56 50,91 15,72" fill="#004f62" opacity=".6"/>
-      <!-- MP text -->
-      <text x="23" y="72" font-family="system-ui,sans-serif" font-size="28" font-weight="900" fill="#e0f7fa" letter-spacing="-1" filter="url(#lsGlow2)">MP</text>
-      <!-- Top highlight edge -->
-      <polyline points="15,37 50,18 85,37" stroke="#b2ebf2" stroke-width="1.5" fill="none" opacity=".8"/>
-      <!-- Corner dots -->
-      <circle cx="50" cy="18" r="2.5" fill="#80deea" opacity=".9"/>
-      <circle cx="15" cy="37" r="2" fill="#00bcd4" opacity=".7"/>
-      <circle cx="85" cy="37" r="2" fill="#00bcd4" opacity=".7"/>
+      <!-- Outer glow -->
+      <circle cx="60" cy="60" r="58" fill="url(#lsGlowBg)"/>
+      <!-- Main circle -->
+      <circle cx="60" cy="60" r="52" fill="url(#lsBg)" filter="url(#lsDrop)"/>
+      <!-- Shine -->
+      <ellipse cx="60" cy="38" rx="34" ry="20" fill="url(#lsShine)"/>
+      <!-- Outer ring -->
+      <circle cx="60" cy="60" r="49" stroke="#a5d6a7" stroke-width="1.2" stroke-opacity=".35" fill="none"/>
+      <!-- Inner ring -->
+      <circle cx="60" cy="60" r="43" stroke="#c8e6c9" stroke-width=".6" stroke-opacity=".2" fill="none"/>
+      <!-- Large wrench -->
+      <g transform="translate(28,28) scale(2.67)" filter="url(#lsText)">
+        <path d="M20.5 2.5C18 .5 14 1 12 3.5c-1.5 1.8-1.7 4.3-.8 6.3L2.5 19.5a1.7 1.7 0 002.4 2.4L14 13.2c2 .9 4.5.7 6.3-.8 2.5-2 3-6 1-8.5l-3.3 3.3-2.5-.5-.5-2.5 3.3-3.3-1.8.1z" fill="#e8f5e9" stroke="#c8e6c9" stroke-width=".4"/>
+      </g>
     </svg>
   </div>
   <div class="ls-brand">
@@ -96,19 +92,23 @@
   <div class="auth-wrap">
     <div class="auth-card">
       <div class="auth-brand">
-        <div class="auth-brand-ico" style="background:none;box-shadow:none;width:56px;height:56px;flex-shrink:0">
-          <svg viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg" width="56" height="56">
+        <div class="auth-brand-ico" style="background:none;box-shadow:none;width:52px;height:52px;flex-shrink:0">
+          <svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
             <defs>
-              <linearGradient id="lF" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#26d0e4"/><stop offset="100%" stop-color="#006f7f"/></linearGradient>
-              <linearGradient id="lT" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#80deea"/><stop offset="100%" stop-color="#00bcd4"/></linearGradient>
-              <linearGradient id="lR" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#00bcd4"/><stop offset="100%" stop-color="#004d5c"/></linearGradient>
-              <filter id="lg"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+              <linearGradient id="bg1" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#43a047"/><stop offset="100%" stop-color="#1b5e20"/></linearGradient>
+              <linearGradient id="shine1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ffffff" stop-opacity=".25"/><stop offset="100%" stop-color="#ffffff" stop-opacity="0"/></linearGradient>
+              <filter id="g1" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
             </defs>
-            <polygon points="8,17 26,8 44,17 44,37 26,46 8,37" fill="url(#lF)" filter="url(#lg)"/>
-            <polygon points="8,17 26,8 44,17 26,26" fill="url(#lT)" opacity=".92"/>
-            <polygon points="44,17 26,26 26,46 44,37" fill="url(#lR)" opacity=".88"/>
-            <text x="14" y="35" font-family="system-ui,sans-serif" font-size="15" font-weight="800" fill="#e0f7fa" letter-spacing="-0.5">MP</text>
-            <polyline points="8,17 26,8 44,17" stroke="#80deea" stroke-width="1.2" fill="none" opacity=".75"/>
+            <!-- Outer ring -->
+            <circle cx="26" cy="26" r="25" fill="url(#bg1)" filter="url(#g1)"/>
+            <!-- Shine overlay -->
+            <ellipse cx="26" cy="16" rx="16" ry="10" fill="url(#shine1)"/>
+            <!-- Subtle ring -->
+            <circle cx="26" cy="26" r="22" stroke="#a5d6a7" stroke-width=".8" stroke-opacity=".3" fill="none"/>
+            <!-- Wrench icon -->
+            <g transform="translate(13,13)">
+              <path d="M20.5 2.5C18 .5 14 1 12 3.5c-1.5 1.8-1.7 4.3-.8 6.3L2.5 19.5a1.7 1.7 0 002.4 2.4L14 13.2c2 .9 4.5.7 6.3-.8 2.5-2 3-6 1-8.5l-3.3 3.3-2.5-.5-.5-2.5 3.3-3.3-1.8.1z" fill="#e8f5e9" stroke="#c8e6c9" stroke-width=".5"/>
+            </g>
           </svg>
         </div>
         <div class="auth-brand-text">
@@ -218,7 +218,21 @@
 <!-- SIDEBAR -->
 <nav id="sb">
   <div class="brand">
-    <div class="brand-ico"><svg viewBox="0 0 20 20" fill="none"><rect x="2" y="2" width="6" height="6" rx="1.5" fill="currentColor"/><rect x="12" y="2" width="6" height="6" rx="1.5" fill="currentColor"/><rect x="2" y="12" width="6" height="6" rx="1.5" fill="currentColor"/><rect x="12" y="12" width="6" height="6" rx="1.5" fill="currentColor" opacity=".5"/></svg></div>
+    <div class="brand-ico" style="background:none;box-shadow:none;width:36px;height:36px;display:flex;align-items:center;justify-content:center">
+      <svg width="36" height="36" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="sbBg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#43a047"/><stop offset="100%" stop-color="#1b5e20"/></linearGradient>
+          <linearGradient id="sbShine" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ffffff" stop-opacity=".25"/><stop offset="100%" stop-color="#ffffff" stop-opacity="0"/></linearGradient>
+          <filter id="sbG"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        </defs>
+        <circle cx="26" cy="26" r="25" fill="url(#sbBg)" filter="url(#sbG)"/>
+        <ellipse cx="26" cy="16" rx="16" ry="10" fill="url(#sbShine)"/>
+        <circle cx="26" cy="26" r="22" stroke="#a5d6a7" stroke-width=".8" stroke-opacity=".3" fill="none"/>
+        <g transform="translate(13,13)">
+          <path d="M20.5 2.5C18 .5 14 1 12 3.5c-1.5 1.8-1.7 4.3-.8 6.3L2.5 19.5a1.7 1.7 0 002.4 2.4L14 13.2c2 .9 4.5.7 6.3-.8 2.5-2 3-6 1-8.5l-3.3 3.3-2.5-.5-.5-2.5 3.3-3.3-1.8.1z" fill="#e8f5e9" stroke="#c8e6c9" stroke-width=".5"/>
+        </g>
+      </svg>
+    </div>
     <div><div class="brand-name">MaintainPro</div><div class="brand-sub">Operations Platform</div></div>
   </div>
 
