@@ -16,6 +16,49 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 </head>
 <div id="tc"></div>
+<!-- LOADING SCREEN -->
+<div id="loading-screen">
+  <div class="ls-logo">
+    <div class="ls-glow-ring"></div>
+    <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" width="110" height="110">
+      <defs>
+        <linearGradient id="lsF" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#26d0e4"/><stop offset="100%" stop-color="#005f6e"/></linearGradient>
+        <linearGradient id="lsT" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#b2ebf2"/><stop offset="100%" stop-color="#00bcd4"/></linearGradient>
+        <linearGradient id="lsR" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#00bcd4"/><stop offset="100%" stop-color="#003d4a"/></linearGradient>
+        <filter id="lsGlow"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <filter id="lsGlow2"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      </defs>
+      <!-- Shadow/depth layer -->
+      <polygon points="15,37 50,18 85,37 85,72 50,91 15,72" fill="#001a20" opacity=".5" transform="translate(3,5)"/>
+      <!-- Main face -->
+      <polygon points="15,37 50,18 85,37 85,72 50,91 15,72" fill="url(#lsF)" filter="url(#lsGlow)"/>
+      <!-- Top facet -->
+      <polygon points="15,37 50,18 85,37 50,56" fill="url(#lsT)" opacity=".95"/>
+      <!-- Right facet -->
+      <polygon points="85,37 50,56 50,91 85,72" fill="url(#lsR)" opacity=".9"/>
+      <!-- Left facet edge -->
+      <polygon points="15,37 50,56 50,91 15,72" fill="#004f62" opacity=".6"/>
+      <!-- MP text -->
+      <text x="23" y="72" font-family="system-ui,sans-serif" font-size="28" font-weight="900" fill="#e0f7fa" letter-spacing="-1" filter="url(#lsGlow2)">MP</text>
+      <!-- Top highlight edge -->
+      <polyline points="15,37 50,18 85,37" stroke="#b2ebf2" stroke-width="1.5" fill="none" opacity=".8"/>
+      <!-- Corner dots -->
+      <circle cx="50" cy="18" r="2.5" fill="#80deea" opacity=".9"/>
+      <circle cx="15" cy="37" r="2" fill="#00bcd4" opacity=".7"/>
+      <circle cx="85" cy="37" r="2" fill="#00bcd4" opacity=".7"/>
+    </svg>
+  </div>
+  <div class="ls-brand">
+    <div class="ls-name">MaintainPro</div>
+    <div class="ls-sub">Hotel Maintenance Platform</div>
+  </div>
+  <div class="ls-bar-wrap">
+    <div class="ls-bar"></div>
+  </div>
+  <div class="ls-text">Loading&hellip;</div>
+</div>
+
+
 
 <!-- Mobile: dim overlay when sidebar opens -->
 <div id="sb-overlay" onclick="closeMobileSB()"></div>
@@ -53,8 +96,20 @@
   <div class="auth-wrap">
     <div class="auth-card">
       <div class="auth-brand">
-        <div class="auth-brand-ico">
-          <svg viewBox="0 0 20 20" fill="none"><rect x="2" y="2" width="6" height="6" rx="1.5" fill="currentColor"/><rect x="12" y="2" width="6" height="6" rx="1.5" fill="currentColor"/><rect x="2" y="12" width="6" height="6" rx="1.5" fill="currentColor"/><rect x="12" y="12" width="6" height="6" rx="1.5" fill="currentColor" opacity=".5"/></svg>
+        <div class="auth-brand-ico" style="background:none;box-shadow:none;width:56px;height:56px;flex-shrink:0">
+          <svg viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg" width="56" height="56">
+            <defs>
+              <linearGradient id="lF" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#26d0e4"/><stop offset="100%" stop-color="#006f7f"/></linearGradient>
+              <linearGradient id="lT" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#80deea"/><stop offset="100%" stop-color="#00bcd4"/></linearGradient>
+              <linearGradient id="lR" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#00bcd4"/><stop offset="100%" stop-color="#004d5c"/></linearGradient>
+              <filter id="lg"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+            </defs>
+            <polygon points="8,17 26,8 44,17 44,37 26,46 8,37" fill="url(#lF)" filter="url(#lg)"/>
+            <polygon points="8,17 26,8 44,17 26,26" fill="url(#lT)" opacity=".92"/>
+            <polygon points="44,17 26,26 26,46 44,37" fill="url(#lR)" opacity=".88"/>
+            <text x="14" y="35" font-family="system-ui,sans-serif" font-size="15" font-weight="800" fill="#e0f7fa" letter-spacing="-0.5">MP</text>
+            <polyline points="8,17 26,8 44,17" stroke="#80deea" stroke-width="1.2" fill="none" opacity=".75"/>
+          </svg>
         </div>
         <div class="auth-brand-text">
           <div class="name">MaintainPro</div>

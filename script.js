@@ -34,6 +34,25 @@ function toggleTheme(){
 })();
 
 // ═══════════════════════════════════════════════
+// LOADING SCREEN
+// ═══════════════════════════════════════════════
+function showLoadingScreen(){
+  const ls=document.getElementById('loading-screen');
+  if(ls){ls.classList.remove('hidden','fade-out');ls.style.display='flex';}
+}
+function hideLoadingScreen(){
+  const ls=document.getElementById('loading-screen');
+  if(!ls)return;
+  ls.classList.add('fade-out');
+  setTimeout(()=>{ls.classList.add('hidden');ls.style.display='none';},520);
+}
+// Hide on page load — only show after login
+(function(){
+  const ls=document.getElementById('loading-screen');
+  if(ls){ls.style.display='none';ls.classList.add('hidden');}
+})();
+
+// ═══════════════════════════════════════════════
 // ROLE-BASED ACCESS CONTROL — FULL SYSTEM
 // ═══════════════════════════════════════════════
 
@@ -159,6 +178,9 @@ async function doLogin(){
     // ── Firebase Auth login (works on all devices) ──
     try{
       const cred = await fbAuth.signInWithEmailAndPassword(email, pass);
+      // Show loading screen while firebase.js onAuthStateChanged loads data
+      document.getElementById('auth-screen').style.display='none';
+      showLoadingScreen();
       // onAuthStateChanged in firebase.js handles the rest
     } catch(e){
       errEl.textContent = e.code==='auth/user-not-found'||e.code==='auth/wrong-password'||e.code==='auth/invalid-credential'
@@ -174,9 +196,13 @@ async function doLogin(){
     if(user){
       currentUser=user;
       document.getElementById('auth-screen').style.display='none';
-      applyUserSession();
-      window._appStarted=true;
-      init();
+      showLoadingScreen();
+      setTimeout(()=>{
+        applyUserSession();
+        window._appStarted=true;
+        init();
+        hideLoadingScreen();
+      },1800);
     } else {
       errEl.textContent='Incorrect email or password.';
       errEl.classList.add('show');
@@ -317,6 +343,7 @@ function doLogout(){
   try{ sessionStorage.removeItem('mp_session'); }catch(e){}
   if(window._refreshInterval){ clearInterval(window._refreshInterval); window._refreshInterval=null; }
   if(typeof fbAuth!=='undefined'&&fbAuth) fbAuth.signOut();
+  hideLoadingScreen();
   const a=document.getElementById('auth-screen');if(a)a.style.display='flex';
   const lu=document.getElementById('l-user');if(lu)lu.value='';
   const lp=document.getElementById('l-pass');if(lp)lp.value='';
@@ -1265,6 +1292,7 @@ function delArea(name){if(AREAS.length<=1){toast('At least one area must remain.
 // INIT
 // ═══════════════════════════════════════════════
 function init(){
+  hideLoadingScreen();
   const dtEl=document.getElementById('af-dt'); if(dtEl) dtEl.value=TODAY;
   const cdEl=document.getElementById('af-cd'); if(cdEl) cdEl.value=TODAY;
   function updateClock(){
