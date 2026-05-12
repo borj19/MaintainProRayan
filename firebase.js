@@ -51,7 +51,6 @@ function initFirebase() {
       // Real-time users listener
       _usersUnsub = fbDb.collection('users').onSnapshot(snap => {
         USERS = snap.docs.map(d => ({ id: d.id, firestoreId: d.id, ...d.data() }));
-        // Refill dropdowns since requestor list now comes from users
         if (typeof fillDrops === 'function') fillDrops();
         const userPage = document.getElementById('page-users');
         if (userPage && userPage.classList.contains('on')
@@ -69,13 +68,12 @@ function initFirebase() {
     window.stopFbListeners  = stopListeners;
 
     // ── Auth state listener ──────────────────────
-    // Runs on every page load — restores session automatically
-    // Works across all devices and browsers
     fbAuth.onAuthStateChanged(async fbUser => {
       if (fbUser) {
         try {
-          // Start listeners now that user is authenticated
           startListeners();
+          // Load field data (SUBTYPES, HNDS, AREAS) before init
+          await fbLoadFields();
           const snap = await fbDb.collection('users').doc(fbUser.uid).get();
           if (snap.exists) {
             currentUser = { uid: fbUser.uid, email: fbUser.email, ...snap.data() };
@@ -87,7 +85,6 @@ function initFirebase() {
               init();
             }
           } else {
-            // Auth user exists but no Firestore profile — show login
             showAuthScreen();
           }
         } catch(e) {
@@ -95,7 +92,6 @@ function initFirebase() {
           showAuthScreen();
         }
       } else {
-        // No Firebase user logged in — stop listeners and show login
         stopListeners();
         showAuthScreen();
       }
@@ -113,18 +109,45 @@ function showAuthScreen() {
   if (a) a.style.display = 'flex';
 }
 
+// ── Load field data from Firestore ──────────
+async function fbLoadFields() {
+  if (!FB_READY) return;
+  try {
+    const snap = await fbDb.collection('settings').doc('fields').get();
+    if (snap.exists) {
+      const data = snap.data();
+      if (data.SUBTYPES) SUBTYPES = data.SUBTYPES;
+      if (data.HNDS)     HNDS     = data.HNDS;
+      if (data.AREAS)    AREAS    = data.AREAS;
+      console.log('✅ Fields loaded from Firestore');
+    }
+  } catch(e) {
+    console.warn('fbLoadFields failed:', e.message);
+  }
+}
+
+// ── Save field data to Firestore ─────────────
+async function fbSaveFields() {
+  if (!FB_READY) return;
+  try {
+    await fbDb.collection('settings').doc('fields').set({ SUBTYPES, HNDS, AREAS });
+  } catch(e) {
+    console.warn('fbSaveFields failed:', e.message);
+    if (typeof toast === 'function') toast('Failed to save field changes.', 'e');
+  }
+}
+
 // ── Add job to Firestore ─────────────────────
 async function fbAddJob(job) {
   if (!FB_READY) { DATA.unshift(job); return; }
   try {
     const { id, ...jobData } = job;
-        const docRef = await fbDb.collection('jobs').add({
+    const docRef = await fbDb.collection('jobs').add({
       ...jobData,
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
     });
     const localJob = DATA.find(r => String(r.id) === String(id));
     if (localJob) localJob.id = docRef.id;
-
   } catch(e) {
     console.error('fbAddJob failed:', e.message);
     if (typeof toast === 'function') toast('Failed to save job.', 'e');
