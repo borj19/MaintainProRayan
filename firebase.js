@@ -118,10 +118,13 @@ async function fbAddJob(job) {
   if (!FB_READY) { DATA.unshift(job); return; }
   try {
     const { id, ...jobData } = job;
-    await fbDb.collection('jobs').add({
+        const docRef = await fbDb.collection('jobs').add({
       ...jobData,
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
     });
+    const localJob = DATA.find(r => String(r.id) === String(id));
+    if (localJob) localJob.id = docRef.id;
+
   } catch(e) {
     console.error('fbAddJob failed:', e.message);
     if (typeof toast === 'function') toast('Failed to save job.', 'e');
