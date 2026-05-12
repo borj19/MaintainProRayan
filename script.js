@@ -753,9 +753,14 @@ function eTask(id){
   document.getElementById('em-ss').value=r.status;
   document.getElementById('em-pr').value=r.priority;
   document.getElementById('em-de').value=r.details;
-  document.getElementById('em-wt').innerHTML=Object.keys(SUBTYPES).map(k=>`<option ${k===r.workType?'selected':''}>${k}</option>`).join('');
-  eus();setTimeout(()=>{document.getElementById('em-st').value=r.subType;},60);
-  document.getElementById('em-rq').innerHTML=REQS.map(v=>`<option ${v===r.requestor?'selected':''}>${v}</option>`).join('');
+  document.getElementById('em-wt').innerHTML=Object.keys(SUBTYPES).map(k=>`<option value="${k}" ${k===r.workType?'selected':''}>${k.replace(/_/g,' ')}</option>`).join('');
+  const emSt=document.getElementById('em-st');
+  const emSubs=SUBTYPES[r.workType]||['Other'];
+  emSt.innerHTML=emSubs.map(s=>`<option value="${s}" ${s===r.subType?'selected':''}>${s}</option>`).join('');
+
+  
+  
+document.getElementById('em-rq').innerHTML=REQS.map(v=>`<option ${v===r.requestor?'selected':''}>${v}</option>`).join('');
   document.getElementById('em-hd').innerHTML=HNDS.map(v=>`<option ${v===r.handler?'selected':''}>${v}</option>`).join('');
   document.getElementById('em-ar').innerHTML=AREAS.map(v=>`<option ${v===r.area?'selected':''}>${v}</option>`).join('');
   om('m-edit');
