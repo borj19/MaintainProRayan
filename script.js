@@ -624,7 +624,7 @@ function fillDrops(){
 }
 
 function aus(){const wt=document.getElementById('af-wt');if(!wt)return;document.getElementById('af-st').innerHTML=(SUBTYPES[wt.value]||['Other']).map(o=>`<option>${o}</option>`).join('')}
-function eus(){const wt=document.getElementById('em-wt');if(!wt)return;document.getElementById('em-st').innerHTML=(SUBTYPES[wt.value]||['Other']).map(o=>`<option>${o}</option>`).join('')}
+function eus(){const wt=document.getElementById('em-wt');if(!wt)return;document.getElementById('em-st').innerHTML=(SUBTYPES[wt.value]||['Other']).map(o=>`<option value="${o}">${o}</option>`)
 function jqus(){const wt=document.getElementById('jq-wt');if(!wt)return;document.getElementById('jq-st').innerHTML=(SUBTYPES[wt.value]||['Other']).map(o=>`<option>${o}</option>`).join('')}
 
 // ═══════════════════════════════════════════════
