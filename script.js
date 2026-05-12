@@ -757,9 +757,6 @@ function eTask(id){
   const emSt=document.getElementById('em-st');
   const emSubs=SUBTYPES[r.workType]||['Other'];
   emSt.innerHTML=emSubs.map(s=>`<option value="${s}" ${s===r.subType?'selected':''}>${s}</option>`).join('');
-
-  
-  
 document.getElementById('em-rq').innerHTML=REQS.map(v=>`<option ${v===r.requestor?'selected':''}>${v}</option>`).join('');
   document.getElementById('em-hd').innerHTML=HNDS.map(v=>`<option ${v===r.handler?'selected':''}>${v}</option>`).join('');
   document.getElementById('em-ar').innerHTML=AREAS.map(v=>`<option ${v===r.area?'selected':''}>${v}</option>`).join('');
