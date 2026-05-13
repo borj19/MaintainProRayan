@@ -41,17 +41,20 @@ function showLoadingScreen(){
   const ls=document.getElementById('loading-screen');
   if(ls){ls.classList.remove('hidden','fade-out');ls.style.display='flex';}
   _lsShownAt=Date.now();
+  // Safety net: auto-hide after 8 seconds even if hideLoadingScreen never called
+  if(window._loadingTimeout) clearTimeout(window._loadingTimeout);
+  window._loadingTimeout=setTimeout(()=>hideLoadingScreen(),8000);
 }
 function hideLoadingScreen(){
+  if(window._loadingTimeout){clearTimeout(window._loadingTimeout);window._loadingTimeout=null;}
   const ls=document.getElementById('loading-screen');
   if(!ls)return;
-  const elapsed=Date.now()-_lsShownAt;
-  const MIN=5000;
-  const wait=Math.max(0,MIN-elapsed);
+  // Hide immediately — no forced minimum wait
+  ls.classList.add('fade-out');
   setTimeout(()=>{
-    ls.classList.add('fade-out');
-    setTimeout(()=>{ls.classList.add('hidden');ls.style.display='none';},520);
-  },wait);
+    ls.classList.add('hidden');
+    ls.style.display='none';
+  },300);
 }
 // Hide on page load — only show after login
 (function(){
@@ -84,6 +87,8 @@ const ALL_PERMS = {
   manage_permissions:  'Manage role permissions',
   manage_fields:       'Manage field lists (work types etc.)',
   view_online_users:   'View online / active users',
+  view_my_dashboard:   'View personal dashboard',
+  view_dept_dashboard: 'View department dashboard (admin: see all depts; requester: see own dept)',
 };
 
 // ── Default permissions per role ─────────────
@@ -96,6 +101,7 @@ let ROLE_PERMS = {
     view_reports:false, export_data:true, send_email:false,
     manage_users:false, manage_permissions:false, manage_fields:false,
     view_online_users:false,
+    view_my_dashboard:false, view_dept_dashboard:false,
   },
   contractor: {
     view_dashboard:false, view_all_tasks:false, add_task:false,
@@ -104,6 +110,7 @@ let ROLE_PERMS = {
     view_reports:false, export_data:false, send_email:false,
     manage_users:false, manage_permissions:false, manage_fields:false,
     view_online_users:false,
+    view_my_dashboard:false, view_dept_dashboard:false,
   },
   requester: {
     view_dashboard:false, view_all_tasks:false, add_task:false,
@@ -112,6 +119,7 @@ let ROLE_PERMS = {
     view_reports:false, export_data:false, send_email:false,
     manage_users:false, manage_permissions:false, manage_fields:false,
     view_online_users:false,
+    view_my_dashboard:true, view_dept_dashboard:true,
   },
 };
 
@@ -153,6 +161,8 @@ const PAGE_PERM = {
   permissions: 'manage_permissions',
   admin:       'manage_fields',
   rooms:       'view_all_tasks',
+  mydash:      'view_my_dashboard',
+  depts:       'view_dept_dashboard',
 };
 
 function switchAuthTab(tab){
@@ -442,6 +452,8 @@ function buildSidebarNav(){
     ['users',      'Users',           '<circle cx="6" cy="5" r="2.5" stroke="currentColor" stroke-width="1.4"/><path d="M1 13c0-2.761 2.239-4 5-4s5 1.239 5 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="13" cy="5" r="2" stroke="currentColor" stroke-width="1.2"/><path d="M11.5 13c0-1.5 1-2.5 2-2.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>','Administration','manage_users','nb-users-count'],
     ['permissions','Permissions',     '<path d="M12 1l1.5 3L17 5l-2.5 2.5.5 3.5L12 9.5 9.5 11l.5-3.5L7.5 5l3.5-1L12 1z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="4" cy="12" r="2.5" stroke="currentColor" stroke-width="1.2"/>','Administration','manage_permissions'],
     ['rooms',      'Rooms board','<rect x="1" y="1" width="6" height="4" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="9" y="1" width="6" height="4" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="1" y="7" width="6" height="4" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="9" y="7" width="6" height="4" rx="1" stroke="currentColor" stroke-width="1.4"/>','Jobs','view_all_tasks'],
+    ['mydash',     'My dashboard','<path d="M2 4h12M2 8h8M2 12h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="13" cy="11" r="2" stroke="currentColor" stroke-width="1.4"/>','Overview','view_my_dashboard'],
+    ['depts',      'Department dashboards','<rect x="1" y="3" width="6" height="12" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="9" y="3" width="6" height="12" rx="1" stroke="currentColor" stroke-width="1.4"/><path d="M3 7h2M3 10h2M11 7h2M11 10h2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>','Analytics','view_dept_dashboard'],
     ['admin',      'Field mgmt',      '<circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.4"/><path d="M2 14c0-3.314 2.686-5 6-5s6 1.686 6 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M11 8l1 1 2-2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>','Administration','manage_fields'],
   ];
 
@@ -686,6 +698,8 @@ function go(p,el){
   if(p==='permissions')   renderPermissionsPage();
   if(p==='admin')         renderAdminPanels();
   if(p==='rooms'&&typeof renderRoomsBoard==='function') renderRoomsBoard();
+  if(p==='mydash') renderMyDashboard();
+  if(p==='depts')  renderDeptDashboards();
 
   if(window.innerWidth<=768) closeMobileSB();
   syncMobileNav(p);
@@ -817,14 +831,14 @@ function bTKpis(){
   const d=DATA,c=d.filter(r=>r.status==='Completed').length;
   const i=d.filter(r=>r.status==='In Progress'||r.status==='In Progress - Contractor').length;
   const u=d.filter(r=>r.priority==='Urgent'||r.priority==='High').length;
-  const p=d.filter(r=>r.subType==='Polish').length;
+  const pending=d.filter(r=>r.status==='Pending').length;
   document.getElementById('t-kpis').innerHTML=[
     {c:'#6ebe2a',l:'Total tasks',v:d.length,s:'All records'},
-    {c:'#6ebe2a',l:'Completed',v:c,tr:`${Math.round(c/d.length*100)}% rate`,tc:'up'},
+    {c:'#6ebe2a',l:'Completed',v:c,tr:d.length?`${Math.round(c/d.length*100)}% rate`:'—',tc:'up'},
     {c:'#5599f5',l:'In progress',v:i},
     {c:'#f0a62e',l:'High priority',v:u,tr:u>3?'Needs attention':'All clear',tc:u>3?'dn':'up'},
-    {c:'#2dcfb3',l:'Polish jobs',v:p},
-    {c:'#a87cf0',l:'Active handlers',v:new Set(d.map(r=>r.handler)).size,s:'Staff assigned'},
+    {c:'#a87cf0',l:'Pending',v:pending,s:'Awaiting action'},
+    {c:'#2dcfb3',l:'Active handlers',v:new Set(d.map(r=>r.handler)).size,s:'Staff assigned'},
   ].map(k=>`<div class="kpi"><div class="kpi-bar" style="background:${k.c}"></div><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div>${k.s?`<div class="kpi-sub">${k.s}</div>`:''} ${k.tr?`<div class="kpi-trend ${k.tc}">${k.tr}</div>`:''}</div>`).join('');
 }
 
@@ -1435,35 +1449,258 @@ function switchAdminTab(panel,el){
   document.getElementById('apanel-'+panel).classList.add('on');
   renderAdminPanels();
 }
-function renderAdminPanels(){renderWorkTypes();renderRequestors();renderHandlers();renderAreas();renderSubTypes();}
+
+// ═══════════════════════════════════════════════
+// MY DASHBOARD — for requesters
+// Shows: their own submissions + their department's submissions (toggleable)
+// ═══════════════════════════════════════════════
+let MYDASH_TAB = 'mine'; // 'mine' or 'dept'
+
+function setMyDashTab(tab){ MYDASH_TAB = tab; renderMyDashboard(); }
+
+function renderMyDashboard(){
+  const u = currentUser; if(!u) return;
+  const el = document.getElementById('page-mydash');
+  if(!el) return;
+
+  // My jobs — match by name, email, username, uid
+  const myJobs = DATA.filter(r =>
+    r.requestor === u.name ||
+    r.createdBy === u.email ||
+    r.createdBy === u.username ||
+    r.createdByUid === u.uid
+  );
+
+  // Dept jobs — anyone in same dept submitted these
+  const deptName = u.dept || '';
+  const deptUserNames = USERS.filter(x => x.dept === deptName && x.role === 'requester').map(x => x.name);
+  const deptUserEmails = USERS.filter(x => x.dept === deptName && x.role === 'requester').map(x => x.email);
+  const deptJobs = DATA.filter(r =>
+    deptUserNames.includes(r.requestor) ||
+    deptUserEmails.includes(r.createdBy)
+  );
+
+  // Determine which dataset to show
+  const showDept = MYDASH_TAB === 'dept' && can('view_dept_dashboard') && deptName;
+  const d = showDept ? deptJobs : myJobs;
+
+  // KPIs
+  const completed = d.filter(r => r.status === 'Completed').length;
+  const inProg = d.filter(r => r.status === 'In Progress' || r.status === 'In Progress - Contractor').length;
+  const pending = d.filter(r => r.status === 'Pending').length;
+  const urgent = d.filter(r => r.priority === 'Urgent').length;
+
+  el.innerHTML = `
+    <div class="hero">
+      <h2>${showDept ? deptName + ' team requests' : 'My requests'}</h2>
+      <p>${showDept ? 'All maintenance requests submitted by your ' + deptName + ' team members.' : 'All maintenance requests you have submitted personally.'}</p>
+    </div>
+
+    ${can('view_dept_dashboard') && deptName ? `
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <button class="btn ${!showDept?'btn-g':'btn-o'} btn-sm" onclick="setMyDashTab('mine')">📋 My requests (${myJobs.length})</button>
+      <button class="btn ${showDept?'btn-g':'btn-o'} btn-sm" onclick="setMyDashTab('dept')">🏢 ${deptName} team (${deptJobs.length})</button>
+    </div>` : ''}
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:14px">
+      ${[
+        {c:'#6ebe2a',l:'Total',v:d.length},
+        {c:'#6ebe2a',l:'Completed',v:completed,tr:d.length?Math.round(completed/d.length*100)+'% rate':'—',tc:'up'},
+        {c:'#5599f5',l:'In progress',v:inProg},
+        {c:'#a87cf0',l:'Pending',v:pending},
+        {c:'#e8534a',l:'Urgent',v:urgent,tr:urgent>0?urgent+' critical':'All clear',tc:urgent>0?'dn':'up'},
+      ].map(k => `<div class="kpi">
+        <div class="kpi-bar" style="background:${k.c}"></div>
+        <div class="kpi-lbl">${k.l}</div>
+        <div class="kpi-val">${k.v}</div>
+        ${k.tr ? `<div class="kpi-trend ${k.tc}">${k.tr}</div>` : ''}
+      </div>`).join('')}
+    </div>
+
+    <div class="card">
+      <div class="card-hd">
+        <span class="card-t">Recent activity</span>
+        <span class="card-badge">${d.length} record${d.length!==1?'s':''}</span>
+      </div>
+      ${d.length ? `
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th style="width:80px">Date</th>
+            <th>Requestor</th>
+            <th>Work type</th>
+            <th>Sub type</th>
+            <th>Location</th>
+            <th>Status</th>
+            <th>Priority</th>
+            <th style="width:80px">Completed</th>
+          </tr></thead>
+          <tbody>
+            ${d.slice().sort((a,b)=>b.date.localeCompare(a.date)).map(r=>`
+              <tr style="cursor:pointer" onclick="vTask('${r.id}')">
+                <td style="font-family:var(--mono);font-size:11px">${fds(r.date)}</td>
+                <td class="td-h">${r.requestor}</td>
+                <td><span style="display:flex;align-items:center;gap:5px">
+                  <span style="width:7px;height:7px;border-radius:50%;background:${wc(r.workType)};flex-shrink:0"></span>
+                  ${r.workType.replace(/_/g,' ')}
+                </span></td>
+                <td style="color:var(--t2)">${r.subType||'—'}</td>
+                <td>${r.location}</td>
+                <td>${sbadge(r.status)}</td>
+                <td>${pbadge(r.priority)}</td>
+                <td style="font-family:var(--mono);font-size:11px;color:var(--t2)">${r.completion?fds(r.completion):'—'}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>` : `
+      <div class="empty-state">
+        <svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.2"/></svg>
+        <p>No requests yet</p>
+        <small>${showDept ? 'No team members have submitted requests yet.' : 'Submit your first request via the Job Request portal.'}</small>
+      </div>`}
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════════
+// DEPARTMENT DASHBOARDS — for admin
+// Auto-shows one panel per department that has requesters
+// ═══════════════════════════════════════════════
+function renderDeptDashboards(){
+  const el = document.getElementById('page-depts');
+  if(!el) return;
+
+  // Get all unique departments from requesters
+  const depts = [...new Set(USERS.filter(u => u.role === 'requester' && u.dept).map(u => u.dept))];
+
+  if(!depts.length){
+    el.innerHTML = `
+      <div class="hero">
+        <h2>Department dashboards</h2>
+        <p>Overview of maintenance requests organized by department.</p>
+      </div>
+      <div class="empty-state">
+        <svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.2"/></svg>
+        <p>No departments yet</p>
+        <small>Create a requester user with a department in Users page to populate this view.</small>
+      </div>`;
+    return;
+  }
+
+  // Build a card section per department
+  let html = `
+    <div class="hero">
+      <h2>Department dashboards</h2>
+      <p>Overview of maintenance requests organized by department. Auto-generated from requester accounts.</p>
+    </div>
+  `;
+
+  depts.forEach(deptName => {
+    const deptRequesters = USERS.filter(u => u.dept === deptName && u.role === 'requester');
+    const deptNames = deptRequesters.map(u => u.name);
+    const deptEmails = deptRequesters.map(u => u.email);
+    const jobs = DATA.filter(r =>
+      deptNames.includes(r.requestor) || deptEmails.includes(r.createdBy)
+    );
+
+    const completed = jobs.filter(r => r.status === 'Completed').length;
+    const inProg = jobs.filter(r => r.status === 'In Progress' || r.status === 'In Progress - Contractor').length;
+    const pending = jobs.filter(r => r.status === 'Pending').length;
+    const urgent = jobs.filter(r => r.priority === 'Urgent').length;
+    const recent = jobs.slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,5);
+
+    html += `
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-hd">
+        <span class="card-t" style="display:flex;align-items:center;gap:8px">
+          <span style="width:8px;height:8px;border-radius:50%;background:var(--g)"></span>
+          ${deptName}
+        </span>
+        <span class="card-badge">${deptRequesters.length} requester${deptRequesters.length!==1?'s':''} · ${jobs.length} job${jobs.length!==1?'s':''}</span>
+      </div>
+
+      <div style="padding:14px;display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px">
+        ${[
+          {c:'#6ebe2a',l:'Total',v:jobs.length},
+          {c:'#6ebe2a',l:'Completed',v:completed},
+          {c:'#5599f5',l:'In progress',v:inProg},
+          {c:'#a87cf0',l:'Pending',v:pending},
+          {c:'#e8534a',l:'Urgent',v:urgent},
+        ].map(k=>`<div style="background:var(--s2);border:1px solid var(--b0);border-radius:var(--r);padding:10px;text-align:center">
+          <div style="font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">${k.l}</div>
+          <div style="font-size:18px;font-weight:700;color:${k.c};font-family:var(--mono)">${k.v}</div>
+        </div>`).join('')}
+      </div>
+
+      ${recent.length ? `
+      <div style="padding:0 14px 14px">
+        <div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">Recent activity</div>
+        ${recent.map(r=>`
+          <div class="act-i" onclick="vTask('${r.id}')" style="cursor:pointer">
+            <div class="act-dot" style="background:${r.status==='Completed'?'var(--g)':r.status==='In Progress'?'var(--blue)':'var(--amber)'}"></div>
+            <div class="act-body" style="flex:1;min-width:0">
+              <div class="act-txt"><span style="color:var(--t0);font-weight:600">${r.requestor}</span> · ${r.workType.replace(/_/g,' ')}</div>
+              <div class="act-sub" style="color:var(--t2);font-size:11.5px;margin-top:2px">
+                <strong style="color:var(--t1)">${r.subType||'—'}</strong>${r.details?' · '+(r.details.length>50?r.details.substring(0,50)+'…':r.details):''}
+              </div>
+              <div class="act-time">${fd(r.date)} · ${r.location}</div>
+            </div>
+            ${sbadge(r.status)}
+          </div>
+        `).join('')}
+      </div>` : `<div style="padding:14px;color:var(--t3);font-size:12px;text-align:center">No jobs from this department yet.</div>`}
+    </div>`;
+  });
+
+  el.innerHTML = html;
+}
+
+function renderAdminPanels(){
+  // Security guard — only admin can access field management
+  if(!currentUser||currentUser.role!=='admin'){
+    toast('Access denied — Field management is admin-only.','e');
+    go('dash',null);
+    return;
+  }
+  renderWorkTypes();renderRequestors();renderHandlers();renderAreas();renderSubTypes();
+}
+
+// Guard for any field-modifying action — call at start of each function
+function _requireAdmin(action){
+  if(!currentUser||currentUser.role!=='admin'){
+    toast(`Access denied — ${action||'this action'} is admin-only.`,'e');
+    return false;
+  }
+  return true;
+}
 
 function renderWorkTypes(){
   const wts=Object.keys(SUBTYPES);
   document.getElementById('wt-count').textContent=wts.length+' types';
   document.getElementById('wt-list').innerHTML=wts.map(w=>`<li class="field-item"><span class="field-item-label">${w.replace(/_/g,' ')}</span><span class="field-item-meta">${SUBTYPES[w].length} sub types</span><div class="field-item-actions"><button class="field-delete-btn" onclick="delWorkType('${w}')"><svg viewBox="0 0 16 16" fill="none"><path d="M3 4h10M6 4V2h4v2M5 4v8h6V4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div></li>`).join('');
 }
-function addWorkType(){const inp=document.getElementById('wt-new');const val=inp.value.trim().replace(/\s+/g,'_');if(!val){toast('Please enter a work type name.','e');return;}if(SUBTYPES[val]){toast('This work type already exists.','e');return;}SUBTYPES[val]=['Other'];inp.value='';fillDrops();renderAdminPanels();rReady=false;fbSaveFields();toast(`Work type "${val.replace(/_/g,' ')}" added`);}
-function delWorkType(key){if(Object.keys(SUBTYPES).length<=1){toast('At least one work type must remain.','e');return;}if(!confirm(`Remove work type "${key.replace(/_/g,' ')}"?`))return;delete SUBTYPES[key];fillDrops();renderAdminPanels();rReady=false;fbSaveFields();toast('Work type removed','i');}
+function addWorkType(){if(!_requireAdmin('add work type'))return;const inp=document.getElementById('wt-new');const val=inp.value.trim().replace(/\s+/g,'_');if(!val){toast('Please enter a work type name.','e');return;}if(SUBTYPES[val]){toast('This work type already exists.','e');return;}SUBTYPES[val]=['Other'];inp.value='';fillDrops();renderAdminPanels();rReady=false;fbSaveFields();toast(`Work type "${val.replace(/_/g,' ')}" added`);}
+function delWorkType(key){if(!_requireAdmin('delete work type'))return;if(Object.keys(SUBTYPES).length<=1){toast('At least one work type must remain.','e');return;}if(!confirm(`Remove work type "${key.replace(/_/g,' ')}"?`))return;delete SUBTYPES[key];fillDrops();renderAdminPanels();rReady=false;fbSaveFields();toast('Work type removed','i');}
 
 function renderSubTypes(){
   const container=document.getElementById('subtype-list');
   container.innerHTML=Object.entries(SUBTYPES).map(([wt,subs])=>`<div class="subtype-section"><div class="subtype-wt-label">${wt.replace(/_/g,' ')}<button class="subtype-wt-expand" onclick="toggleSubSection('ss-${wt}')">${subs.length} sub types</button></div><div class="subtype-items" id="ss-${wt}">${subs.map(s=>`<span class="subtype-chip">${s}<button onclick="delSubType('${wt}','${s.replace(/'/g,"\\'")}')"><svg viewBox="0 0 16 16" fill="none"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button></span>`).join('')}<input type="text" placeholder="Add…" style="padding:4px 8px;font-size:11px;background:var(--s2);border:1px dashed var(--b2);border-radius:5px;color:var(--t0);width:100px;font-family:var(--font)" onkeydown="if(event.key==='Enter')addSubType('${wt}',this)"></div></div>`).join('');
 }
 function toggleSubSection(id){const el=document.getElementById(id);if(el)el.classList.toggle('open');}
-function addSubType(wt,inp){const val=inp.value.trim();if(!val)return;if(SUBTYPES[wt].includes(val)){toast('Already exists.','e');return;}SUBTYPES[wt].push(val);inp.value='';renderAdminPanels();rReady=false;fbSaveFields();toast(`Sub type "${val}" added`);}
-function delSubType(wt,sub){if(SUBTYPES[wt].length<=1){toast('At least one sub type must remain.','e');return;}SUBTYPES[wt]=SUBTYPES[wt].filter(s=>s!==sub);renderAdminPanels();rReady=false;fbSaveFields();toast('Sub type removed','i');}
+function addSubType(wt,inp){if(!_requireAdmin('add sub type'))return;const val=inp.value.trim();if(!val)return;if(SUBTYPES[wt].includes(val)){toast('Already exists.','e');return;}SUBTYPES[wt].push(val);inp.value='';renderAdminPanels();rReady=false;fbSaveFields();toast(`Sub type "${val}" added`);}
+function delSubType(wt,sub){if(!_requireAdmin('delete sub type'))return;if(SUBTYPES[wt].length<=1){toast('At least one sub type must remain.','e');return;}SUBTYPES[wt]=SUBTYPES[wt].filter(s=>s!==sub);renderAdminPanels();rReady=false;fbSaveFields();toast('Sub type removed','i');}
 
 function renderRequestors(){document.getElementById('rq-count').textContent=REQS.length+' requestors';document.getElementById('rq-list').innerHTML=REQS.map(r=>`<li class="field-item"><span class="field-item-label">${r}</span><div class="field-item-actions"><button class="field-delete-btn" onclick="delRequestor('${r.replace(/'/g,"\\'")}')"><svg viewBox="0 0 16 16" fill="none"><path d="M3 4h10M6 4V2h4v2M5 4v8h6V4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div></li>`).join('');}
 function addRequestor(){toast('Requestors are added by creating user accounts with the Requestor role.','i');}
 function delRequestor(name){toast('Requestors are managed via the Users page. Delete the user account to remove a requestor.','i');}
 
 function renderHandlers(){document.getElementById('hd-count').textContent=HNDS.length+' handlers';document.getElementById('hd-list').innerHTML=HNDS.map(h=>`<li class="field-item"><span class="field-item-label">${h}</span><div class="field-item-actions"><button class="field-delete-btn" onclick="delHandler('${h.replace(/'/g,"\\'")}')"><svg viewBox="0 0 16 16" fill="none"><path d="M3 4h10M6 4V2h4v2M5 4v8h6V4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div></li>`).join('');}
-function addHandler(){const inp=document.getElementById('hd-new');const val=inp.value.trim();if(!val){toast('Please enter a handler name.','e');return;}if(HNDS.includes(val)){toast('Already exists.','e');return;}HNDS.push(val);inp.value='';fillDrops();renderAdminPanels();rReady=false;fbSaveFields();toast(`Handler "${val}" added`);}
-function delHandler(name){if(HNDS.length<=1){toast('At least one handler must remain.','e');return;}if(!confirm(`Remove handler "${name}"?`))return;HNDS=HNDS.filter(h=>h!==name);fillDrops();renderAdminPanels();rReady=false;fbSaveFields();toast('Handler removed','i');}
+function addHandler(){if(!_requireAdmin('add handler'))return;const inp=document.getElementById('hd-new');const val=inp.value.trim();if(!val){toast('Please enter a handler name.','e');return;}if(HNDS.includes(val)){toast('Already exists.','e');return;}HNDS.push(val);inp.value='';fillDrops();renderAdminPanels();rReady=false;fbSaveFields();toast(`Handler "${val}" added`);}
+function delHandler(name){if(!_requireAdmin('delete handler'))return;if(HNDS.length<=1){toast('At least one handler must remain.','e');return;}if(!confirm(`Remove handler "${name}"?`))return;HNDS=HNDS.filter(h=>h!==name);fillDrops();renderAdminPanels();rReady=false;fbSaveFields();toast('Handler removed','i');}
 
 function renderAreas(){document.getElementById('ar-count').textContent=AREAS.length+' areas';document.getElementById('ar-list').innerHTML=AREAS.map(a=>`<li class="field-item"><span class="field-item-label">${a.replace(/_/g,' ')}</span><span class="field-item-meta" style="font-family:var(--mono);font-size:10px">${a}</span><div class="field-item-actions"><button class="field-delete-btn" onclick="delArea('${a.replace(/'/g,"\\'")}')"><svg viewBox="0 0 16 16" fill="none"><path d="M3 4h10M6 4V2h4v2M5 4v8h6V4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div></li>`).join('');}
-function addArea(){const inp=document.getElementById('ar-new');const val=inp.value.trim();if(!val){toast('Please enter an area name.','e');return;}if(AREAS.includes(val)){toast('Already exists.','e');return;}AREAS.push(val);inp.value='';fillDrops();renderAdminPanels();rReady=false;fbSaveFields();toast(`Area "${val.replace(/_/g,' ')}" added`);}
-function delArea(name){if(AREAS.length<=1){toast('At least one area must remain.','e');return;}if(!confirm(`Remove area "${name.replace(/_/g,' ')}"?`))return;AREAS=AREAS.filter(a=>a!==name);fillDrops();renderAdminPanels();rReady=false;fbSaveFields();toast('Area removed','i');}
+function addArea(){if(!_requireAdmin('add area'))return;const inp=document.getElementById('ar-new');const val=inp.value.trim();if(!val){toast('Please enter an area name.','e');return;}if(AREAS.includes(val)){toast('Already exists.','e');return;}AREAS.push(val);inp.value='';fillDrops();renderAdminPanels();rReady=false;fbSaveFields();toast(`Area "${val.replace(/_/g,' ')}" added`);}
+function delArea(name){if(!_requireAdmin('delete area'))return;if(AREAS.length<=1){toast('At least one area must remain.','e');return;}if(!confirm(`Remove area "${name.replace(/_/g,' ')}"?`))return;AREAS=AREAS.filter(a=>a!==name);fillDrops();renderAdminPanels();rReady=false;fbSaveFields();toast('Area removed','i');}
 
 // ═══════════════════════════════════════════════
 // INIT
