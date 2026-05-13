@@ -185,10 +185,19 @@ async function doLogin(){
     // ── Firebase Auth login (works on all devices) ──
     try{
       const cred = await fbAuth.signInWithEmailAndPassword(email, pass);
-      // Show loading screen while firebase.js onAuthStateChanged loads data
+      // Check if account is disabled (soft-deleted)
+      try{
+        const profSnap = await fbDb.collection('users').doc(cred.user.uid).get();
+        if(profSnap.exists && profSnap.data().disabled===true){
+          await fbAuth.signOut();
+          errEl.textContent = 'This account has been disabled. Please contact your administrator.';
+          errEl.classList.add('show');
+          if(btn){btn.textContent='Sign in';btn.disabled=false;}
+          return;
+        }
+      }catch(_){}
       document.getElementById('auth-screen').style.display='none';
       showLoadingScreen();
-      // onAuthStateChanged in firebase.js handles the rest
     } catch(e){
       errEl.textContent = e.code==='auth/user-not-found'||e.code==='auth/wrong-password'||e.code==='auth/invalid-credential'
         ? 'Incorrect email or password. Please try again.'
@@ -254,7 +263,13 @@ async function adminAddUser(){
       secondApp.delete();
 
       // Save profile to Firestore
-      const profile={uid,email,name,initials,role,dept,lastLogin:null,createdAt:getTODAY()};
+      const profile={uid,email,name,initials,role,dept,lastLogin:null,
+        disabled:false,
+        createdAt:getTODAY(),
+        createdBy:currentUser?.email||currentUser?.username||'system',
+        updatedAt:getTODAY(),
+        updatedBy:currentUser?.email||currentUser?.username||'system'
+      };
       await fbDb.collection('users').doc(uid).set(profile);
 
       // Add to local USERS array — include both id and firestoreId for compatibility
@@ -310,7 +325,11 @@ function adminSaveUser(){
   if(dup){errEl.textContent='Username already taken.';errEl.classList.add('show');return;}
   const idx=USERS.findIndex(x=>String(x.id)===String(id)); if(idx<0) return;
   const initials=name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
-  const updates={name,username:u,role,dept,initials,email:u};
+  const updates={
+    name,username:u,role,dept,initials,email:u,
+    updatedAt:getTODAY(),
+    updatedBy:currentUser?.email||currentUser?.username||'system'
+  };
   USERS[idx]={...USERS[idx],...updates};
   if(p) USERS[idx].password=p;
   // Save changes to Firestore so they persist across devices
@@ -333,20 +352,29 @@ function adminSaveUser(){
 function deleteUser(id){
   if(String(id)===String(currentUser.id)){toast('You cannot delete your own account.','e');return;}
   const u=USERS.find(x=>String(x.id)===String(id));
-  if(!confirm(`Delete account "${u?.name||id}"? This cannot be undone.`))return;
-  // Delete from Firestore so it's removed across all devices
-  if(typeof fbDb!=='undefined'&&fbDb&&u){
+  if(!u){toast('User not found.','e');return;}
+  // Soft delete — mark as disabled, don't physically remove
+  const isReactivate = u.disabled===true;
+  const action = isReactivate ? 'reactivate' : 'disable';
+  if(!confirm(`${isReactivate?'Reactivate':'Disable'} account "${u.name||id}"?\n\n${isReactivate?'They will be able to log in again.':'They will no longer be able to log in, but their data is preserved.'}`))return;
+  if(typeof fbDb!=='undefined'&&fbDb){
     const fsId=u.firestoreId||u.uid||id;
-    fbDb.collection('users').doc(String(fsId)).delete()
-      .catch(e=>console.warn('Firestore delete failed:',e.message));
+    fbDb.collection('users').doc(String(fsId)).update({
+      disabled: !isReactivate,
+      disabledAt: !isReactivate ? getTODAY() : firebase.firestore.FieldValue.delete(),
+      updatedAt: getTODAY(),
+      updatedBy: currentUser?.email||currentUser?.username||'system'
+    }).catch(e=>console.error('Firestore update failed:',e.message));
   }
-  USERS=USERS.filter(x=>String(x.id)!==String(id));
+  const idx=USERS.findIndex(x=>String(x.id)===String(id));
+  if(idx>=0) USERS[idx].disabled = !isReactivate;
   renderUserPage();
-  toast('User removed','i');
+  toast(isReactivate?`Account "${u.name}" reactivated`:`Account "${u.name}" disabled`,'i');
 }
 
 function doLogout(){
   if(!confirm('Are you sure you want to sign out?'))return;
+  if(typeof stopPresence==='function') stopPresence();
   currentUser=null;
   window._appStarted=false;
   try{ sessionStorage.removeItem('mp_session'); }catch(e){}
@@ -360,6 +388,8 @@ function doLogout(){
 }
 
 function applyUserSession(){
+  // Start presence tracking when user logs in
+  if(typeof startPresence==='function') setTimeout(startPresence, 1000);
   const u=currentUser;
   const av=document.getElementById('sb-av'); if(av) av.textContent=u.initials;
   const nm=document.getElementById('sb-name'); if(nm) nm.textContent=u.name;
@@ -479,6 +509,88 @@ function wc(k){return WTC[k]||PAL[Object.keys(SUBTYPES).indexOf(k)%PAL.length]||
 // ═══════════════════════════════════════════════
 function getTODAY(){return new Date().toISOString().slice(0,10);}
 const TODAY=getTODAY();
+
+// ═══════════════════════════════════════════════
+// PRESENCE — live online user tracking
+// ═══════════════════════════════════════════════
+let _presenceInterval = null;
+let ONLINE_USERS = [];
+
+function startPresence() {
+  if (!currentUser || typeof fbDb==='undefined' || !fbDb) return;
+  const uid = currentUser.uid || currentUser.id;
+  if (!uid) return;
+  const heartbeat = ()=>{
+    fbDb.collection('presence').doc(String(uid)).set({
+      uid: String(uid),
+      name: currentUser.name,
+      role: currentUser.role,
+      lastSeen: Date.now()
+    }, {merge:true}).catch(e=>console.warn('Presence write failed:',e.message));
+  };
+  heartbeat();
+  if (_presenceInterval) clearInterval(_presenceInterval);
+  _presenceInterval = setInterval(heartbeat, 30000); // every 30s
+
+  // Listen for online users
+  if (window._presenceUnsub) window._presenceUnsub();
+  window._presenceUnsub = fbDb.collection('presence').onSnapshot(snap=>{
+    const now = Date.now();
+    ONLINE_USERS = snap.docs.map(d=>d.data())
+      .filter(u=>u.lastSeen && (now - u.lastSeen < 60000)); // active within 60s
+    renderOnlineBadge();
+  }, e=>console.warn('Presence listener:',e.message));
+}
+
+function stopPresence() {
+  if (_presenceInterval) { clearInterval(_presenceInterval); _presenceInterval=null; }
+  if (window._presenceUnsub) { window._presenceUnsub(); window._presenceUnsub=null; }
+  if (currentUser && typeof fbDb!=='undefined' && fbDb) {
+    const uid = currentUser.uid || currentUser.id;
+    if (uid) fbDb.collection('presence').doc(String(uid)).delete().catch(()=>{});
+  }
+  ONLINE_USERS = [];
+}
+
+function renderOnlineBadge() {
+  const el = document.getElementById('tb-online');
+  if (!el) return;
+  const n = ONLINE_USERS.length;
+  el.innerHTML = `
+    <span style="display:inline-flex;align-items:center;gap:5px;cursor:pointer" onclick="toggleOnlineList()">
+      <span style="width:8px;height:8px;border-radius:50%;background:#6ebe2a;box-shadow:0 0 0 3px rgba(110,190,42,.2);display:inline-block"></span>
+      <span style="font-size:11.5px;font-weight:600;color:var(--t1)">${n} online</span>
+    </span>
+  `;
+}
+
+function toggleOnlineList() {
+  let pop = document.getElementById('online-pop');
+  if (pop) { pop.remove(); return; }
+  pop = document.createElement('div');
+  pop.id = 'online-pop';
+  pop.style.cssText = 'position:absolute;top:48px;right:14px;background:var(--s0);border:1px solid var(--b2);border-radius:10px;padding:10px;z-index:9001;min-width:200px;box-shadow:0 8px 24px rgba(0,0,0,.4)';
+  pop.innerHTML = `
+    <div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--b0)">Currently online (${ONLINE_USERS.length})</div>
+    ${ONLINE_USERS.length
+      ? ONLINE_USERS.map(u=>`<div style="padding:5px 0;display:flex;align-items:center;gap:7px">
+          <span style="width:7px;height:7px;border-radius:50%;background:#6ebe2a;flex-shrink:0"></span>
+          <span style="font-size:12px;color:var(--t0)">${u.name}</span>
+          <span style="font-size:10px;color:var(--t3);margin-left:auto">${u.role||''}</span>
+        </div>`).join('')
+      : '<div style="font-size:12px;color:var(--t3);padding:6px 0">No one online</div>'}
+  `;
+  document.body.appendChild(pop);
+  // Close on outside click
+  setTimeout(()=>{
+    document.addEventListener('click', function close(e){
+      if (!pop.contains(e.target) && e.target.id!=='tb-online') {
+        pop.remove();
+        document.removeEventListener('click', close);
+      }
+    });
+  }, 100);
+}
 let DATA=[]; // jobs loaded from Firestore in real-time
 let nid=1,fData=[...DATA],sKey=null,sDir=1,cPg=1,eId=null;
 const PGS=12,chs={};
@@ -800,7 +912,10 @@ function addTask(){
   const det=document.getElementById('af-de').value.trim();
   if(!loc||!det){toast('Location and details are required.','e');return;}
   const t={
-    id:nid++,date:document.getElementById('af-dt').value||TODAY,
+    id:nid++,date:document.getElementById('af-dt').value||getTODAY(),
+    createdBy:currentUser?(currentUser.email||currentUser.username||'staff'):'staff',
+    createdByUid:currentUser?(currentUser.uid||currentUser.id||''):'',
+    createdAt:getTODAY(),
     requestor:document.getElementById('af-rq').value,
     handler:document.getElementById('af-hd').value,
     workType:document.getElementById('af-wt').value,
@@ -960,8 +1075,11 @@ function submitJobRequest(){
     ? currentUser.name
     : (jqRqEl&&jqRqEl.value ? jqRqEl.value : (USERS[0]?USERS[0].name:'Guest'));
   if(!isRequester&&(!jqRqEl||!jqRqEl.value)){toast('Please select a requestor.','e');return;}
+  // Allow custom date if entered, default to today
+  const dtField=document.getElementById('jq-dt');
+  const jobDate=(dtField&&dtField.value)?dtField.value:getTODAY();
   const t={
-    id:nid++,date:getTODAY(),
+    id:nid++,date:jobDate,
     requestor:req,
     handler:handler,
     workType:wt,
@@ -972,7 +1090,8 @@ function submitJobRequest(){
     priority:document.getElementById('jq-pr').value,
     completion:'',
     createdBy:    currentUser?(currentUser.email||currentUser.username||'guest'):'guest',
-    createdByUid: currentUser?(currentUser.uid||currentUser.id||''):''
+    createdByUid: currentUser?(currentUser.uid||currentUser.id||''):'',
+    createdAt:    getTODAY()
   };
   fbAddJob(t);
   if(!FB_READY){fillDrops();rReady=false;}
@@ -1138,7 +1257,7 @@ function renderUserPage(){
         <svg viewBox="0 0 14 14" fill="none"><path d="M9.5 1.5l3 3-8 8H1.5v-3l8-8z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         Edit
       </button>
-      ${u.id!==currentUser.id?`<button class="btn btn-r btn-sm" onclick="deleteUser('${u.id}')">
+      ${u.id!==currentUser.id?`<button class="btn ${u.disabled?'btn-g':'btn-r'} btn-sm" onclick="deleteUser('${u.id}')">
         <svg viewBox="0 0 14 14" fill="none"><path d="M2 3.5h10M5 3.5V2h4v1.5M4.5 3.5v7h5v-7" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         Remove
       </button>`:''}

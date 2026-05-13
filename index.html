@@ -269,6 +269,7 @@
       <svg class="s-ico" viewBox="0 0 16 16" fill="none"><circle cx="6.5" cy="6.5" r="4" stroke="currentColor" stroke-width="1.5"/><path d="M10 10l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
       <input type="text" id="gsearch" placeholder="Search all tasks…" oninput="gSrch(this.value)">
     </div>
+    <div id="tb-online" style="display:flex;align-items:center;padding:6px 12px;border-radius:8px;background:var(--s1);border:1px solid var(--b0)"></div>
     <div class="tb-date" id="tb-dt"></div>
     <button class="btn btn-g" id="topbar-new-btn" onclick="go('add',null)">
       <svg viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
@@ -431,6 +432,7 @@
             <div class="fc"><label class="fl">Sub type</label><select id="jq-st" class="fi"></select></div>
             <div class="fc"><label class="fl">Area / Level <span class="r">*</span></label><select id="jq-ar" class="fi"></select></div>
             <div class="fc"><label class="fl">Location / Room <span class="r">*</span></label><input type="text" id="jq-lc" class="fi" placeholder="e.g. Room 415 or Restaurant"></div>
+            <div class="fc"><label class="fl">Date</label><input type="date" id="jq-dt" class="fi" title="Default is today — change to backdate an old job"></div>
             <div class="fc"><label class="fl">Priority</label><select id="jq-pr" class="fi"><option>Low</option><option selected>Medium</option><option>High</option><option>Urgent</option></select></div>
             <div class="fc ff"><label class="fl">Description <span class="r">*</span></label><textarea id="jq-de" class="fi" rows="4" placeholder="Please describe the issue in detail — include what you observed, when it started, and any relevant context..."></textarea></div>
           </div>
