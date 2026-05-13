@@ -41,7 +41,7 @@ function showLoadingScreen(){
   const ls=document.getElementById('loading-screen');
   if(ls){ls.classList.remove('hidden','fade-out');ls.style.display='flex';}
   _lsShownAt=Date.now();
-  // Safety net: auto-hide after 8 seconds even if hideLoadingScreen never called
+  // Safety auto-hide after 8 seconds
   if(window._loadingTimeout) clearTimeout(window._loadingTimeout);
   window._loadingTimeout=setTimeout(()=>hideLoadingScreen(),8000);
 }
@@ -49,12 +49,8 @@ function hideLoadingScreen(){
   if(window._loadingTimeout){clearTimeout(window._loadingTimeout);window._loadingTimeout=null;}
   const ls=document.getElementById('loading-screen');
   if(!ls)return;
-  // Hide immediately — no forced minimum wait
   ls.classList.add('fade-out');
-  setTimeout(()=>{
-    ls.classList.add('hidden');
-    ls.style.display='none';
-  },300);
+  setTimeout(()=>{ls.classList.add('hidden');ls.style.display='none';},300);
 }
 // Hide on page load — only show after login
 (function(){
@@ -87,8 +83,6 @@ const ALL_PERMS = {
   manage_permissions:  'Manage role permissions',
   manage_fields:       'Manage field lists (work types etc.)',
   view_online_users:   'View online / active users',
-  view_my_dashboard:   'View personal dashboard',
-  view_dept_dashboard: 'View department dashboard (admin: see all depts; requester: see own dept)',
 };
 
 // ── Default permissions per role ─────────────
@@ -101,7 +95,6 @@ let ROLE_PERMS = {
     view_reports:false, export_data:true, send_email:false,
     manage_users:false, manage_permissions:false, manage_fields:false,
     view_online_users:false,
-    view_my_dashboard:false, view_dept_dashboard:false,
   },
   contractor: {
     view_dashboard:false, view_all_tasks:false, add_task:false,
@@ -110,7 +103,6 @@ let ROLE_PERMS = {
     view_reports:false, export_data:false, send_email:false,
     manage_users:false, manage_permissions:false, manage_fields:false,
     view_online_users:false,
-    view_my_dashboard:false, view_dept_dashboard:false,
   },
   requester: {
     view_dashboard:false, view_all_tasks:false, add_task:false,
@@ -119,7 +111,6 @@ let ROLE_PERMS = {
     view_reports:false, export_data:false, send_email:false,
     manage_users:false, manage_permissions:false, manage_fields:false,
     view_online_users:false,
-    view_my_dashboard:true, view_dept_dashboard:true,
   },
 };
 
@@ -161,8 +152,6 @@ const PAGE_PERM = {
   permissions: 'manage_permissions',
   admin:       'manage_fields',
   rooms:       'view_all_tasks',
-  mydash:      'view_my_dashboard',
-  depts:       'view_dept_dashboard',
 };
 
 function switchAuthTab(tab){
@@ -452,8 +441,6 @@ function buildSidebarNav(){
     ['users',      'Users',           '<circle cx="6" cy="5" r="2.5" stroke="currentColor" stroke-width="1.4"/><path d="M1 13c0-2.761 2.239-4 5-4s5 1.239 5 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="13" cy="5" r="2" stroke="currentColor" stroke-width="1.2"/><path d="M11.5 13c0-1.5 1-2.5 2-2.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>','Administration','manage_users','nb-users-count'],
     ['permissions','Permissions',     '<path d="M12 1l1.5 3L17 5l-2.5 2.5.5 3.5L12 9.5 9.5 11l.5-3.5L7.5 5l3.5-1L12 1z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="4" cy="12" r="2.5" stroke="currentColor" stroke-width="1.2"/>','Administration','manage_permissions'],
     ['rooms',      'Rooms board','<rect x="1" y="1" width="6" height="4" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="9" y="1" width="6" height="4" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="1" y="7" width="6" height="4" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="9" y="7" width="6" height="4" rx="1" stroke="currentColor" stroke-width="1.4"/>','Jobs','view_all_tasks'],
-    ['mydash',     'My dashboard','<path d="M2 4h12M2 8h8M2 12h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="13" cy="11" r="2" stroke="currentColor" stroke-width="1.4"/>','Overview','view_my_dashboard'],
-    ['depts',      'Department dashboards','<rect x="1" y="3" width="6" height="12" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="9" y="3" width="6" height="12" rx="1" stroke="currentColor" stroke-width="1.4"/><path d="M3 7h2M3 10h2M11 7h2M11 10h2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>','Analytics','view_dept_dashboard'],
     ['admin',      'Field mgmt',      '<circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.4"/><path d="M2 14c0-3.314 2.686-5 6-5s6 1.686 6 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M11 8l1 1 2-2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>','Administration','manage_fields'],
   ];
 
@@ -698,8 +685,6 @@ function go(p,el){
   if(p==='permissions')   renderPermissionsPage();
   if(p==='admin')         renderAdminPanels();
   if(p==='rooms'&&typeof renderRoomsBoard==='function') renderRoomsBoard();
-  if(p==='mydash') renderMyDashboard();
-  if(p==='depts')  renderDeptDashboards();
 
   if(window.innerWidth<=768) closeMobileSB();
   syncMobileNav(p);
@@ -1040,6 +1025,11 @@ function renderInProgress(){
 // ═══════════════════════════════════════════════
 // JOB REQUEST PORTAL
 // ═══════════════════════════════════════════════
+function setReqFilter(f){
+  window._reqStatusFilter=f;
+  renderRequestPage();
+}
+
 function renderRequestPage(){
   const u=currentUser;
   const heroSub=document.getElementById('request-hero-sub');
@@ -1065,10 +1055,8 @@ function renderRequestPage(){
     {l:'Completed',v:done,s:'Resolved',c:'var(--g)'},
   ].map(x=>`<div class="request-status-card"><div class="rsc-label" style="color:${x.c}">${x.l}</div><div class="rsc-count" style="color:${x.c}">${x.v}</div><div class="rsc-sub">${x.s}</div></div>`).join('');
 
-  // My requests list
-  // Requestor sees all jobs they submitted — match by name, email, OR username
-  // Admin/staff see all pending requests for assignment
-  const shown = u.role==='requester'
+  // My requests list with status filter
+  const myAllReqs = u.role==='requester'
     ? DATA.filter(r=>
         r.requestor===u.name ||
         (u.email && r.createdBy===u.email) ||
@@ -1076,13 +1064,44 @@ function renderRequestPage(){
         (u.uid && r.createdByUid===u.uid) ||
         (u.id && r.createdByUid===String(u.id))
       )
-    : DATA; // admin/staff see all jobs in "My requests" panel
+    : DATA;
+
+  // Apply status filter for requesters (default = 'all')
+  if(!window._reqStatusFilter) window._reqStatusFilter='all';
+  const f=window._reqStatusFilter;
+  const shown = (u.role==='requester' && f!=='all')
+    ? myAllReqs.filter(r=>{
+        if(f==='pending') return r.status==='Pending';
+        if(f==='inprog')  return r.status==='In Progress'||r.status==='In Progress - Contractor';
+        if(f==='done')    return r.status==='Completed';
+        return true;
+      })
+    : myAllReqs;
+
+  // Sort newest first
+  shown.sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+
   const list=document.getElementById('my-requests-list');
   const countBadge=document.getElementById('my-req-count');
   if(countBadge)countBadge.textContent=(u.role==='requester'?'My requests':'Pending requests')+' ('+shown.length+')';
   if(!list)return;
-  if(!shown.length){list.innerHTML=`<div class="empty-state"><svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.2"/><path d="M5 8h6M8 5v6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg><p>${u.role==='requester'?'No requests submitted yet.':'No pending requests.'}</p><small>${u.role==='requester'?'Use the form above to submit your first request.':''}</small></div>`;return;}
-  list.innerHTML=shown.map(r=>`<div class="my-request-item">
+
+  // Status filter buttons for requesters only
+  let filterHtml='';
+  if(u.role==='requester'){
+    const cP=myAllReqs.filter(r=>r.status==='Pending').length;
+    const cI=myAllReqs.filter(r=>r.status==='In Progress'||r.status==='In Progress - Contractor').length;
+    const cD=myAllReqs.filter(r=>r.status==='Completed').length;
+    filterHtml=`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;padding:0 4px">
+      <button class="btn ${f==='all'?'btn-g':'btn-o'} btn-sm" onclick="setReqFilter('all')">All (${myAllReqs.length})</button>
+      <button class="btn ${f==='pending'?'btn-g':'btn-o'} btn-sm" onclick="setReqFilter('pending')">Pending (${cP})</button>
+      <button class="btn ${f==='inprog'?'btn-g':'btn-o'} btn-sm" onclick="setReqFilter('inprog')">In progress (${cI})</button>
+      <button class="btn ${f==='done'?'btn-g':'btn-o'} btn-sm" onclick="setReqFilter('done')">Completed (${cD})</button>
+    </div>`;
+  }
+
+  if(!shown.length){list.innerHTML=filterHtml+`<div class="empty-state"><svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.2"/><path d="M5 8h6M8 5v6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg><p>${u.role==='requester'?(f==='all'?'No requests submitted yet.':'No requests with this status.'):'No pending requests.'}</p><small>${u.role==='requester'&&f==='all'?'Use the form above to submit your first request.':''}</small></div>`;return;}
+  list.innerHTML=filterHtml+shown.map(r=>`<div class="my-request-item" onclick="vTask('${r.id}')" style="cursor:pointer">
     <div class="mri-top">
       <span class="mri-id">#${r.id}</span>
       <span class="mri-type">${r.workType.replace(/_/g,' ')} — ${r.subType}</span>
@@ -1449,214 +1468,7 @@ function switchAdminTab(panel,el){
   document.getElementById('apanel-'+panel).classList.add('on');
   renderAdminPanels();
 }
-
-// ═══════════════════════════════════════════════
-// MY DASHBOARD — for requesters
-// Shows: their own submissions + their department's submissions (toggleable)
-// ═══════════════════════════════════════════════
-let MYDASH_TAB = 'mine'; // 'mine' or 'dept'
-
-function setMyDashTab(tab){ MYDASH_TAB = tab; renderMyDashboard(); }
-
-function renderMyDashboard(){
-  const u = currentUser; if(!u) return;
-  const el = document.getElementById('page-mydash');
-  if(!el) return;
-
-  // My jobs — match by name, email, username, uid
-  const myJobs = DATA.filter(r =>
-    r.requestor === u.name ||
-    r.createdBy === u.email ||
-    r.createdBy === u.username ||
-    r.createdByUid === u.uid
-  );
-
-  // Dept jobs — anyone in same dept submitted these
-  const deptName = u.dept || '';
-  const deptUserNames = USERS.filter(x => x.dept === deptName && x.role === 'requester').map(x => x.name);
-  const deptUserEmails = USERS.filter(x => x.dept === deptName && x.role === 'requester').map(x => x.email);
-  const deptJobs = DATA.filter(r =>
-    deptUserNames.includes(r.requestor) ||
-    deptUserEmails.includes(r.createdBy)
-  );
-
-  // Determine which dataset to show
-  const showDept = MYDASH_TAB === 'dept' && can('view_dept_dashboard') && deptName;
-  const d = showDept ? deptJobs : myJobs;
-
-  // KPIs
-  const completed = d.filter(r => r.status === 'Completed').length;
-  const inProg = d.filter(r => r.status === 'In Progress' || r.status === 'In Progress - Contractor').length;
-  const pending = d.filter(r => r.status === 'Pending').length;
-  const urgent = d.filter(r => r.priority === 'Urgent').length;
-
-  el.innerHTML = `
-    <div class="hero">
-      <h2>${showDept ? deptName + ' team requests' : 'My requests'}</h2>
-      <p>${showDept ? 'All maintenance requests submitted by your ' + deptName + ' team members.' : 'All maintenance requests you have submitted personally.'}</p>
-    </div>
-
-    ${can('view_dept_dashboard') && deptName ? `
-    <div style="display:flex;gap:8px;margin-bottom:14px">
-      <button class="btn ${!showDept?'btn-g':'btn-o'} btn-sm" onclick="setMyDashTab('mine')">📋 My requests (${myJobs.length})</button>
-      <button class="btn ${showDept?'btn-g':'btn-o'} btn-sm" onclick="setMyDashTab('dept')">🏢 ${deptName} team (${deptJobs.length})</button>
-    </div>` : ''}
-
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:14px">
-      ${[
-        {c:'#6ebe2a',l:'Total',v:d.length},
-        {c:'#6ebe2a',l:'Completed',v:completed,tr:d.length?Math.round(completed/d.length*100)+'% rate':'—',tc:'up'},
-        {c:'#5599f5',l:'In progress',v:inProg},
-        {c:'#a87cf0',l:'Pending',v:pending},
-        {c:'#e8534a',l:'Urgent',v:urgent,tr:urgent>0?urgent+' critical':'All clear',tc:urgent>0?'dn':'up'},
-      ].map(k => `<div class="kpi">
-        <div class="kpi-bar" style="background:${k.c}"></div>
-        <div class="kpi-lbl">${k.l}</div>
-        <div class="kpi-val">${k.v}</div>
-        ${k.tr ? `<div class="kpi-trend ${k.tc}">${k.tr}</div>` : ''}
-      </div>`).join('')}
-    </div>
-
-    <div class="card">
-      <div class="card-hd">
-        <span class="card-t">Recent activity</span>
-        <span class="card-badge">${d.length} record${d.length!==1?'s':''}</span>
-      </div>
-      ${d.length ? `
-      <div class="tbl-wrap">
-        <table>
-          <thead><tr>
-            <th style="width:80px">Date</th>
-            <th>Requestor</th>
-            <th>Work type</th>
-            <th>Sub type</th>
-            <th>Location</th>
-            <th>Status</th>
-            <th>Priority</th>
-            <th style="width:80px">Completed</th>
-          </tr></thead>
-          <tbody>
-            ${d.slice().sort((a,b)=>b.date.localeCompare(a.date)).map(r=>`
-              <tr style="cursor:pointer" onclick="vTask('${r.id}')">
-                <td style="font-family:var(--mono);font-size:11px">${fds(r.date)}</td>
-                <td class="td-h">${r.requestor}</td>
-                <td><span style="display:flex;align-items:center;gap:5px">
-                  <span style="width:7px;height:7px;border-radius:50%;background:${wc(r.workType)};flex-shrink:0"></span>
-                  ${r.workType.replace(/_/g,' ')}
-                </span></td>
-                <td style="color:var(--t2)">${r.subType||'—'}</td>
-                <td>${r.location}</td>
-                <td>${sbadge(r.status)}</td>
-                <td>${pbadge(r.priority)}</td>
-                <td style="font-family:var(--mono);font-size:11px;color:var(--t2)">${r.completion?fds(r.completion):'—'}</td>
-              </tr>`).join('')}
-          </tbody>
-        </table>
-      </div>` : `
-      <div class="empty-state">
-        <svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.2"/></svg>
-        <p>No requests yet</p>
-        <small>${showDept ? 'No team members have submitted requests yet.' : 'Submit your first request via the Job Request portal.'}</small>
-      </div>`}
-    </div>
-  `;
-}
-
-// ═══════════════════════════════════════════════
-// DEPARTMENT DASHBOARDS — for admin
-// Auto-shows one panel per department that has requesters
-// ═══════════════════════════════════════════════
-function renderDeptDashboards(){
-  const el = document.getElementById('page-depts');
-  if(!el) return;
-
-  // Get all unique departments from requesters
-  const depts = [...new Set(USERS.filter(u => u.role === 'requester' && u.dept).map(u => u.dept))];
-
-  if(!depts.length){
-    el.innerHTML = `
-      <div class="hero">
-        <h2>Department dashboards</h2>
-        <p>Overview of maintenance requests organized by department.</p>
-      </div>
-      <div class="empty-state">
-        <svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.2"/></svg>
-        <p>No departments yet</p>
-        <small>Create a requester user with a department in Users page to populate this view.</small>
-      </div>`;
-    return;
-  }
-
-  // Build a card section per department
-  let html = `
-    <div class="hero">
-      <h2>Department dashboards</h2>
-      <p>Overview of maintenance requests organized by department. Auto-generated from requester accounts.</p>
-    </div>
-  `;
-
-  depts.forEach(deptName => {
-    const deptRequesters = USERS.filter(u => u.dept === deptName && u.role === 'requester');
-    const deptNames = deptRequesters.map(u => u.name);
-    const deptEmails = deptRequesters.map(u => u.email);
-    const jobs = DATA.filter(r =>
-      deptNames.includes(r.requestor) || deptEmails.includes(r.createdBy)
-    );
-
-    const completed = jobs.filter(r => r.status === 'Completed').length;
-    const inProg = jobs.filter(r => r.status === 'In Progress' || r.status === 'In Progress - Contractor').length;
-    const pending = jobs.filter(r => r.status === 'Pending').length;
-    const urgent = jobs.filter(r => r.priority === 'Urgent').length;
-    const recent = jobs.slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,5);
-
-    html += `
-    <div class="card" style="margin-bottom:14px">
-      <div class="card-hd">
-        <span class="card-t" style="display:flex;align-items:center;gap:8px">
-          <span style="width:8px;height:8px;border-radius:50%;background:var(--g)"></span>
-          ${deptName}
-        </span>
-        <span class="card-badge">${deptRequesters.length} requester${deptRequesters.length!==1?'s':''} · ${jobs.length} job${jobs.length!==1?'s':''}</span>
-      </div>
-
-      <div style="padding:14px;display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px">
-        ${[
-          {c:'#6ebe2a',l:'Total',v:jobs.length},
-          {c:'#6ebe2a',l:'Completed',v:completed},
-          {c:'#5599f5',l:'In progress',v:inProg},
-          {c:'#a87cf0',l:'Pending',v:pending},
-          {c:'#e8534a',l:'Urgent',v:urgent},
-        ].map(k=>`<div style="background:var(--s2);border:1px solid var(--b0);border-radius:var(--r);padding:10px;text-align:center">
-          <div style="font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">${k.l}</div>
-          <div style="font-size:18px;font-weight:700;color:${k.c};font-family:var(--mono)">${k.v}</div>
-        </div>`).join('')}
-      </div>
-
-      ${recent.length ? `
-      <div style="padding:0 14px 14px">
-        <div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">Recent activity</div>
-        ${recent.map(r=>`
-          <div class="act-i" onclick="vTask('${r.id}')" style="cursor:pointer">
-            <div class="act-dot" style="background:${r.status==='Completed'?'var(--g)':r.status==='In Progress'?'var(--blue)':'var(--amber)'}"></div>
-            <div class="act-body" style="flex:1;min-width:0">
-              <div class="act-txt"><span style="color:var(--t0);font-weight:600">${r.requestor}</span> · ${r.workType.replace(/_/g,' ')}</div>
-              <div class="act-sub" style="color:var(--t2);font-size:11.5px;margin-top:2px">
-                <strong style="color:var(--t1)">${r.subType||'—'}</strong>${r.details?' · '+(r.details.length>50?r.details.substring(0,50)+'…':r.details):''}
-              </div>
-              <div class="act-time">${fd(r.date)} · ${r.location}</div>
-            </div>
-            ${sbadge(r.status)}
-          </div>
-        `).join('')}
-      </div>` : `<div style="padding:14px;color:var(--t3);font-size:12px;text-align:center">No jobs from this department yet.</div>`}
-    </div>`;
-  });
-
-  el.innerHTML = html;
-}
-
 function renderAdminPanels(){
-  // Security guard — only admin can access field management
   if(!currentUser||currentUser.role!=='admin'){
     toast('Access denied — Field management is admin-only.','e');
     go('dash',null);
@@ -1665,7 +1477,6 @@ function renderAdminPanels(){
   renderWorkTypes();renderRequestors();renderHandlers();renderAreas();renderSubTypes();
 }
 
-// Guard for any field-modifying action — call at start of each function
 function _requireAdmin(action){
   if(!currentUser||currentUser.role!=='admin'){
     toast(`Access denied — ${action||'this action'} is admin-only.`,'e');
