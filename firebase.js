@@ -182,10 +182,27 @@ async function fbDeleteJob(id) {
 }
 
 // ── Re-render current active page ───────────
+// Skip re-render on pages with active form input to preserve user's typing
 function renderActivePage() {
   const active = document.querySelector('.page.on');
   if (!active) return;
   const p = active.id.replace('page-', '');
+
+  // Pages with forms: only re-render if user is NOT typing
+  const formPages = ['add', 'request'];
+  if (formPages.includes(p)) {
+    const focused = document.activeElement;
+    const isTyping = focused && (focused.tagName === 'INPUT' || focused.tagName === 'TEXTAREA' || focused.tagName === 'SELECT');
+    if (isTyping) return; // skip — user is filling the form
+    // Check if any field on this page has user-entered content
+    const formInputs = active.querySelectorAll('input, textarea');
+    const hasContent = Array.from(formInputs).some(el => el.value && el.value.trim() !== '' && el.type !== 'date' && el.type !== 'hidden');
+    if (hasContent) return; // skip — preserve partially filled form
+  }
+  // Also skip if any modal is open (editing/viewing)
+  const openModal = document.querySelector('.modal.show, .modal[style*="display: flex"], .modal[style*="display:flex"]');
+  if (openModal) return;
+
   if (p === 'dash')       rDash();
   if (p === 'tasks')      { bTKpis(); af(); }
   if (p === 'inprogress') renderInProgress();

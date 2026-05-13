@@ -56,7 +56,7 @@ function getRoomCellStyle(roomNum, jobsMap) {
 
   // If filter active but no matching jobs for this room → dim
   if ((ROOMS_FILTER.workType || ROOMS_FILTER.subType) && !relevantJobs.length) {
-    return { bg:'#0d1109', border:'#1d2412', text:'#3e4d2c', dim:true };
+    return { bg:'var(--s0)', border:'var(--b0)', text:'var(--t3)', dim:true };
   }
 
   const jobs = relevantJobs.length ? relevantJobs : allJobs;
@@ -84,7 +84,7 @@ function getRoomCellStyle(roomNum, jobsMap) {
   if (hasPending) return { bg:'rgba(168,124,240,.18)', border:'#a87cf0', text:'#a87cf0', dim:false };
 
   // No jobs at all
-  return { bg:'#111507', border:'#1d2412', text:'#3e4d2c', dim:false };
+  return { bg:'var(--s1)', border:'var(--b0)', text:'var(--t3)', dim:false };
 }
 
 // ── Get last completed date for a room ────────
@@ -159,7 +159,7 @@ function renderRoomsBoard() {
   <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;padding:8px 12px;background:var(--s1);border-radius:var(--r);border:1px solid var(--b0)">
     <span style="font-size:9.5px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.07em">Legend:</span>
     ${[
-      ['#0d1109','#1d2412','#3e4d2c','No history'],
+      ['var(--s0)','var(--b0)','var(--t3)','No history'],
       ['rgba(110,190,42,.22)','#6ebe2a','#6ebe2a','Serviced ≤ 30 days'],
       ['rgba(240,166,46,.2)','#f0a62e','#f0a62e','30–90 days ago'],
       ['rgba(232,83,74,.18)','#e8534a','#e8534a','Over 90 days / Urgent'],
@@ -476,13 +476,139 @@ function closeRoomModal() {
   if (m) m.style.display = 'none';
 }
 
-// ── Add job shortcut — pre-fills room ─────────
+// ── Add job — opens inline modal, stays on rooms board ──
 function addJobForRoom(roomNum) {
-  go('add', document.getElementById('nb-add'));
-  setTimeout(() => {
-    const loc = document.getElementById('af-lc');
-    if (loc) { loc.value = `Room ${roomNum}`; loc.focus(); }
-  }, 150);
+  closeRoomModal();
+  // Default to today
+  const today = getTODAY();
+
+  // Build a quick-add modal
+  let modal = document.getElementById('room-quick-add');
+  if (modal) modal.remove();
+  modal = document.createElement('div');
+  modal.id = 'room-quick-add';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9100;display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(3px)';
+  modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+
+  const workTypes = Object.keys(SUBTYPES);
+  const firstWt = workTypes[0] || '';
+  const firstSubTypes = SUBTYPES[firstWt] || [];
+
+  modal.innerHTML = `
+    <div style="background:var(--s0);border:1px solid var(--b2);border-radius:14px;width:100%;max-width:560px;max-height:88vh;overflow-y:auto;animation:mIn .18s ease">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 22px;border-bottom:1px solid var(--b0)">
+        <div>
+          <div style="font-size:16px;font-weight:700;color:var(--t0)">Add job for Room ${roomNum}</div>
+          <div style="font-size:11.5px;color:var(--t2);margin-top:2px">Quick form — stays on rooms board</div>
+        </div>
+        <button onclick="document.getElementById('room-quick-add').remove()" style="background:none;border:none;color:var(--t2);cursor:pointer;font-size:20px;line-height:1;padding:4px 8px">✕</button>
+      </div>
+
+      <div style="padding:16px 22px;display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="fc">
+          <label class="fl">Room</label>
+          <input type="text" class="fi" id="qa-loc" value="Room ${roomNum}" readonly style="background:var(--s2);opacity:.85">
+        </div>
+        <div class="fc">
+          <label class="fl">Date</label>
+          <input type="date" class="fi" id="qa-dt" value="${today}">
+        </div>
+        <div class="fc">
+          <label class="fl">Work type <span class="r">*</span></label>
+          <select class="fi" id="qa-wt" onchange="qaUpdateSubType()">
+            ${workTypes.map(w => `<option value="${w}">${w.replace(/_/g,' ')}</option>`).join('')}
+          </select>
+        </div>
+        <div class="fc">
+          <label class="fl">Sub type</label>
+          <select class="fi" id="qa-st">
+            ${firstSubTypes.map(s => `<option value="${s}">${s}</option>`).join('')}
+          </select>
+        </div>
+        <div class="fc">
+          <label class="fl">Handler</label>
+          <select class="fi" id="qa-hd">
+            ${HNDS.map(h => `<option value="${h}" ${AUTO_ASSIGN[firstWt]===h?'selected':''}>${h}</option>`).join('')}
+          </select>
+        </div>
+        <div class="fc">
+          <label class="fl">Priority</label>
+          <select class="fi" id="qa-pr">
+            <option>Low</option><option selected>Medium</option><option>High</option><option>Urgent</option>
+          </select>
+        </div>
+        <div class="fc" style="grid-column:1/-1">
+          <label class="fl">Description <span class="r">*</span></label>
+          <textarea class="fi" id="qa-de" rows="3" placeholder="Describe the maintenance issue..."></textarea>
+        </div>
+      </div>
+
+      <div style="padding:14px 22px;border-top:1px solid var(--b0);display:flex;justify-content:flex-end;gap:8px">
+        <button class="btn btn-o btn-sm" onclick="document.getElementById('room-quick-add').remove()">Cancel</button>
+        <button class="btn btn-g btn-sm" onclick="quickAddRoomJob('${roomNum}')">
+          <svg viewBox="0 0 16 16" fill="none" style="width:12px;height:12px"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          Add job
+        </button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  setTimeout(()=>{ const de=document.getElementById('qa-de'); if(de) de.focus(); }, 100);
+}
+
+// Update sub-type and handler when work type changes in quick-add
+function qaUpdateSubType() {
+  const wt = document.getElementById('qa-wt').value;
+  const stSel = document.getElementById('qa-st');
+  const hdSel = document.getElementById('qa-hd');
+  const subs = SUBTYPES[wt] || [];
+  stSel.innerHTML = subs.map(s => `<option value="${s}">${s}</option>`).join('');
+  if (AUTO_ASSIGN[wt]) hdSel.value = AUTO_ASSIGN[wt];
+}
+
+// Submit the quick add job
+function quickAddRoomJob(roomNum) {
+  const wt  = document.getElementById('qa-wt').value;
+  const st  = document.getElementById('qa-st').value;
+  const hd  = document.getElementById('qa-hd').value;
+  const pr  = document.getElementById('qa-pr').value;
+  const de  = document.getElementById('qa-de').value.trim();
+  const dt  = document.getElementById('qa-dt').value || getTODAY();
+
+  if (!de) { toast('Please enter a description.','e'); return; }
+
+  // Find area for this room (look up in AREAS or derive from floor)
+  const floor = roomNum.length === 3 ? roomNum[0]+'F' : roomNum.substring(0,2)+'F';
+  const area = AREAS.find(a => a.includes(floor.replace('F',''))) || AREAS[0] || 'Level '+floor.replace('F','');
+
+  const t = {
+    id: nid++,
+    date: dt,
+    requestor: currentUser ? currentUser.name : 'Admin',
+    handler: hd,
+    workType: wt,
+    subType: st,
+    area: area,
+    location: `Room ${roomNum}`,
+    details: de,
+    status: 'In Progress',
+    priority: pr,
+    completion: '',
+    createdBy: currentUser?(currentUser.email||currentUser.username||'admin'):'admin',
+    createdByUid: currentUser?(currentUser.uid||currentUser.id||''):'',
+    createdAt: getTODAY()
+  };
+
+  if (typeof fbAddJob === 'function') {
+    fbAddJob(t);
+  } else {
+    DATA.unshift(t);
+  }
+  if (!FB_READY) { fillDrops(); }
+  document.getElementById('room-quick-add').remove();
+  toast(`Job added for Room ${roomNum}`, 's');
+  // Re-render board to show the new job immediately
+  setTimeout(()=> renderRoomsBoard(), 400);
 }
 
 // ── Clear all filters ──────────────────────────

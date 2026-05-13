@@ -185,6 +185,13 @@ async function doLogin(){
     // ── Firebase Auth login (works on all devices) ──
     try{
       const cred = await fbAuth.signInWithEmailAndPassword(email, pass);
+      // Show app body once authenticated
+      const bodyEl=document.getElementById('body');
+      if(bodyEl)bodyEl.style.visibility='visible';
+      const tbEl=document.getElementById('topbar');
+      if(tbEl)tbEl.style.visibility='visible';
+      const sbEl=document.getElementById('sidebar');
+      if(sbEl)sbEl.style.visibility='visible';
       // Check if account is disabled (soft-deleted)
       try{
         const profSnap = await fbDb.collection('users').doc(cred.user.uid).get();
@@ -375,6 +382,13 @@ function deleteUser(id){
 function doLogout(){
   if(!confirm('Are you sure you want to sign out?'))return;
   if(typeof stopPresence==='function') stopPresence();
+  // Hide app while logged out — prevents content flash
+  const bodyEl=document.getElementById('body');
+  if(bodyEl)bodyEl.style.visibility='hidden';
+  const tbEl=document.getElementById('topbar');
+  if(tbEl)tbEl.style.visibility='hidden';
+  const sbEl=document.getElementById('sidebar');
+  if(sbEl)sbEl.style.visibility='hidden';
   currentUser=null;
   window._appStarted=false;
   try{ sessionStorage.removeItem('mp_session'); }catch(e){}
@@ -388,6 +402,13 @@ function doLogout(){
 }
 
 function applyUserSession(){
+  // Reveal app — visibility was hidden during login screen
+  const bodyEl=document.getElementById('body');
+  if(bodyEl)bodyEl.style.visibility='visible';
+  const tbEl=document.getElementById('topbar');
+  if(tbEl)tbEl.style.visibility='visible';
+  const sbEl=document.getElementById('sidebar');
+  if(sbEl)sbEl.style.visibility='visible';
   // Start presence tracking when user logs in
   if(typeof startPresence==='function') setTimeout(startPresence, 1000);
   const u=currentUser;
