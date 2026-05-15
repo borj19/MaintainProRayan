@@ -914,6 +914,11 @@ function saveEdit(){
   fbUpdateJob(String(eId),updates);
   if(!FB_READY)Object.assign(r,updates);
   cm('m-edit');af();rReady=false;fillDrops();toast('Task updated successfully');
+  // Notify handler if changed or assigned; notify requestor of status change
+  if (typeof notifyUser === 'function') {
+    if (updates.handler && updates.handler !== r.handler) notifyUser(updates.handler, '🔧 Job reassigned to you', updates.workType.replace(/_/g,' ') + ' — ' + updates.location, eId);
+    if (updates.status && updates.status !== r.status) notifyUser(r.requestor, '📋 Your request was updated', 'Status changed to: ' + updates.status, eId);
+  }
 }
 
 function dTask(id){
@@ -950,6 +955,8 @@ function addTask(){
   DATA.unshift(t);fillDrops();rReady=false;clrAF();rAddSide();
   document.getElementById('nb-count').textContent=DATA.length;
   toast(`Task #${t.id} added — marked In Progress`);
+  // Notify assigned handler
+  if (typeof notifyUser === 'function') notifyUser(t.handler, '🔧 New job assigned', t.workType.replace(/_/g,' ') + ' — ' + t.location + ' (' + t.area.replace(/_/g,' ') + ')', t.id);
 }
 function clrAF(){
   ['af-lc','af-de','af-cd'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
@@ -1151,6 +1158,8 @@ function submitJobRequest(){
   if(!FB_READY){fillDrops();rReady=false;}
   clrJQ();renderRequestPage();
   toast(`Request submitted — assigned to ${handler}`);
+  // Notify handler of new job request
+  if (typeof notifyUser === 'function') notifyUser(handler, '📥 New job request', t.workType.replace(/_/g,' ') + ' — ' + t.location + ' (' + t.area.replace(/_/g,' ') + ')', t.id);
 }
 
 function assignRequest(id){
@@ -1165,6 +1174,8 @@ function assignRequest(id){
   fillDrops();renderRequestPage();rReady=false;
   toast(`Request assigned to ${updates.handler}`);
 }
+  // Notify assigned handler
+  if (typeof notifyUser === 'function') notifyUser(updates.handler, '🔧 Job assigned to you', r.workType.replace(/_/g,' ') + ' — ' + r.location, id);
 
 function clrJQ(){
   ['jq-lc','jq-de'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});

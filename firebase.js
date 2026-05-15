@@ -84,6 +84,8 @@ function initFirebase() {
               window._appStarted = true;
               init();
             }
+            // Init push notifications after login
+            setTimeout(() => { if (typeof initFCM === 'function') initFCM(); }, 1500);
           } else {
             showAuthScreen();
           }
@@ -220,3 +222,79 @@ function renderActivePage() {
 
 // ── Start Firebase ───────────────────────────
 initFirebase();
+
+// ═══════════════════════════════════════════════
+// FCM — Push Notifications
+// ═══════════════════════════════════════════════
+const FCM_VAPID_KEY = 'BIZCBRzkWKJhgFtU7NitJEPUBNx0lsWmqsl73kGIuCvmk8e-W3iYmjUPyhEpOFi8Qz4wZCrPu8zBD1kDufbWZ88';
+let fbMessaging = null;
+
+async function initFCM() {
+  if (!FB_READY || !currentUser) return;
+  if (!('Notification' in window) || !('serviceWorker' in navigator)) {
+    console.warn('Push notifications not supported in this browser.');
+    return;
+  }
+  try {
+    fbMessaging = firebase.messaging();
+    const swReg = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+    console.log('✅ Service worker registered');
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') { console.warn('🔕 Notification permission denied'); return; }
+    const token = await fbMessaging.getToken({ vapidKey: FCM_VAPID_KEY, serviceWorkerRegistration: swReg });
+    if (token) { console.log('✅ FCM token obtained'); await saveFCMToken(token); }
+    fbMessaging.onMessage(payload => {
+      console.log('[FCM] Foreground message:', payload);
+      const { title, body } = payload.notification || {};
+      if (typeof toast === 'function') toast(`🔔 ${title}: ${body}`, 'i');
+    });
+  } catch (e) {
+    console.warn('FCM init failed:', e.message);
+  }
+}
+window.initFCM = initFCM;
+
+async function saveFCMToken(token) {
+  if (!FB_READY || !currentUser) return;
+  try {
+    const uid = currentUser.uid || currentUser.id;
+    await fbDb.collection('users').doc(String(uid)).update({
+      fcmTokens: firebase.firestore.FieldValue.arrayUnion(token),
+      fcmUpdatedAt: getTODAY ? getTODAY() : new Date().toISOString().slice(0,10),
+    });
+    console.log('✅ FCM token saved');
+  } catch (e) { console.warn('saveFCMToken failed:', e.message); }
+}
+
+async function notifyUser(targetName, title, body, jobId) {
+  if (!FB_READY) return;
+  try {
+    const target = (typeof USERS !== 'undefined' ? USERS : []).find(u => u.name === targetName);
+    if (!target) return;
+    const targetUid = target.uid || target.firestoreId || target.id;
+    if (!targetUid) return;
+    await fbDb.collection('notifications').add({
+      toUid: String(targetUid), toName: targetName,
+      title, body, jobId: String(jobId || ''),
+      sentAt: firebase.firestore.FieldValue.serverTimestamp(),
+      sentBy: (typeof currentUser !== 'undefined' && currentUser) ? currentUser.name : 'System',
+      read: false,
+    });
+    console.log(`✅ Notification queued for ${targetName}`);
+  } catch (e) { console.warn('notifyUser failed:', e.message); }
+}
+window.notifyUser = notifyUser;
+
+async function notifyByUid(targetUid, title, body, jobId) {
+  if (!FB_READY || !targetUid) return;
+  try {
+    await fbDb.collection('notifications').add({
+      toUid: String(targetUid), title, body, jobId: String(jobId || ''),
+      sentAt: firebase.firestore.FieldValue.serverTimestamp(),
+      sentBy: (typeof currentUser !== 'undefined' && currentUser) ? currentUser.name : 'System',
+      read: false,
+    });
+    console.log(`✅ Notification queued for UID: ${targetUid}`);
+  } catch (e) { console.warn('notifyByUid failed:', e.message); }
+}
+window.notifyByUid = notifyByUid;
