@@ -1,4 +1,4 @@
-json{
+{
   "functions": {
     "source": "functions",
     "runtime": "nodejs20"
