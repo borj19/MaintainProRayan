@@ -232,25 +232,21 @@ let fbMessaging = null;
 async function initFCM() {
   if (!FB_READY || !currentUser) return;
   if (!('Notification' in window) || !('serviceWorker' in navigator)) {
-    console.warn('Push notifications not supported in this browser.');
-    return;
+    console.warn('Push notifications not supported.'); return;
   }
   try {
     fbMessaging = firebase.messaging();
-    const swReg = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+    const swReg = await navigator.serviceWorker.register('./firebase-messaging-sw.js');
     console.log('✅ Service worker registered');
     const permission = await Notification.requestPermission();
     if (permission !== 'granted') { console.warn('🔕 Notification permission denied'); return; }
     const token = await fbMessaging.getToken({ vapidKey: FCM_VAPID_KEY, serviceWorkerRegistration: swReg });
     if (token) { console.log('✅ FCM token obtained'); await saveFCMToken(token); }
     fbMessaging.onMessage(payload => {
-      console.log('[FCM] Foreground message:', payload);
       const { title, body } = payload.notification || {};
-      if (typeof toast === 'function') toast(`🔔 ${title}: ${body}`, 'i');
+      if (typeof toast === 'function') toast('🔔 ' + title + ': ' + body, 'i');
     });
-  } catch (e) {
-    console.warn('FCM init failed:', e.message);
-  }
+  } catch (e) { console.warn('FCM init failed:', e.message); }
 }
 window.initFCM = initFCM;
 
@@ -260,7 +256,7 @@ async function saveFCMToken(token) {
     const uid = currentUser.uid || currentUser.id;
     await fbDb.collection('users').doc(String(uid)).update({
       fcmTokens: firebase.firestore.FieldValue.arrayUnion(token),
-      fcmUpdatedAt: getTODAY ? getTODAY() : new Date().toISOString().slice(0,10),
+      fcmUpdatedAt: new Date().toISOString().slice(0,10),
     });
     console.log('✅ FCM token saved');
   } catch (e) { console.warn('saveFCMToken failed:', e.message); }
@@ -280,7 +276,7 @@ async function notifyUser(targetName, title, body, jobId) {
       sentBy: (typeof currentUser !== 'undefined' && currentUser) ? currentUser.name : 'System',
       read: false,
     });
-    console.log(`✅ Notification queued for ${targetName}`);
+    console.log('✅ Notification queued for ' + targetName);
   } catch (e) { console.warn('notifyUser failed:', e.message); }
 }
 window.notifyUser = notifyUser;
@@ -294,7 +290,7 @@ async function notifyByUid(targetUid, title, body, jobId) {
       sentBy: (typeof currentUser !== 'undefined' && currentUser) ? currentUser.name : 'System',
       read: false,
     });
-    console.log(`✅ Notification queued for UID: ${targetUid}`);
+    console.log('✅ Notification queued for UID: ' + targetUid);
   } catch (e) { console.warn('notifyByUid failed:', e.message); }
 }
 window.notifyByUid = notifyByUid;
