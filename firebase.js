@@ -129,11 +129,17 @@ async function fbLoadFields() {
 // ── Save field data to Firestore ─────────────
 async function fbSaveFields() {
   if (!FB_READY) return;
+  console.log('💾 Saving fields to Firestore...', { SUBTYPES, HNDS, AREAS });
   try {
-    await fbDb.collection('settings').doc('fields').set({ SUBTYPES, HNDS, AREAS });
+    await fbDb.collection('settings').doc('fields').set(
+      { SUBTYPES, HNDS, AREAS },
+      { merge: true }
+    );
+    console.log('✅ Fields saved successfully');
   } catch(e) {
     console.warn('fbSaveFields failed:', e.message);
     if (typeof toast === 'function') toast('Failed to save field changes.', 'e');
+    throw e; // re-throw so callers can catch and show error toast
   }
 }
 

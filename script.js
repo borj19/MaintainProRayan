@@ -1490,28 +1490,148 @@ function renderWorkTypes(){
   document.getElementById('wt-count').textContent=wts.length+' types';
   document.getElementById('wt-list').innerHTML=wts.map(w=>`<li class="field-item"><span class="field-item-label">${w.replace(/_/g,' ')}</span><span class="field-item-meta">${SUBTYPES[w].length} sub types</span><div class="field-item-actions"><button class="field-delete-btn" onclick="delWorkType('${w}')"><svg viewBox="0 0 16 16" fill="none"><path d="M3 4h10M6 4V2h4v2M5 4v8h6V4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div></li>`).join('');
 }
-function addWorkType(){if(!_requireAdmin('add work type'))return;const inp=document.getElementById('wt-new');const val=inp.value.trim().replace(/\s+/g,'_');if(!val){toast('Please enter a work type name.','e');return;}if(SUBTYPES[val]){toast('This work type already exists.','e');return;}SUBTYPES[val]=['Other'];inp.value='';fillDrops();renderAdminPanels();rReady=false;fbSaveFields();toast(`Work type "${val.replace(/_/g,' ')}" added`);}
-function delWorkType(key){if(!_requireAdmin('delete work type'))return;if(Object.keys(SUBTYPES).length<=1){toast('At least one work type must remain.','e');return;}if(!confirm(`Remove work type "${key.replace(/_/g,' ')}"?`))return;delete SUBTYPES[key];fillDrops();renderAdminPanels();rReady=false;fbSaveFields();toast('Work type removed','i');}
+function addWorkType(){
+  if(!_requireAdmin('add work type')) return;
+  const inp=document.getElementById('wt-new');
+  const val=inp.value.trim().replace(/\s+/g,'_');
+  if(!val){toast('Please enter a work type name.','e');return;}
+  if(SUBTYPES[val]){toast('This work type already exists.','e');return;}
+  SUBTYPES[val]=['Other'];
+  inp.value='';
+  fillDrops();
+  renderAdminPanels();
+  rReady=false;
+  toast('Saving work type…','i');
+  fbSaveFields().then(()=>{
+    toast(`Work type "${val.replace(/_/g,' ')}" saved ✓`,'s');
+  }).catch(()=>{
+    toast('Failed to save work type. Check your connection.','e');
+  });
+}
+function delWorkType(key){
+  if(!_requireAdmin('delete work type')) return;
+  if(Object.keys(SUBTYPES).length<=1){toast('At least one work type must remain.','e');return;}
+  if(!confirm(`Remove work type "${key.replace(/_/g,' ')}"?`)) return;
+  delete SUBTYPES[key];
+  fillDrops();
+  renderAdminPanels();
+  rReady=false;
+  toast('Saving changes…','i');
+  fbSaveFields().then(()=>{
+    toast('Work type removed ✓','s');
+  }).catch(()=>{
+    toast('Failed to remove work type. Check your connection.','e');
+  });
+}
 
 function renderSubTypes(){
   const container=document.getElementById('subtype-list');
   container.innerHTML=Object.entries(SUBTYPES).map(([wt,subs])=>`<div class="subtype-section"><div class="subtype-wt-label">${wt.replace(/_/g,' ')}<button class="subtype-wt-expand" onclick="toggleSubSection('ss-${wt}')">${subs.length} sub types</button></div><div class="subtype-items" id="ss-${wt}">${subs.map(s=>`<span class="subtype-chip">${s}<button onclick="delSubType('${wt}','${s.replace(/'/g,"\\'")}')"><svg viewBox="0 0 16 16" fill="none"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button></span>`).join('')}<input type="text" placeholder="Add…" style="padding:4px 8px;font-size:11px;background:var(--s2);border:1px dashed var(--b2);border-radius:5px;color:var(--t0);width:100px;font-family:var(--font)" onkeydown="if(event.key==='Enter')addSubType('${wt}',this)"></div></div>`).join('');
 }
 function toggleSubSection(id){const el=document.getElementById(id);if(el)el.classList.toggle('open');}
-function addSubType(wt,inp){if(!_requireAdmin('add sub type'))return;const val=inp.value.trim();if(!val)return;if(SUBTYPES[wt].includes(val)){toast('Already exists.','e');return;}SUBTYPES[wt].push(val);inp.value='';renderAdminPanels();rReady=false;fbSaveFields();toast(`Sub type "${val}" added`);}
-function delSubType(wt,sub){if(!_requireAdmin('delete sub type'))return;if(SUBTYPES[wt].length<=1){toast('At least one sub type must remain.','e');return;}SUBTYPES[wt]=SUBTYPES[wt].filter(s=>s!==sub);renderAdminPanels();rReady=false;fbSaveFields();toast('Sub type removed','i');}
+function addSubType(wt,inp){
+  if(!_requireAdmin('add sub type')) return;
+  const val=inp.value.trim();
+  if(!val) return;
+  if(SUBTYPES[wt].includes(val)){toast('Already exists.','e');return;}
+  SUBTYPES[wt].push(val);
+  inp.value='';
+  renderAdminPanels();
+  rReady=false;
+  toast('Saving sub type…','i');
+  fbSaveFields().then(()=>{
+    toast(`Sub type "${val}" saved ✓`,'s');
+  }).catch(()=>{
+    toast('Failed to save sub type. Check your connection.','e');
+  });
+}
+function delSubType(wt,sub){
+  if(!_requireAdmin('delete sub type')) return;
+  if(SUBTYPES[wt].length<=1){toast('At least one sub type must remain.','e');return;}
+  SUBTYPES[wt]=SUBTYPES[wt].filter(s=>s!==sub);
+  renderAdminPanels();
+  rReady=false;
+  toast('Saving changes…','i');
+  fbSaveFields().then(()=>{
+    toast('Sub type removed ✓','s');
+  }).catch(()=>{
+    toast('Failed to remove sub type. Check your connection.','e');
+  });
+}
 
 function renderRequestors(){document.getElementById('rq-count').textContent=REQS.length+' requestors';document.getElementById('rq-list').innerHTML=REQS.map(r=>`<li class="field-item"><span class="field-item-label">${r}</span><div class="field-item-actions"><button class="field-delete-btn" onclick="delRequestor('${r.replace(/'/g,"\\'")}')"><svg viewBox="0 0 16 16" fill="none"><path d="M3 4h10M6 4V2h4v2M5 4v8h6V4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div></li>`).join('');}
 function addRequestor(){toast('Requestors are added by creating user accounts with the Requestor role.','i');}
 function delRequestor(name){toast('Requestors are managed via the Users page. Delete the user account to remove a requestor.','i');}
 
 function renderHandlers(){document.getElementById('hd-count').textContent=HNDS.length+' handlers';document.getElementById('hd-list').innerHTML=HNDS.map(h=>`<li class="field-item"><span class="field-item-label">${h}</span><div class="field-item-actions"><button class="field-delete-btn" onclick="delHandler('${h.replace(/'/g,"\\'")}')"><svg viewBox="0 0 16 16" fill="none"><path d="M3 4h10M6 4V2h4v2M5 4v8h6V4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div></li>`).join('');}
-function addHandler(){if(!_requireAdmin('add handler'))return;const inp=document.getElementById('hd-new');const val=inp.value.trim();if(!val){toast('Please enter a handler name.','e');return;}if(HNDS.includes(val)){toast('Already exists.','e');return;}HNDS.push(val);inp.value='';fillDrops();renderAdminPanels();rReady=false;fbSaveFields();toast(`Handler "${val}" added`);}
-function delHandler(name){if(!_requireAdmin('delete handler'))return;if(HNDS.length<=1){toast('At least one handler must remain.','e');return;}if(!confirm(`Remove handler "${name}"?`))return;HNDS=HNDS.filter(h=>h!==name);fillDrops();renderAdminPanels();rReady=false;fbSaveFields();toast('Handler removed','i');}
+function addHandler(){
+  if(!_requireAdmin('add handler')) return;
+  const inp=document.getElementById('hd-new');
+  const val=inp.value.trim();
+  if(!val){toast('Please enter a handler name.','e');return;}
+  if(HNDS.includes(val)){toast('Already exists.','e');return;}
+  HNDS.push(val);
+  inp.value='';
+  fillDrops();
+  renderAdminPanels();
+  rReady=false;
+  toast('Saving handler…','i');
+  fbSaveFields().then(()=>{
+    toast(`Handler "${val}" saved ✓`,'s');
+  }).catch(()=>{
+    toast('Failed to save handler. Check your connection.','e');
+  });
+}
+function delHandler(name){
+  if(!_requireAdmin('delete handler')) return;
+  if(HNDS.length<=1){toast('At least one handler must remain.','e');return;}
+  if(!confirm(`Remove handler "${name}"?`)) return;
+  HNDS=HNDS.filter(h=>h!==name);
+  fillDrops();
+  renderAdminPanels();
+  rReady=false;
+  toast('Saving changes…','i');
+  fbSaveFields().then(()=>{
+    toast('Handler removed ✓','s');
+  }).catch(()=>{
+    toast('Failed to remove handler. Check your connection.','e');
+  });
+}
 
 function renderAreas(){document.getElementById('ar-count').textContent=AREAS.length+' areas';document.getElementById('ar-list').innerHTML=AREAS.map(a=>`<li class="field-item"><span class="field-item-label">${a.replace(/_/g,' ')}</span><span class="field-item-meta" style="font-family:var(--mono);font-size:10px">${a}</span><div class="field-item-actions"><button class="field-delete-btn" onclick="delArea('${a.replace(/'/g,"\\'")}')"><svg viewBox="0 0 16 16" fill="none"><path d="M3 4h10M6 4V2h4v2M5 4v8h6V4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div></li>`).join('');}
-function addArea(){if(!_requireAdmin('add area'))return;const inp=document.getElementById('ar-new');const val=inp.value.trim();if(!val){toast('Please enter an area name.','e');return;}if(AREAS.includes(val)){toast('Already exists.','e');return;}AREAS.push(val);inp.value='';fillDrops();renderAdminPanels();rReady=false;fbSaveFields();toast(`Area "${val.replace(/_/g,' ')}" added`);}
-function delArea(name){if(!_requireAdmin('delete area'))return;if(AREAS.length<=1){toast('At least one area must remain.','e');return;}if(!confirm(`Remove area "${name.replace(/_/g,' ')}"?`))return;AREAS=AREAS.filter(a=>a!==name);fillDrops();renderAdminPanels();rReady=false;fbSaveFields();toast('Area removed','i');}
+function addArea(){
+  if(!_requireAdmin('add area')) return;
+  const inp=document.getElementById('ar-new');
+  const val=inp.value.trim();
+  if(!val){toast('Please enter an area name.','e');return;}
+  if(AREAS.includes(val)){toast('Already exists.','e');return;}
+  AREAS.push(val);
+  inp.value='';
+  fillDrops();
+  renderAdminPanels();
+  rReady=false;
+  toast('Saving area…','i');
+  fbSaveFields().then(()=>{
+    toast(`Area "${val.replace(/_/g,' ')}" saved ✓`,'s');
+  }).catch(()=>{
+    toast('Failed to save area. Check your connection.','e');
+  });
+}
+function delArea(name){
+  if(!_requireAdmin('delete area')) return;
+  if(AREAS.length<=1){toast('At least one area must remain.','e');return;}
+  if(!confirm(`Remove area "${name.replace(/_/g,' ')}"?`)) return;
+  AREAS=AREAS.filter(a=>a!==name);
+  fillDrops();
+  renderAdminPanels();
+  rReady=false;
+  toast('Saving changes…','i');
+  fbSaveFields().then(()=>{
+    toast('Area removed ✓','s');
+  }).catch(()=>{
+    toast('Failed to remove area. Check your connection.','e');
+  });
+}
 
 // ═══════════════════════════════════════════════
 // INIT
