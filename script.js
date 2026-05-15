@@ -380,7 +380,8 @@ function deleteUser(id){
 
 function doLogout(){
   if(!confirm('Are you sure you want to sign out?'))return;
-  if(typeof stopPresence==='function') stopPresence();
+  if(typeof stopPresence==="function") stopPresence();
+  if(typeof stopNotifListener==="function") stopNotifListener();
   // Hide app while logged out — prevents content flash
   const bodyEl=document.getElementById('body');
   if(bodyEl)bodyEl.style.visibility='hidden';
@@ -409,7 +410,8 @@ function applyUserSession(){
   const sbEl=document.getElementById('sidebar');
   if(sbEl)sbEl.style.visibility='visible';
   // Start presence tracking when user logs in
-  if(typeof startPresence==='function') setTimeout(startPresence, 1000);
+  if(typeof startPresence==="function") setTimeout(startPresence, 1000);
+  if(typeof startNotifListener==="function") setTimeout(startNotifListener, 2000);
   const u=currentUser;
   const av=document.getElementById('sb-av'); if(av) av.textContent=u.initials;
   const nm=document.getElementById('sb-name'); if(nm) nm.textContent=u.name;
@@ -1712,3 +1714,142 @@ document.addEventListener('DOMContentLoaded', function() {
   // No action needed here — firebase.js will show login or restore session
   window._appStarted = false;
 });
+
+// ═══════════════════════════════════════════════
+// IN-APP NOTIFICATIONS — Bell + Sound
+// ═══════════════════════════════════════════════
+let _notifUnsub = null;
+let _notifItems = [];
+
+// ── Start listening to notifications for current user ──
+function startNotifListener() {
+  if (!FB_READY || !currentUser) return;
+  if (_notifUnsub) { _notifUnsub(); _notifUnsub = null; }
+  const uid = currentUser.uid || currentUser.id;
+  _notifUnsub = fbDb.collection('notifications')
+    .where('toUid', '==', String(uid))
+    .orderBy('sentAt', 'desc')
+    .limit(30)
+    .onSnapshot(snap => {
+      const prev = _notifItems.length;
+      _notifItems = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      updateNotifBadge();
+      renderNotifList();
+      // Play sound if new notification arrived
+      if (_notifItems.length > prev && prev > 0) playNotifSound();
+    }, e => console.warn('Notif listener:', e.message));
+}
+
+// ── Stop listener on logout ──
+function stopNotifListener() {
+  if (_notifUnsub) { _notifUnsub(); _notifUnsub = null; }
+  _notifItems = [];
+  updateNotifBadge();
+}
+
+// ── Update bell badge count ──
+function updateNotifBadge() {
+  const unread = _notifItems.filter(n => !n.read).length;
+  const badge = document.getElementById('notif-badge');
+  if (!badge) return;
+  if (unread > 0) {
+    badge.textContent = unread > 99 ? '99+' : unread;
+    badge.style.display = 'block';
+    // Animate bell
+    const btn = document.getElementById('notif-bell-btn');
+    if (btn) { btn.style.animation = 'none'; setTimeout(() => btn.style.animation = '', 10); }
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+// ── Render notification list in panel ──
+function renderNotifList() {
+  const list = document.getElementById('notif-list');
+  if (!list) return;
+  if (!_notifItems.length) {
+    list.innerHTML = '<div style="padding:32px;text-align:center;color:var(--t3);font-size:13px">No notifications yet</div>';
+    return;
+  }
+  list.innerHTML = _notifItems.map(n => {
+    const time = n.sentAt ? new Date(n.sentAt.seconds ? n.sentAt.seconds * 1000 : n.sentAt).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' }) : '';
+    const date = n.sentAt ? new Date(n.sentAt.seconds ? n.sentAt.seconds * 1000 : n.sentAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }) : '';
+    return `<div onclick="openNotif('${n.id}')" style="padding:12px 16px;border-bottom:1px solid var(--b0);cursor:pointer;background:${n.read ? 'transparent' : 'rgba(110,190,42,.06)'};transition:background .2s" onmouseover="this.style.background='var(--s1)'" onmouseout="this.style.background='${n.read ? 'transparent' : 'rgba(110,190,42,.06)'}'">
+      <div style="display:flex;align-items:flex-start;gap:10px">
+        <div style="width:8px;height:8px;border-radius:50%;background:${n.read ? 'var(--b2)' : 'var(--g)'};margin-top:5px;flex-shrink:0"></div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12.5px;font-weight:${n.read ? '400' : '600'};color:var(--t0);margin-bottom:3px">${n.title || 'Notification'}</div>
+          <div style="font-size:11.5px;color:var(--t2);line-height:1.4">${n.body || ''}</div>
+          <div style="font-size:10px;color:var(--t3);margin-top:4px">${date} ${time}</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Open notification and mark as read ──
+function openNotif(id) {
+  const n = _notifItems.find(x => x.id === id);
+  if (!n) return;
+  // Mark as read
+  if (!n.read && FB_READY) {
+    fbDb.collection('notifications').doc(id).update({ read: true }).catch(() => {});
+    n.read = true;
+    updateNotifBadge();
+    renderNotifList();
+  }
+  // Navigate to the job if there's a jobId
+  if (n.jobId) {
+    toggleNotifPanel();
+    setTimeout(() => vTask(n.jobId), 200);
+  }
+}
+
+// ── Mark all as read ──
+function markAllNotifsRead() {
+  if (!FB_READY) return;
+  const unread = _notifItems.filter(n => !n.read);
+  unread.forEach(n => {
+    fbDb.collection('notifications').doc(n.id).update({ read: true }).catch(() => {});
+    n.read = true;
+  });
+  updateNotifBadge();
+  renderNotifList();
+  toast('All notifications marked as read', 'i');
+}
+
+// ── Toggle notification panel ──
+function toggleNotifPanel() {
+  const panel = document.getElementById('notif-panel');
+  if (!panel) return;
+  const isOpen = panel.style.display === 'flex';
+  panel.style.display = isOpen ? 'none' : 'flex';
+  if (!isOpen) renderNotifList();
+}
+
+// ── Close panel on outside click ──
+document.addEventListener('click', e => {
+  const panel = document.getElementById('notif-panel');
+  const bell  = document.getElementById('notif-bell-btn');
+  if (panel && panel.style.display === 'flex' && !panel.contains(e.target) && !bell.contains(e.target)) {
+    panel.style.display = 'none';
+  }
+});
+
+// ── Play notification sound ──
+function playNotifSound() {
+  try {
+    // Generate a pleasant ding sound using Web Audio API
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.setValueAtTime(880, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.3);
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.4);
+  } catch (e) { console.warn('Sound failed:', e.message); }
+}

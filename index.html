@@ -15,6 +15,16 @@
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
+<style>
+@keyframes bell-ring {
+  0%,100%{transform:rotate(0)}
+  20%{transform:rotate(-15deg)}
+  40%{transform:rotate(15deg)}
+  60%{transform:rotate(-10deg)}
+  80%{transform:rotate(10deg)}
+}
+#notif-bell-btn:has(+ * .show), #notif-bell-btn.ringing { animation: bell-ring .5s ease; }
+</style>
 <!-- Chart.js CDN -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script><!-- EmailJS SDK -->
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
@@ -282,6 +292,14 @@
     </div>
     <div id="tb-online" style="display:flex;align-items:center;padding:6px 12px;border-radius:8px;background:var(--s1);border:1px solid var(--b0)"></div>
     <div class="tb-date" id="tb-dt"></div>
+    <!-- Notification Bell -->
+    <div style="position:relative">
+      <button class="icon-btn" id="notif-bell-btn" onclick="toggleNotifPanel()" title="Notifications" style="position:relative">
+        <svg viewBox="0 0 16 16" fill="none" style="width:18px;height:18px"><path d="M8 1.5a4.5 4.5 0 00-4.5 4.5v2.5L2 10h12l-1.5-1.5V6A4.5 4.5 0 008 1.5z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M6.5 10.5a1.5 1.5 0 003 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+        <span id="notif-badge" style="display:none;position:absolute;top:-4px;right:-4px;background:#e8534a;color:#fff;font-size:9px;font-weight:700;min-width:16px;height:16px;border-radius:8px;padding:0 4px;line-height:16px;text-align:center">0</span>
+      </button>
+    </div>
+
     <button class="btn btn-g" id="topbar-new-btn" onclick="go('add',null)">
       <svg viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
       New task
@@ -775,5 +793,21 @@
 <script src="dashboard.js"></script>
 <script src="reports.js"></script>
 <script src="rooms.js"></script>
+<!-- NOTIFICATION PANEL -->
+<div id="notif-panel" style="display:none;position:fixed;top:56px;right:14px;width:360px;max-width:95vw;max-height:480px;background:var(--s0);border:1px solid var(--b2);border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.4);z-index:9000;overflow:hidden;flex-direction:column">
+  <div style="padding:14px 16px;border-bottom:1px solid var(--b0);display:flex;align-items:center;justify-content:space-between">
+    <span style="font-size:13px;font-weight:700;color:var(--t0)">🔔 Notifications</span>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button onclick="markAllNotifsRead()" style="font-size:11px;color:var(--g);background:none;border:none;cursor:pointer;font-family:var(--font)">Mark all read</button>
+      <button onclick="toggleNotifPanel()" style="background:none;border:none;cursor:pointer;color:var(--t2);font-size:18px;line-height:1">×</button>
+    </div>
+  </div>
+  <div id="notif-list" style="overflow-y:auto;max-height:400px;padding:8px 0"></div>
+</div>
+
+<!-- NOTIFICATION SOUND -->
+<audio id="notif-sound" preload="auto">
+  <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFhYmMkZGRkZGRkZCOi4eEgX57eHZ0cnBtamlnZWNhX11bWVdVU1FPTUpIRkRCQD49Ozk3NjQyMTAvLiwtKyopKCcmJSQjIiEgHx4dHBsaGRgXFhUUExIREA8ODQwLCgkIBwYFBAMCAQA=" type="audio/wav">
+</audio>
 </body>
 </html>
