@@ -1,11 +1,50 @@
 // ═══════════════════════════════════════════════
-// firebase-messaging-sw.js — FCM Service Worker
-// MaintainPro — Push Notifications
-// Must be in the ROOT folder (same level as index.html)
+// firebase-messaging-sw.js — FCM Service Worker + PWA
+// MaintainPro — Push Notifications + Offline Support
 // ═══════════════════════════════════════════════
 
 importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js');
+
+const CACHE_NAME = 'maintainpro-v1';
+const OFFLINE_ASSETS = [
+  '/MaintainProRayan/',
+  '/MaintainProRayan/index.html',
+  '/MaintainProRayan/styles.css',
+  '/MaintainProRayan/script.js',
+  '/MaintainProRayan/firebase.js',
+  '/MaintainProRayan/dashboard.js',
+  '/MaintainProRayan/reports.js',
+  '/MaintainProRayan/rooms.js',
+  '/MaintainProRayan/icon-192.png',
+  '/MaintainProRayan/icon-512.png',
+];
+
+self.addEventListener('install', event => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then(cache => cache.addAll(OFFLINE_ASSETS).catch(e => console.warn('[SW] Cache failed:', e)))
+  );
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))))
+  );
+  self.clients.claim();
+});
+
+self.addEventListener('fetch', event => {
+  if (event.request.method !== 'GET') return;
+  if (event.request.url.includes('firestore') || event.request.url.includes('googleapis') || event.request.url.includes('firebase')) return;
+  event.respondWith(
+    fetch(event.request).then(res => {
+      const clone = res.clone();
+      caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+      return res;
+    }).catch(() => caches.match(event.request))
+  );
+});
 
 firebase.initializeApp({
   apiKey:            "AIzaSyAU5pYiisi4gUdcdN0jG7sA5KQ7Ud35M38",
@@ -18,46 +57,30 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// ── Handle background notifications ─────────────
-// This fires when the app is in the background or closed
 messaging.onBackgroundMessage(payload => {
-  console.log('[SW] Background message received:', payload);
-
-  const { title, body, icon, data } = payload.notification || {};
-
+  const { title, body } = payload.notification || {};
   self.registration.showNotification(title || 'MaintainPro', {
-    body:    body  || 'You have a new notification.',
-    icon:    icon  || '/icon-192.png',
-    badge:   '/icon-192.png',
-    tag:     data?.jobId || 'maintainpro',
-    data:    data  || {},
+    body:    body || 'You have a new notification.',
+    icon:    '/MaintainProRayan/icon-192.png',
+    badge:   '/MaintainProRayan/icon-192.png',
+    tag:     'maintainpro-notification',
+    requireInteraction: true,
     actions: [
-      { action: 'view', title: '👁 View task' },
-      { action: 'dismiss', title: 'Dismiss' }
+      { action: 'view',    title: '👁 View task' },
+      { action: 'dismiss', title: 'Dismiss'      },
     ],
-    requireInteraction: true, // keeps notification visible until user acts
   });
 });
 
-// ── Notification click handler ───────────────────
 self.addEventListener('notificationclick', event => {
   event.notification.close();
-
   if (event.action === 'dismiss') return;
-
-  // Open/focus the app when notification is clicked
   event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
-      // If app is already open, focus it
-      for (const client of clientList) {
-        if (client.url.includes('maintainpro') && 'focus' in client) {
-          return client.focus();
-        }
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+      for (const client of list) {
+        if (client.url.includes('MaintainProRayan') && 'focus' in client) return client.focus();
       }
-      // Otherwise open a new window
-      if (clients.openWindow) {
-        return clients.openWindow('/');
-      }
+      if (clients.openWindow) return clients.openWindow('/MaintainProRayan/');
     })
   );
 });
