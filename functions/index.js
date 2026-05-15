@@ -1,124 +1,108 @@
 // ═══════════════════════════════════════════════
-// functions/index.js — Firebase Cloud Functions
+// functions/index.js — Firebase Cloud Functions (1st gen)
 // MaintainPro — Push Notification Dispatcher
+// Uses v1 functions — no Artifact Registry or Cloud Build needed
 // ═══════════════════════════════════════════════
 
-const { onDocumentCreated } = require('firebase-functions/v2/firestore');
-const { initializeApp }     = require('firebase-admin/app');
-const { getFirestore }      = require('firebase-admin/firestore');
-const { getMessaging }      = require('firebase-admin/messaging');
+const functions = require('firebase-functions');
+const admin     = require('firebase-admin');
 
-initializeApp();
+admin.initializeApp();
 
 // ── Triggered when a new notification doc is created ──
-// notifyUser() and notifyByUid() write to this collection
-exports.sendPushNotification = onDocumentCreated(
-  'notifications/{docId}',
-  async (event) => {
-    const snap = event.data;
-    if (!snap) return;
+exports.sendPushNotification = functions.firestore
+  .document('notifications/{docId}')
+  .onCreate(async (snap, context) => {
 
-    const data    = snap.data();
-    const toUid   = data.toUid;
-    const title   = data.title   || 'MaintainPro';
-    const body    = data.body    || 'You have a new notification.';
-    const jobId   = data.jobId   || '';
+    const data  = snap.data();
+    const toUid = data.toUid;
+    const title = data.title || 'MaintainPro';
+    const body  = data.body  || 'You have a new notification.';
+    const jobId = data.jobId || '';
 
     if (!toUid) {
-      console.warn('No toUid in notification doc — skipping.');
-      return;
+      console.warn('No toUid — skipping.');
+      return null;
     }
-
-    const db = getFirestore();
 
     // ── Get FCM tokens for the target user ───────
     let tokens = [];
     try {
-      const userDoc = await db.collection('users').doc(toUid).get();
+      const userDoc = await admin.firestore().collection('users').doc(toUid).get();
       if (!userDoc.exists) {
-        console.warn(`User ${toUid} not found.`);
-        return;
+        console.warn('User not found:', toUid);
+        return null;
       }
       tokens = userDoc.data().fcmTokens || [];
     } catch (e) {
-      console.error('Failed to fetch user tokens:', e.message);
-      return;
+      console.error('Failed to fetch tokens:', e.message);
+      return null;
     }
 
     if (!tokens.length) {
-      console.warn(`No FCM tokens for user ${toUid} — they may not have logged in yet.`);
-      // Mark notification as sent anyway so it shows in-app
-      await snap.ref.update({ pushed: false, pushedAt: new Date().toISOString() });
-      return;
+      console.warn('No FCM tokens for user:', toUid);
+      return snap.ref.update({ pushed: false, pushedAt: new Date().toISOString() });
     }
 
-    // ── Send push to all devices for this user ───
-    const messaging = getMessaging();
+    // ── Send push to all devices ─────────────────
     const message = {
       notification: { title, body },
       data: {
-        jobId:   String(jobId),
-        toUid:   String(toUid),
-        click_action: 'FLUTTER_NOTIFICATION_CLICK', // ensures tap opens app
+        jobId: String(jobId),
+        toUid: String(toUid),
       },
       webpush: {
         notification: {
           title,
           body,
-          icon:  '/icon-192.png',
-          badge: '/icon-192.png',
+          icon:  'https://borj19.github.io/MaintainProRayan/icon-192.png',
+          badge: 'https://borj19.github.io/MaintainProRayan/icon-192.png',
           requireInteraction: true,
           actions: [
             { action: 'view',    title: '👁 View task' },
-            { action: 'dismiss', title: 'Dismiss'     },
+            { action: 'dismiss', title: 'Dismiss'      },
           ],
         },
         fcmOptions: {
           link: 'https://borj19.github.io/MaintainProRayan/',
         },
       },
-      tokens, // send to all devices this user has logged in from
+      tokens,
     };
 
     try {
-      const response = await messaging.sendEachForMulticast(message);
-      console.log(`✅ Push sent to ${response.successCount}/${tokens.length} devices for user ${toUid}`);
+      const response = await admin.messaging().sendEachForMulticast(message);
+      console.log(`✅ Sent to ${response.successCount}/${tokens.length} devices`);
 
-      // ── Clean up invalid/expired tokens ─────────
-      const invalidTokens = [];
+      // Remove invalid tokens
+      const badTokens = [];
       response.responses.forEach((res, i) => {
         if (!res.success) {
-          const code = res.error?.code;
-          console.warn(`Token ${i} failed:`, code);
+          const code = res.error && res.error.code;
           if (
             code === 'messaging/invalid-registration-token' ||
             code === 'messaging/registration-token-not-registered'
           ) {
-            invalidTokens.push(tokens[i]);
+            badTokens.push(tokens[i]);
           }
         }
       });
 
-      // Remove bad tokens from Firestore
-      if (invalidTokens.length) {
-        const userRef = db.collection('users').doc(toUid);
-        const cleanedTokens = tokens.filter(t => !invalidTokens.includes(t));
-        await userRef.update({ fcmTokens: cleanedTokens });
-        console.log(`🧹 Removed ${invalidTokens.length} invalid token(s)`);
+      if (badTokens.length) {
+        const clean = tokens.filter(t => !badTokens.includes(t));
+        await admin.firestore().collection('users').doc(toUid).update({ fcmTokens: clean });
+        console.log('🧹 Removed', badTokens.length, 'invalid token(s)');
       }
 
-      // Mark notification doc as pushed
-      await snap.ref.update({
-        pushed:        true,
-        pushedAt:      new Date().toISOString(),
-        successCount:  response.successCount,
-        failureCount:  response.failureCount,
+      return snap.ref.update({
+        pushed:       true,
+        pushedAt:     new Date().toISOString(),
+        successCount: response.successCount,
+        failureCount: response.failureCount,
       });
 
     } catch (e) {
       console.error('sendEachForMulticast failed:', e.message);
-      await snap.ref.update({ pushed: false, error: e.message });
+      return snap.ref.update({ pushed: false, error: e.message });
     }
-  }
-);
-
+  });
