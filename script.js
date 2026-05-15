@@ -1039,6 +1039,7 @@ function setReqFilter(f){
 
 function renderRequestPage(){
   const u=currentUser;
+  if(!u) return; // guard — Firebase not ready yet
   const heroSub=document.getElementById('request-hero-sub');
   if(heroSub)heroSub.textContent=u.role==='requester'
     ?`Logged in as ${u.name}. Once submitted, your request will be automatically assigned and you can track its progress below.`
@@ -1173,9 +1174,9 @@ function assignRequest(id){
   if(!FB_READY) Object.assign(r,updates);
   fillDrops();renderRequestPage();rReady=false;
   toast(`Request assigned to ${updates.handler}`);
-}
   // Notify assigned handler
   if (typeof notifyUser === 'function') notifyUser(updates.handler, '🔧 Job assigned to you', r.workType.replace(/_/g,' ') + ' — ' + r.location, id);
+}
 
 function clrJQ(){
   ['jq-lc','jq-de'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
