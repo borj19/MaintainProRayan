@@ -107,10 +107,22 @@ html,body{
   transition:background var(--transition),color var(--transition);
 }
 
-::-webkit-scrollbar{width:5px;height:5px}
-::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:var(--b2);border-radius:99px}
-::-webkit-scrollbar-thumb:hover{background:var(--b3)}
+/* Premium custom scrollbars */
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:transparent;border-radius:99px}
+::-webkit-scrollbar-thumb{
+  background:var(--b1);
+  border-radius:99px;
+  border:2px solid transparent;
+  background-clip:padding-box;
+  transition:background .2s ease;
+}
+::-webkit-scrollbar-thumb:hover{background:var(--b3);background-clip:padding-box;border:2px solid transparent}
+* { scrollbar-width:thin; scrollbar-color:var(--b1) transparent; }
+
+/* Custom selection — uses brand color, not browser default */
+::selection{background:var(--g4);color:var(--t0)}
+::-moz-selection{background:var(--g4);color:var(--t0)}
 
 /* ═══════════════════════════════════════════════
    THEME TOGGLE
@@ -1573,4 +1585,303 @@ textarea.fi{resize:vertical;min-height:76px}
   #cmd-palette{padding:7vh 12px 12px}
   .cmd-input{font-size:15px}
   .cmd-input-wrap{padding:14px 16px}
+}
+
+
+/* ═══════════════════════════════════════════════
+   PHASE 2 — VISUAL IDENTITY REFINEMENT
+═══════════════════════════════════════════════ */
+
+/* ── Brand accent gradient token ───────────── */
+:root{
+  --brand-gradient: linear-gradient(135deg, var(--g) 0%, #2dcfb3 100%);
+  --brand-gradient-hover: linear-gradient(135deg, var(--g2) 0%, #34d8bc 100%);
+  --focus-ring: 0 0 0 3px var(--g4);
+  --focus-glow: 0 0 0 1px var(--g), 0 0 0 4px var(--g3);
+}
+
+/* Better text rendering */
+html,body{
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  text-rendering:optimizeLegibility;
+}
+html{scroll-behavior:smooth}
+
+/* Tabular figures for all numeric data */
+.kpi-val,.tb-date,.act-time,td,.rc{font-variant-numeric:tabular-nums}
+
+/* ── Typography refinement ─────────────────── */
+.kpi-val{
+  letter-spacing:-.04em;
+  font-weight:700;
+}
+.card-t{letter-spacing:-.015em}
+h1,h2,h3,h4{letter-spacing:-.025em}
+
+/* ── Custom focus rings — branded green glow ─ */
+*:focus-visible{outline:none}
+.fi:focus,.auth-inp:focus,.auth-select:focus,input:focus,textarea:focus,select:focus{
+  outline:none;
+  border-color:var(--g);
+  box-shadow:var(--focus-ring);
+}
+.btn:focus-visible,.nav-btn:focus-visible,.icon-btn:focus-visible,.theme-toggle:focus-visible{
+  outline:none;
+  box-shadow:var(--focus-ring);
+}
+
+/* ── Input depth: subtle inset shadow when not focused ─ */
+.fi,.auth-inp,.auth-select{
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.04);
+  transition:border-color .18s ease, box-shadow .18s ease, background .18s ease;
+}
+[data-theme="dark"] .fi,
+[data-theme="dark"] .auth-inp,
+[data-theme="dark"] .auth-select{
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.25);
+}
+.fi:focus,.auth-inp:focus,.auth-select:focus{
+  box-shadow:var(--focus-ring), inset 0 1px 2px rgba(0,0,0,.04);
+}
+
+/* ── Brand gradient on primary CTAs ────────── */
+.btn.btn-g,.auth-btn{
+  background:var(--brand-gradient) !important;
+  background-size:200% 100% !important;
+  transition:background-position .35s ease, transform .15s ease, box-shadow .2s ease !important;
+  box-shadow:0 2px 8px rgba(76,175,80,.25), 0 1px 2px rgba(0,0,0,.1);
+  font-weight:600;
+}
+.btn.btn-g:hover,.auth-btn:hover{
+  background-position:100% 0 !important;
+  box-shadow:0 4px 14px rgba(76,175,80,.35), 0 2px 4px rgba(0,0,0,.12);
+  transform:translateY(-1px);
+}
+.btn.btn-g:active,.auth-btn:active{
+  transform:translateY(0);
+  box-shadow:0 1px 4px rgba(76,175,80,.2);
+}
+
+/* KPI bar — use brand gradient on the top accent bar */
+.kpi-bar{
+  background:var(--brand-gradient) !important;
+  opacity:.85;
+}
+
+/* ── Card hover elevation — subtle lift ────── */
+.card{
+  transition:border-color .18s ease, background .18s ease, transform .2s ease, box-shadow .25s ease;
+}
+.card:hover{
+  border-color:var(--b1);
+  box-shadow:var(--shadow);
+}
+
+/* ── Sticky topbar — backdrop blur ──────────── */
+#topbar{
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+  background:color-mix(in srgb, var(--s0) 88%, transparent);
+}
+@supports not (backdrop-filter:blur(12px)){
+  #topbar{background:var(--s0)}
+}
+
+/* ── Sidebar refinement: active nav with gradient ─ */
+.nav-btn{
+  font-weight:500;
+  transition:background .15s ease, color .15s ease, transform .12s ease;
+}
+.nav-btn:hover{
+  background:var(--g3);
+  color:var(--t0);
+}
+.nav-btn.on{
+  background:linear-gradient(90deg, var(--g3) 0%, transparent 100%);
+  color:var(--g);
+  font-weight:600;
+}
+.nav-btn.on::before{
+  background:var(--brand-gradient);
+  box-shadow:0 0 8px rgba(76,175,80,.4);
+}
+
+/* Nav section labels — tighter, more refined */
+.nav-sec-label{
+  font-weight:700;letter-spacing:.14em;
+  color:var(--t3);
+  font-size:9.5px;
+}
+
+/* ── User row in sidebar — subtle gradient bg ─ */
+.user-row{
+  background:linear-gradient(135deg, var(--g3) 0%, color-mix(in srgb, var(--g3) 50%, transparent) 100%);
+  border:1px solid var(--g4);
+}
+
+/* User avatar — gradient ring */
+.user-av{
+  background:var(--brand-gradient);
+  box-shadow:0 2px 10px rgba(76,175,80,.35), 0 0 0 2px var(--s0);
+}
+
+/* Brand icon — gradient glow */
+.brand-ico{position:relative}
+.brand-ico::after{
+  content:'';position:absolute;inset:-4px;border-radius:50%;
+  background:radial-gradient(circle, rgba(76,175,80,.25), transparent 60%);
+  z-index:-1;
+  pointer-events:none;
+}
+
+/* ── Status badges — refined with dot prefix ─ */
+.s-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  font-weight:600;
+  letter-spacing:.01em;
+}
+.s-badge::before{
+  content:'';width:6px;height:6px;border-radius:50%;
+  background:currentColor;
+  box-shadow:0 0 0 2px color-mix(in srgb, currentColor 25%, transparent);
+  flex-shrink:0;
+}
+
+/* ── Priority badges — refined ───────────────── */
+.p-badge{
+  font-weight:600;
+  letter-spacing:.01em;
+}
+
+/* ── Modal refinement: stronger backdrop blur ─ */
+.mov{
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+  background:rgba(0,0,0,.6);
+}
+[data-theme="light"] .mov{background:rgba(0,0,0,.4)}
+
+.mod{
+  box-shadow:0 32px 80px rgba(0,0,0,.5), 0 12px 24px rgba(0,0,0,.3), 0 0 0 1px var(--b0);
+}
+[data-theme="light"] .mod{
+  box-shadow:0 24px 60px rgba(0,0,0,.18), 0 8px 24px rgba(0,0,0,.08), 0 0 0 1px var(--b0);
+}
+
+/* ── Auth card — premium feel ────────────────── */
+.auth-card{
+  box-shadow:0 24px 60px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.2), 0 0 0 1px var(--b0);
+  position:relative;
+  overflow:hidden;
+}
+.auth-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:var(--brand-gradient);
+  opacity:.9;
+}
+[data-theme="light"] .auth-card{
+  box-shadow:0 24px 60px rgba(0,0,0,.12), 0 8px 24px rgba(0,0,0,.06), 0 0 0 1px var(--b0);
+}
+
+/* ── KPI card — gradient bar with subtle shimmer ─ */
+.kpi{
+  transition:border-color .2s ease, transform .25s cubic-bezier(.4,0,.2,1), box-shadow .25s ease;
+}
+.kpi:hover{
+  border-color:var(--g4);
+  box-shadow:0 12px 28px rgba(0,0,0,.16), 0 4px 8px rgba(0,0,0,.08);
+}
+[data-theme="light"] .kpi:hover{
+  box-shadow:0 8px 24px rgba(0,0,0,.1), 0 2px 6px rgba(0,0,0,.05);
+}
+
+/* ── Tables: smoother row hover ───────────────── */
+.tbl-wrap table tbody tr{
+  transition:background .12s ease;
+}
+.tbl-wrap table tbody tr:hover{
+  background:var(--g3);
+}
+
+/* ── Toast refinement — premium look ─────────── */
+.toast{
+  font-weight:600;
+  letter-spacing:-.005em;
+  border-radius:14px;
+}
+
+/* ── Cards in sidebar / panels: refined ────── */
+.kpi-lbl{
+  letter-spacing:.1em;
+  font-weight:700;
+}
+
+/* ── Animated gradient on h2 / hero titles ── */
+.hero h2,.page-title{
+  letter-spacing:-.028em;
+  font-weight:700;
+}
+
+/* ── Logo squares — refined hover state ──── */
+.logo-mark .logo-sq-tr{
+  filter:drop-shadow(0 2px 8px rgba(76,175,80,.5));
+}
+
+/* ── Subtle data-zone tints (very gentle) ── */
+.card.tinted-success{background:linear-gradient(180deg, color-mix(in srgb, var(--g) 4%, var(--s1)) 0%, var(--s1) 100%)}
+.card.tinted-info   {background:linear-gradient(180deg, color-mix(in srgb, var(--blue) 4%, var(--s1)) 0%, var(--s1) 100%)}
+.card.tinted-warn   {background:linear-gradient(180deg, color-mix(in srgb, var(--amber) 4%, var(--s1)) 0%, var(--s1) 100%)}
+
+/* ── Theme toggle: refined gradient handle ── */
+.theme-toggle::after{
+  background:var(--brand-gradient);
+  box-shadow:0 2px 6px rgba(76,175,80,.4), 0 1px 2px rgba(0,0,0,.2);
+}
+
+/* ── Mobile bottom nav: better active state ── */
+.mbn-btn.on{
+  color:var(--g);
+}
+.mbn-btn.on svg{filter:drop-shadow(0 0 6px var(--g4))}
+
+/* ── Command palette: brand gradient on selected ── */
+.cmd-item.sel{
+  background:linear-gradient(90deg, var(--g3) 0%, color-mix(in srgb, var(--g3) 40%, transparent) 100%);
+}
+.cmd-input-wrap{
+  background:linear-gradient(180deg, color-mix(in srgb, var(--s2) 50%, transparent) 0%, transparent 100%);
+}
+
+/* ── Pills/tags: refined ────────────────────── */
+.card-badge{
+  font-weight:600;
+  letter-spacing:.02em;
+}
+
+/* ── Empty state icon — gradient on icon ── */
+.empty-state svg{
+  background:var(--brand-gradient);
+  background-clip:padding-box;
+  color:#fff;
+}
+
+/* ── Page transition: subtle fade on switch ── */
+.page{
+  animation:pageEnter .35s cubic-bezier(.25,.46,.45,.94);
+}
+@keyframes pageEnter{
+  from{opacity:0;transform:translateY(6px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+/* ── Iconography: smoother SVG rendering ── */
+svg{shape-rendering:geometricPrecision}
+
+/* ── Reduce motion preferences respected ── */
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    animation-duration:.01ms !important;
+    transition-duration:.01ms !important;
+  }
 }
