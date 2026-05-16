@@ -1904,8 +1904,6 @@ svg{shape-rendering:geometricPrecision}
   from{opacity:0;transform:translateY(-6px)}
   to{opacity:1;transform:translateY(0)}
 }
-
-/* Subtle gradient mesh background */
 .hero-bg{
   position:absolute;inset:0;pointer-events:none;
   background:
@@ -1922,8 +1920,6 @@ svg{shape-rendering:geometricPrecision}
   flex-wrap:wrap;
 }
 .hero-main{flex:1;min-width:0}
-
-/* Greeting line */
 .hero-greeting{
   display:flex;align-items:center;gap:12px;
   margin-bottom:8px;
@@ -1945,8 +1941,6 @@ svg{shape-rendering:geometricPrecision}
   color:var(--t0);
   font-weight:700;
 }
-
-/* Subtitle: Role · Department */
 .hero-meta{
   display:flex;align-items:center;gap:8px;
   font-size:13px;
@@ -1964,8 +1958,6 @@ svg{shape-rendering:geometricPrecision}
   color:var(--t2);
   font-variant-numeric:tabular-nums;
 }
-
-/* Stats inline */
 .hero-stats{
   display:flex;align-items:center;gap:18px;
   flex-wrap:wrap;
@@ -1993,8 +1985,6 @@ svg{shape-rendering:geometricPrecision}
   font-style:italic;
   margin-left:4px;
 }
-
-/* Quick action chips */
 .hero-actions{
   display:flex;
   flex-wrap:wrap;
@@ -2013,8 +2003,6 @@ svg{shape-rendering:geometricPrecision}
   font-size:13px;font-weight:600;
   cursor:pointer;
   transition:all .2s cubic-bezier(.4,0,.2,1);
-  backdrop-filter:blur(8px);
-  -webkit-backdrop-filter:blur(8px);
   white-space:nowrap;
 }
 .hero-chip svg{
@@ -2024,7 +2012,7 @@ svg{shape-rendering:geometricPrecision}
   transition:transform .2s ease;
 }
 .hero-chip:hover{
-  background:var(--brand-gradient);
+  background:var(--g);
   border-color:transparent;
   color:#fff;
   transform:translateY(-1px);
@@ -2033,7 +2021,6 @@ svg{shape-rendering:geometricPrecision}
 .hero-chip:hover svg{color:#fff;transform:scale(1.1)}
 .hero-chip:active{transform:translateY(0)}
 
-/* ── Responsive: Tablet ─────────────────────── */
 @media(max-width:900px){
   .hero-content{
     flex-direction:column;
@@ -2044,7 +2031,6 @@ svg{shape-rendering:geometricPrecision}
   .hero-actions{width:100%}
 }
 
-/* ── Responsive: Mobile ─────────────────────── */
 @media(max-width:640px){
   #d-hero{margin-bottom:12px}
   .hero-content{
@@ -2060,7 +2046,6 @@ svg{shape-rendering:geometricPrecision}
     gap:6px;
     margin-bottom:10px;
   }
-  /* Stats stack vertically with proper alignment */
   .hero-stats{
     flex-direction:column;
     align-items:flex-start;
@@ -2068,7 +2053,6 @@ svg{shape-rendering:geometricPrecision}
     font-size:13px;
   }
   .hero-stats-scope{margin-left:0;margin-top:2px}
-  /* Chips: full width single column */
   .hero-actions{
     flex-direction:column;
     gap:6px;
@@ -2082,7 +2066,6 @@ svg{shape-rendering:geometricPrecision}
   }
 }
 
-/* ── Responsive: Tiny screens ───────────────── */
 @media(max-width:400px){
   .hero-content{padding:16px}
   .hero-greeting{gap:8px}

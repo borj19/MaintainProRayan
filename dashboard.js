@@ -33,7 +33,6 @@ function renderDashHero() {
   const heroEl = document.getElementById('d-hero');
   if (!heroEl || !currentUser) return;
 
-  // Time-based greeting
   const hour = new Date().getHours();
   let greeting, icon;
   if (hour >= 5 && hour < 12)       { greeting = 'Good morning';   icon = '☀️'; }
@@ -42,20 +41,15 @@ function renderDashHero() {
   else                              { greeting = 'Hello';          icon = '✨'; }
 
   const firstName = (currentUser.name || 'there').split(' ')[0];
-
-  // Role + dept
   const roleLabel = (typeof ROLE_LABELS !== 'undefined' && ROLE_LABELS[currentUser.role])
     ? ROLE_LABELS[currentUser.role]
     : (currentUser.role || 'User');
   const dept = currentUser.dept || '';
   const subtitle = dept ? `${roleLabel} · ${dept}` : roleLabel;
-
-  // Today's date
   const todayStr = new Date().toLocaleDateString('en-AU', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
   });
 
-  // Role-specific stats
   const role = currentUser.role;
   const myEmail = currentUser.email || '';
   const myName = currentUser.name || '';
@@ -109,7 +103,6 @@ function renderDashHero() {
     ];
   }
 
-  // Quick action chips (permission-aware)
   const actions = [];
   if (typeof can === 'function') {
     if (can('add_task')) actions.push({
@@ -127,10 +120,6 @@ function renderDashHero() {
     if (can('view_all_tasks')) actions.push({
       label: 'Rooms board', page: 'rooms',
       icon: '<rect x="1" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="1" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.5"/>'
-    });
-    if (can('view_reports')) actions.push({
-      label: 'Reports', page: 'reports',
-      icon: '<path d="M2 13l4-5 3 3 5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>'
     });
   }
   const visibleActions = actions.slice(0, 4);
@@ -177,7 +166,6 @@ function renderDashHero() {
 
 function rDash() {
   renderDashHero();
-
   const d = getDashData();
   const c = d.filter(r => r.status === 'Completed').length;
   const u = d.filter(r => r.priority === 'Urgent').length;

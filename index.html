@@ -8,17 +8,12 @@
 <link rel="manifest" href="manifest.json">
 <meta name="color-scheme" content="dark light">
 <meta name="theme-color" content="#6ebe2a">
-<!-- White background for app icon splash on iOS -->
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="MaintainPro">
-<!-- Home screen icons — new 4-square logo -->
-<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<link rel="apple-touch-icon" href="icon-192.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<link rel="shortcut icon" href="favicon-32.png">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 <style>
@@ -316,6 +311,8 @@
 
   <!-- ══ DASHBOARD ══ -->
   <div id="page-dash" class="page on">
+    <!-- Personalized hero banner -->
+    <div id="d-hero"></div>
     <div class="dash-filter">
       <span style="font-size:11px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.07em;margin-right:4px">Period:</span>
       <button class="dash-filter-btn on" id="df-all" onclick="setDashFilter('all',this)">All time</button>
