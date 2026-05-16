@@ -1659,6 +1659,16 @@ function delArea(name){
 // ═══════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════
+function init(){
+  hideLoadingScreen();
+  const dtEl=document.getElementById('af-dt'); if(dtEl) dtEl.value=TODAY;
+  const cdEl=document.getElementById('af-cd'); if(cdEl) cdEl.value=TODAY;
+  function updateClock(){
+    const el=document.getElementById('tb-dt');if(!el)return;
+    const now=new Date();
+    el.textContent=now.toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short',year:'numeric'})
+      +' '+now.toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});
+  }
   updateClock();
   if(window._clockInterval)clearInterval(window._clockInterval);
   window._clockInterval=setInterval(updateClock,1000);
