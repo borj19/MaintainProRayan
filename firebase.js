@@ -84,6 +84,10 @@ function initFirebase() {
               window._appStarted = true;
               init();
             }
+            // App is ready — hide loading screen after a brief moment so user sees the transition
+            setTimeout(() => {
+              if (typeof hideLoadingScreen === 'function') hideLoadingScreen();
+            }, 600);
             // Init push notifications after login
             setTimeout(() => { if (typeof initFCM === 'function') initFCM(); }, 1500);
           } else {
@@ -107,6 +111,13 @@ function initFirebase() {
 }
 
 function showAuthScreen() {
+  // Hide loading screen (user is not signed in — show login)
+  if (typeof hideLoadingScreen === 'function') {
+    hideLoadingScreen();
+  } else {
+    const ls = document.getElementById('loading-screen');
+    if (ls) { ls.classList.add('fade-out'); setTimeout(()=>{ ls.classList.add('hidden'); ls.style.display='none'; }, 500); }
+  }
   const a = document.getElementById('auth-screen');
   if (a) a.style.display = 'flex';
 }

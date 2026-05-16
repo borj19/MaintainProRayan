@@ -64,36 +64,8 @@ function hideLoadingScreen(){
   ls.classList.add('fade-out');
   setTimeout(()=>{ls.classList.add('hidden');ls.style.display='none';},500);
 }
-// Hide on page load — only show after login
-(function(){
-  const ls=document.getElementById('loading-screen');
-  if(ls){ls.style.display='none';ls.classList.add('hidden');}
-})();
-
-// Pre-fill saved email + checkbox state on page load
-function restoreSavedEmail(){
-  try{
-    const saved = localStorage.getItem('mp_saved_email');
-    const emailField = document.getElementById('l-user');
-    const remember = document.getElementById('l-remember');
-    if(saved && emailField && !emailField.value){
-      emailField.value = saved;
-      if(remember) remember.checked = true;
-      // Focus the password field so user can type and hit Enter
-      const pwField = document.getElementById('l-pass');
-      if(pwField) setTimeout(()=>pwField.focus(), 200);
-    } else if(remember){
-      // No saved email — checkbox unchecked by default
-      remember.checked = false;
-    }
-  }catch(_){}
-}
-// Run after DOM ready
-if(document.readyState==='loading'){
-  document.addEventListener('DOMContentLoaded', restoreSavedEmail);
-} else {
-  setTimeout(restoreSavedEmail, 100);
-}
+// Loading screen stays VISIBLE on page load — firebase.js controls when to hide it
+// (Either after auto-restore + init completes, OR when login screen is shown)
 
 // ═══════════════════════════════════════════════
 // ROLE-BASED ACCESS CONTROL — FULL SYSTEM
@@ -239,13 +211,6 @@ async function doLogin(){
           return;
         }
       }catch(_){}
-      // Save email to localStorage if "Remember me" is checked
-      const remember = document.getElementById('l-remember');
-      if(remember && remember.checked){
-        try{ localStorage.setItem('mp_saved_email', email); }catch(_){}
-      } else {
-        try{ localStorage.removeItem('mp_saved_email'); }catch(_){}
-      }
       document.getElementById('auth-screen').style.display='none';
       showLoadingScreen();
     } catch(e){
@@ -261,13 +226,6 @@ async function doLogin(){
     const user=USERS.find(x=>(x.email===email||x.username===email)&&x.password===pass);
     if(user){
       currentUser=user;
-      // Save email to localStorage if "Remember me" is checked
-      const remember = document.getElementById('l-remember');
-      if(remember && remember.checked){
-        try{ localStorage.setItem('mp_saved_email', email); }catch(_){}
-      } else {
-        try{ localStorage.removeItem('mp_saved_email'); }catch(_){}
-      }
       document.getElementById('auth-screen').style.display='none';
       showLoadingScreen();
       setTimeout(()=>{
@@ -453,12 +411,6 @@ function doLogout(){
 }
 
 function applyUserSession(){
-  // Show loading screen for auto-restore (firebase auth state on page load/idle resume)
-  // Only show if it's not already visible from a manual login
-  const ls=document.getElementById('loading-screen');
-  if(ls&&(ls.classList.contains('hidden')||ls.style.display==='none')){
-    if(typeof showLoadingScreen==='function') showLoadingScreen();
-  }
   // Reveal app — visibility was hidden during login screen
   const bodyEl=document.getElementById('body');
   if(bodyEl)bodyEl.style.visibility='visible';
