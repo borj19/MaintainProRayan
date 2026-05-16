@@ -153,7 +153,12 @@
           <label class="auth-lbl">Password</label>
           <input type="password" class="auth-inp" id="l-pass" placeholder="Enter your password" autocomplete="current-password">
         </div>
-        <button class="auth-btn" onclick="doLogin()">
+        <!-- Remember me — saves email for next login -->
+        <label class="auth-remember" for="l-remember" style="display:flex;align-items:center;gap:8px;margin:14px 0 4px;cursor:pointer;user-select:none;font-size:13px;color:var(--t1)">
+          <input type="checkbox" id="l-remember" style="width:16px;height:16px;accent-color:var(--g);cursor:pointer;flex-shrink:0">
+          <span>Save my email for next time</span>
+        </label>
+        <button class="auth-btn" onclick="doLogin()" style="margin-top:10px">
           <svg viewBox="0 0 16 16" fill="none"><path d="M10 2h3a1 1 0 011 1v10a1 1 0 01-1 1h-3M7 11l4-3-4-3M11 8H2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           Sign in
         </button>
