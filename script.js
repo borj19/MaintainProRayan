@@ -64,8 +64,11 @@ function hideLoadingScreen(){
   ls.classList.add('fade-out');
   setTimeout(()=>{ls.classList.add('hidden');ls.style.display='none';},500);
 }
-// Loading screen stays VISIBLE on page load — firebase.js controls when to hide it
-// (Either after auto-restore + init completes, OR when login screen is shown)
+// Hide on page load — only show after login
+(function(){
+  const ls=document.getElementById('loading-screen');
+  if(ls){ls.style.display='none';ls.classList.add('hidden');}
+})();
 
 // ═══════════════════════════════════════════════
 // ROLE-BASED ACCESS CONTROL — FULL SYSTEM
@@ -1660,7 +1663,7 @@ function delArea(name){
 // INIT
 // ═══════════════════════════════════════════════
 function init(){
-  hideLoadingScreen();
+  // Loading screen is now hidden by firebase.js after data is ready (not here)
   const dtEl=document.getElementById('af-dt'); if(dtEl) dtEl.value=TODAY;
   const cdEl=document.getElementById('af-cd'); if(cdEl) cdEl.value=TODAY;
   function updateClock(){

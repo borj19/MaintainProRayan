@@ -115,7 +115,7 @@
 <!-- ══════════════════════════════════
      AUTH SCREEN (Login + Register)
 ══════════════════════════════════ -->
-<div id="auth-screen" style="display:none">
+<div id="auth-screen">
   <div class="auth-wrap">
     <div class="auth-card">
       <div class="auth-brand">
@@ -162,7 +162,7 @@
           <svg viewBox="0 0 16 16" fill="none"><path d="M10 2h3a1 1 0 011 1v10a1 1 0 01-1 1h-3M7 11l4-3-4-3M11 8H2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           Sign in
         </button>
-        <div class="auth-note" style="margin-top:18px;text-align:center;font-size:11px;color:var(--t3);opacity:.85">Rayan - All rights reserved 2026 </div>
+        <div class="auth-note" style="margin-top:18px;text-align:center;font-size:11px;color:var(--t3);opacity:.85">All rights reserved 2026 — Designed and Created by Rayan</div>
       </div>
     </div>
   </div>
@@ -311,6 +311,8 @@
 
   <!-- ══ DASHBOARD ══ -->
   <div id="page-dash" class="page on">
+    <!-- Personalized hero banner — greeting + role + stats + quick actions -->
+    <div id="d-hero"></div>
     <div class="dash-filter">
       <span style="font-size:11px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.07em;margin-right:4px">Period:</span>
       <button class="dash-filter-btn on" id="df-all" onclick="setDashFilter('all',this)">All time</button>

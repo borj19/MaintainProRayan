@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════
-// dashboard.js — Dashboard rendering
+// dashboard.js — with personalized hero banner
 // ═══════════════════════════════════════════════
 
 let dashFilteredData = DATA;
@@ -26,14 +26,164 @@ function getDashData() {
   return DATA;
 }
 
+// ═══════════════════════════════════════════════
+// PERSONALIZED HERO BANNER
+// ═══════════════════════════════════════════════
+function renderDashHero() {
+  const heroEl = document.getElementById('d-hero');
+  if (!heroEl || !currentUser) return;
+
+  // Time-based greeting
+  const hour = new Date().getHours();
+  let greeting, icon;
+  if (hour >= 5 && hour < 12)       { greeting = 'Good morning';   icon = '☀️'; }
+  else if (hour >= 12 && hour < 17) { greeting = 'Good afternoon'; icon = '🌤️'; }
+  else if (hour >= 17 && hour < 22) { greeting = 'Good evening';   icon = '🌙'; }
+  else                              { greeting = 'Hello';          icon = '✨'; }
+
+  const firstName = (currentUser.name || 'there').split(' ')[0];
+
+  // Role + dept
+  const roleLabel = (typeof ROLE_LABELS !== 'undefined' && ROLE_LABELS[currentUser.role])
+    ? ROLE_LABELS[currentUser.role]
+    : (currentUser.role || 'User');
+  const dept = currentUser.dept || '';
+  const subtitle = dept ? `${roleLabel} · ${dept}` : roleLabel;
+
+  // Today's date
+  const todayStr = new Date().toLocaleDateString('en-AU', {
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+  });
+
+  // Role-specific stats
+  const role = currentUser.role;
+  const myEmail = currentUser.email || '';
+  const myName = currentUser.name || '';
+  const myUid = currentUser.uid || currentUser.id || '';
+  let stats = [];
+  let scope = '';
+
+  if (role === 'admin') {
+    scope = 'across the system';
+    const urgent = DATA.filter(r => r.priority === 'Urgent' && r.status !== 'Completed').length;
+    const inProg = DATA.filter(r => r.status === 'In Progress' || r.status === 'In Progress - Contractor').length;
+    const today = DATA.filter(r => r.date === getTODAY()).length;
+    stats = [
+      { v: urgent, l: 'urgent',      c: 'var(--red)' },
+      { v: inProg, l: 'in progress', c: 'var(--blue)' },
+      { v: today,  l: 'today',       c: 'var(--g)' },
+    ];
+  } else if (role === 'staff') {
+    scope = 'assigned to you';
+    const mine = DATA.filter(r => r.handler === myName);
+    const myUrgent = mine.filter(r => r.priority === 'Urgent' && r.status !== 'Completed').length;
+    const myActive = mine.filter(r => r.status === 'In Progress' || r.status === 'In Progress - Contractor').length;
+    const myDone = mine.filter(r => r.status === 'Completed' && r.completion === getTODAY()).length;
+    stats = [
+      { v: myUrgent, l: 'urgent',     c: 'var(--red)' },
+      { v: myActive, l: 'active',     c: 'var(--blue)' },
+      { v: myDone,   l: 'done today', c: 'var(--g)' },
+    ];
+  } else if (role === 'requester') {
+    scope = 'in your requests';
+    const mine = DATA.filter(r =>
+      r.requestor === myName ||
+      r.createdBy === myEmail ||
+      r.createdByUid === myUid
+    );
+    const pending = mine.filter(r => r.status === 'Pending').length;
+    const inProg = mine.filter(r => r.status === 'In Progress' || r.status === 'In Progress - Contractor').length;
+    const done = mine.filter(r => r.status === 'Completed').length;
+    stats = [
+      { v: pending, l: 'pending',     c: 'var(--amber)' },
+      { v: inProg,  l: 'in progress', c: 'var(--blue)' },
+      { v: done,    l: 'completed',   c: 'var(--g)' },
+    ];
+  } else if (role === 'contractor') {
+    scope = 'assigned to you';
+    const mine = DATA.filter(r => r.status === 'In Progress - Contractor');
+    const myUrgent = mine.filter(r => r.priority === 'Urgent').length;
+    stats = [
+      { v: mine.length, l: 'active jobs', c: 'var(--blue)' },
+      { v: myUrgent,    l: 'urgent',      c: 'var(--red)' },
+    ];
+  }
+
+  // Quick action chips (permission-aware)
+  const actions = [];
+  if (typeof can === 'function') {
+    if (can('add_task')) actions.push({
+      label: 'New task', page: 'add',
+      icon: '<path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>'
+    });
+    if (can('submit_request')) actions.push({
+      label: 'Submit request', page: 'request',
+      icon: '<path d="M3 3h10v10H3z" stroke="currentColor" stroke-width="1.5"/><path d="M6 7h4M6 10h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>'
+    });
+    if (can('view_inprogress')) actions.push({
+      label: 'In progress', page: 'inprogress',
+      icon: '<circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/><path d="M8 5v3l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>'
+    });
+    if (can('view_all_tasks')) actions.push({
+      label: 'Rooms board', page: 'rooms',
+      icon: '<rect x="1" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="1" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.5"/>'
+    });
+    if (can('view_reports')) actions.push({
+      label: 'Reports', page: 'reports',
+      icon: '<path d="M2 13l4-5 3 3 5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>'
+    });
+  }
+  const visibleActions = actions.slice(0, 4);
+
+  heroEl.innerHTML = `
+    <div class="hero-bg"></div>
+    <div class="hero-content">
+      <div class="hero-main">
+        <div class="hero-greeting">
+          <span class="hero-icon">${icon}</span>
+          <span class="hero-text">${greeting}, <strong>${firstName}</strong></span>
+        </div>
+        <div class="hero-meta">
+          <span class="hero-role">${subtitle}</span>
+          <span class="hero-dot">·</span>
+          <span class="hero-date">${todayStr}</span>
+        </div>
+        ${stats.length ? `
+          <div class="hero-stats">
+            ${stats.map(s => `
+              <span class="hero-stat">
+                <span class="hero-stat-dot" style="background:${s.c}"></span>
+                <strong>${s.v}</strong>
+                <span class="hero-stat-lbl">${s.l}</span>
+              </span>
+            `).join('')}
+            <span class="hero-stats-scope">${scope}</span>
+          </div>
+        ` : ''}
+      </div>
+      ${visibleActions.length ? `
+        <div class="hero-actions">
+          ${visibleActions.map(a => `
+            <button class="hero-chip" onclick="go('${a.page}', null)">
+              <svg viewBox="0 0 16 16" fill="none">${a.icon}</svg>
+              <span>${a.label}</span>
+            </button>
+          `).join('')}
+        </div>
+      ` : ''}
+    </div>
+  `;
+}
+
 function rDash() {
+  renderDashHero();
+
   const d = getDashData();
   const c = d.filter(r => r.status === 'Completed').length;
   const u = d.filter(r => r.priority === 'Urgent').length;
   const ip = d.filter(r => r.status === 'In Progress' || r.status === 'In Progress - Contractor').length;
   const pending = d.filter(r => r.status === 'Pending').length;
 
-  // KPI cards — Polish removed, Pending added
   const kpis = [
     { c: '#6ebe2a', l: 'Total tasks', v: d.length, s: 'Filtered view' },
     { c: '#6ebe2a', l: 'Completed',   v: c, tr: d.length ? `${Math.round(c / d.length * 100)}% rate` : '—', tc: 'up' },
@@ -54,7 +204,6 @@ function rDash() {
   const gridColor = chartColor('--b0') || '#1d2412';
   const tickColor = chartColor('--t3') || '#3e4d2c';
 
-  // Live rolling 7-day window — based on today's real date
   const todayDate = new Date(getTODAY());
   const days = [];
   const dates = [];
@@ -77,7 +226,6 @@ function rDash() {
     `<span class="leg-i"><span class="leg-sq" style="background:${wc(k)}"></span>${k.replace(/_/g, ' ')}</span>`
   ).join('');
 
-  // Daily job count chart — live rolling 7-day window
   mkCh('ch-dd', {
     type: 'bar',
     data: {
@@ -100,7 +248,6 @@ function rDash() {
     }
   });
 
-  // Work type doughnut
   const wtC = cb(d, 'workType'),
         wtL = Object.keys(wtC),
         wtV = Object.values(wtC),
@@ -115,7 +262,6 @@ function rDash() {
     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, cutout: '62%' }
   });
 
-  // Top handlers
   const hC = Object.entries(cb(d, 'handler')).sort((a, b) => b[1] - a[1]),
         mxH = hC[0]?.[1] || 1;
   const hnEl = document.getElementById('d-hn');
@@ -123,7 +269,6 @@ function rDash() {
     `<li class="ri"><span class="rn">${i + 1}</span><span class="rnm">${n}</span><div class="rb"><div class="rbf" style="width:${Math.round(c / mxH * 100)}%;background:var(--g)"></div></div><span class="rc">${c}</span></li>`
   ).join('');
 
-  // Top requestors
   const rC = Object.entries(cb(d, 'requestor')).sort((a, b) => b[1] - a[1]),
         mxR = rC[0]?.[1] || 1;
   const rqEl = document.getElementById('d-rq');
@@ -131,7 +276,6 @@ function rDash() {
     `<li class="ri"><span class="rn">${i + 1}</span><span class="rnm">${n}</span><div class="rb"><div class="rbf" style="width:${Math.round(c / mxR * 100)}%;background:var(--cyan)"></div></div><span class="rc">${c}</span></li>`
   ).join('');
 
-  // Recent activity — now shows sub type + details
   const actEl = document.getElementById('d-act');
   if (actEl) actEl.innerHTML = DATA.slice(0, 6).map(r => `
     <div class="act-i" onclick="vTask('${r.id}')" style="cursor:pointer">
