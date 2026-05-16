@@ -41,27 +41,12 @@
 <div id="loading-screen">
   <div class="ls-logo">
     <div class="ls-glow-ring"></div>
-    <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="lsBg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#43a047"/><stop offset="100%" stop-color="#1b5e20"/></linearGradient>
-        <linearGradient id="lsShine" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ffffff" stop-opacity=".28"/><stop offset="100%" stop-color="#ffffff" stop-opacity="0"/></linearGradient>
-        <radialGradient id="lsGlowBg" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#4caf50" stop-opacity=".35"/><stop offset="100%" stop-color="#4caf50" stop-opacity="0"/></radialGradient>
-        <filter id="lsDrop"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-        <filter id="lsText"><feGaussianBlur stdDeviation="1.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-      </defs>
-      <!-- Outer glow -->
-      <circle cx="60" cy="60" r="58" fill="url(#lsGlowBg)"/>
-      <!-- Main circle -->
-      <circle cx="60" cy="60" r="52" fill="url(#lsBg)" filter="url(#lsDrop)"/>
-      <!-- Shine -->
-      <ellipse cx="60" cy="38" rx="34" ry="20" fill="url(#lsShine)"/>
-      <!-- Outer ring -->
-      <circle cx="60" cy="60" r="49" stroke="#a5d6a7" stroke-width="1.2" stroke-opacity=".35" fill="none"/>
-      <!-- Inner ring -->
-      <circle cx="60" cy="60" r="43" stroke="#c8e6c9" stroke-width=".6" stroke-opacity=".2" fill="none"/>
-      <!-- Large wrench -->
-      <g transform="translate(28,28) scale(2.67)" filter="url(#lsText)">
-        <path d="M20.5 2.5C18 .5 14 1 12 3.5c-1.5 1.8-1.7 4.3-.8 6.3L2.5 19.5a1.7 1.7 0 002.4 2.4L14 13.2c2 .9 4.5.7 6.3-.8 2.5-2 3-6 1-8.5l-3.3 3.3-2.5-.5-.5-2.5 3.3-3.3-1.8.1z" fill="#e8f5e9" stroke="#c8e6c9" stroke-width=".4"/>
+    <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" style="color:var(--t0)">
+      <!-- Main circle uses theme text color -->
+      <circle cx="60" cy="60" r="52" fill="currentColor"/>
+      <!-- Large wrench cut-out — opposite color shows through -->
+      <g transform="translate(28,28) scale(2.67)" style="color:var(--bg)">
+        <path d="M20.5 2.5C18 .5 14 1 12 3.5c-1.5 1.8-1.7 4.3-.8 6.3L2.5 19.5a1.7 1.7 0 002.4 2.4L14 13.2c2 .9 4.5.7 6.3-.8 2.5-2 3-6 1-8.5l-3.3 3.3-2.5-.5-.5-2.5 3.3-3.3-1.8.1z" fill="currentColor"/>
       </g>
     </svg>
   </div>
@@ -114,21 +99,12 @@
     <div class="auth-card">
       <div class="auth-brand">
         <div class="auth-brand-ico" style="background:none;box-shadow:none;width:52px;height:52px;flex-shrink:0">
-          <svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <linearGradient id="bg1" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#43a047"/><stop offset="100%" stop-color="#1b5e20"/></linearGradient>
-              <linearGradient id="shine1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ffffff" stop-opacity=".25"/><stop offset="100%" stop-color="#ffffff" stop-opacity="0"/></linearGradient>
-              <filter id="g1" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-            </defs>
-            <!-- Outer ring -->
-            <circle cx="26" cy="26" r="25" fill="url(#bg1)" filter="url(#g1)"/>
-            <!-- Shine overlay -->
-            <ellipse cx="26" cy="16" rx="16" ry="10" fill="url(#shine1)"/>
-            <!-- Subtle ring -->
-            <circle cx="26" cy="26" r="22" stroke="#a5d6a7" stroke-width=".8" stroke-opacity=".3" fill="none"/>
-            <!-- Wrench icon -->
-            <g transform="translate(13,13)">
-              <path d="M20.5 2.5C18 .5 14 1 12 3.5c-1.5 1.8-1.7 4.3-.8 6.3L2.5 19.5a1.7 1.7 0 002.4 2.4L14 13.2c2 .9 4.5.7 6.3-.8 2.5-2 3-6 1-8.5l-3.3 3.3-2.5-.5-.5-2.5 3.3-3.3-1.8.1z" fill="#e8f5e9" stroke="#c8e6c9" stroke-width=".5"/>
+          <svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg" style="color:var(--t0)">
+            <!-- Logo circle uses theme text color: black in light, white in dark -->
+            <circle cx="26" cy="26" r="25" fill="currentColor"/>
+            <!-- Wrench cut out — opposite color shows through -->
+            <g transform="translate(13,13)" style="color:var(--bg)">
+              <path d="M20.5 2.5C18 .5 14 1 12 3.5c-1.5 1.8-1.7 4.3-.8 6.3L2.5 19.5a1.7 1.7 0 002.4 2.4L14 13.2c2 .9 4.5.7 6.3-.8 2.5-2 3-6 1-8.5l-3.3 3.3-2.5-.5-.5-2.5 3.3-3.3-1.8.1z" fill="currentColor"/>
             </g>
           </svg>
         </div>
@@ -240,17 +216,10 @@
 <nav id="sb">
   <div class="brand">
     <div class="brand-ico" style="background:none;box-shadow:none;width:36px;height:36px;display:flex;align-items:center;justify-content:center">
-      <svg width="36" height="36" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="sbBg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#43a047"/><stop offset="100%" stop-color="#1b5e20"/></linearGradient>
-          <linearGradient id="sbShine" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ffffff" stop-opacity=".25"/><stop offset="100%" stop-color="#ffffff" stop-opacity="0"/></linearGradient>
-          <filter id="sbG"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-        </defs>
-        <circle cx="26" cy="26" r="25" fill="url(#sbBg)" filter="url(#sbG)"/>
-        <ellipse cx="26" cy="16" rx="16" ry="10" fill="url(#sbShine)"/>
-        <circle cx="26" cy="26" r="22" stroke="#a5d6a7" stroke-width=".8" stroke-opacity=".3" fill="none"/>
-        <g transform="translate(13,13)">
-          <path d="M20.5 2.5C18 .5 14 1 12 3.5c-1.5 1.8-1.7 4.3-.8 6.3L2.5 19.5a1.7 1.7 0 002.4 2.4L14 13.2c2 .9 4.5.7 6.3-.8 2.5-2 3-6 1-8.5l-3.3 3.3-2.5-.5-.5-2.5 3.3-3.3-1.8.1z" fill="#e8f5e9" stroke="#c8e6c9" stroke-width=".5"/>
+      <svg width="36" height="36" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg" style="color:var(--t0)">
+        <circle cx="26" cy="26" r="25" fill="currentColor"/>
+        <g transform="translate(13,13)" style="color:var(--bg)">
+          <path d="M20.5 2.5C18 .5 14 1 12 3.5c-1.5 1.8-1.7 4.3-.8 6.3L2.5 19.5a1.7 1.7 0 002.4 2.4L14 13.2c2 .9 4.5.7 6.3-.8 2.5-2 3-6 1-8.5l-3.3 3.3-2.5-.5-.5-2.5 3.3-3.3-1.8.1z" fill="currentColor"/>
         </g>
       </svg>
     </div>
