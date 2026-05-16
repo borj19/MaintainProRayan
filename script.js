@@ -41,16 +41,28 @@ function showLoadingScreen(){
   const ls=document.getElementById('loading-screen');
   if(ls){ls.classList.remove('hidden','fade-out');ls.style.display='flex';}
   _lsShownAt=Date.now();
-  // Safety auto-hide after 8 seconds
+  // Rotate loading messages for a premium feel
+  const msgs=['Initializing workspace','Connecting to database','Loading your data','Almost there'];
+  const msgEl=document.getElementById('ls-msg');
+  if(msgEl){
+    let i=0;msgEl.textContent=msgs[0];
+    if(window._lsMsgTimer) clearInterval(window._lsMsgTimer);
+    window._lsMsgTimer=setInterval(()=>{
+      i=(i+1)%msgs.length;
+      msgEl.style.opacity='0';
+      setTimeout(()=>{msgEl.textContent=msgs[i];msgEl.style.opacity='1';},180);
+    },1400);
+  }
   if(window._loadingTimeout) clearTimeout(window._loadingTimeout);
   window._loadingTimeout=setTimeout(()=>hideLoadingScreen(),8000);
 }
 function hideLoadingScreen(){
   if(window._loadingTimeout){clearTimeout(window._loadingTimeout);window._loadingTimeout=null;}
+  if(window._lsMsgTimer){clearInterval(window._lsMsgTimer);window._lsMsgTimer=null;}
   const ls=document.getElementById('loading-screen');
   if(!ls)return;
   ls.classList.add('fade-out');
-  setTimeout(()=>{ls.classList.add('hidden');ls.style.display='none';},300);
+  setTimeout(()=>{ls.classList.add('hidden');ls.style.display='none';},500);
 }
 // Hide on page load — only show after login
 (function(){
@@ -1853,3 +1865,268 @@ function playNotifSound() {
     osc.stop(ctx.currentTime + 0.4);
   } catch (e) { console.warn('Sound failed:', e.message); }
 }
+
+
+// ═══════════════════════════════════════════════
+// PHASE 1 ENHANCEMENTS
+// Animated counters, skeletons, command palette
+// ═══════════════════════════════════════════════
+
+// ── KPI counter animation ─────────────────────
+// Animates numbers from 0 to their final value smoothly
+function animateCounters(scope) {
+  scope = scope || document;
+  const els = scope.querySelectorAll('.kpi-val:not([data-animated])');
+  els.forEach(el => {
+    const raw = el.textContent.trim();
+    // Skip if it's not a number or has special formatting
+    const m = raw.match(/^(\d+)(.*)$/);
+    if (!m) return;
+    const finalVal = parseInt(m[1], 10);
+    const suffix = m[2] || '';
+    if (isNaN(finalVal) || finalVal === 0) {
+      el.setAttribute('data-animated', '1');
+      return;
+    }
+    el.setAttribute('data-animated', '1');
+    el.classList.add('counting');
+    const duration = 900;
+    const start = performance.now();
+    const startVal = 0;
+    function step(now) {
+      const elapsed = now - start;
+      const t = Math.min(elapsed / duration, 1);
+      // ease-out cubic for smooth deceleration
+      const eased = 1 - Math.pow(1 - t, 3);
+      const current = Math.round(startVal + (finalVal - startVal) * eased);
+      el.textContent = current + suffix;
+      if (t < 1) requestAnimationFrame(step);
+      else el.textContent = finalVal + suffix;
+    }
+    requestAnimationFrame(step);
+  });
+}
+
+// Hook into dashboard render — animate after KPIs are rendered
+const _origRDash = typeof rDash === 'function' ? rDash : null;
+if (_origRDash) {
+  window.rDash = function() {
+    _origRDash.apply(this, arguments);
+    // Trigger counter animation after DOM update
+    requestAnimationFrame(() => {
+      const kpis = document.querySelectorAll('#d-kpis .kpi-val');
+      kpis.forEach(el => el.removeAttribute('data-animated'));
+      animateCounters(document.getElementById('d-kpis'));
+    });
+  };
+}
+
+// ── Skeleton loaders ──────────────────────────
+function renderKPISkeletons(targetId, count) {
+  count = count || 6;
+  const el = document.getElementById(targetId);
+  if (!el) return;
+  let html = '';
+  for (let i = 0; i < count; i++) {
+    html += '<div class="skel-kpi"><div class="skel skel-line sm" style="margin-bottom:14px"></div><div class="skel skel-line xl"></div><div class="skel skel-line sm" style="margin-top:8px;width:40%"></div></div>';
+  }
+  el.innerHTML = html;
+}
+
+function renderTableSkeleton(targetId, rows) {
+  rows = rows || 5;
+  const el = document.getElementById(targetId);
+  if (!el) return;
+  let html = '<div style="padding:6px">';
+  for (let i = 0; i < rows; i++) {
+    html += '<div style="display:flex;gap:12px;padding:10px 0;align-items:center">';
+    html += '<div class="skel skel-circle" style="width:28px;height:28px;flex-shrink:0"></div>';
+    html += '<div style="flex:1"><div class="skel skel-line md" style="margin-bottom:6px"></div><div class="skel skel-line sm"></div></div>';
+    html += '</div>';
+  }
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+// ── Command palette (⌘K / Ctrl+K) ─────────────
+let _cmdSel = 0;
+let _cmdItems = [];
+
+function cmdOpen() {
+  const p = document.getElementById('cmd-palette');
+  if (!p) return;
+  p.classList.add('on');
+  const inp = document.getElementById('cmd-input');
+  if (inp) {
+    inp.value = '';
+    setTimeout(() => inp.focus(), 50);
+  }
+  cmdRender();
+}
+
+function cmdClose() {
+  const p = document.getElementById('cmd-palette');
+  if (p) p.classList.remove('on');
+  _cmdSel = 0;
+}
+
+function cmdBuildItems(query) {
+  const q = (query || '').toLowerCase().trim();
+  const items = [];
+
+  // Pages — available based on user permissions
+  const pages = [
+    {id:'dash',     title:'Dashboard',         sub:'Overview & analytics',          perm:'view_dashboard',    icon:'<path d="M2 2h5v5H2zM9 2h5v5H9zM2 9h5v5H2zM9 9h5v5H9z" stroke="currentColor" stroke-width="1.4"/>'},
+    {id:'tasks',    title:'All tasks',         sub:'Manage all jobs',                perm:'view_all_tasks',    icon:'<path d="M2 4h12M2 8h8M2 12h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>'},
+    {id:'add',      title:'Add new task',      sub:'Create a maintenance job',       perm:'add_task',          icon:'<path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>'},
+    {id:'inprogress',title:'In progress',      sub:'Active tasks',                   perm:'view_inprogress',   icon:'<circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.4"/><path d="M8 5v3l2 2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>'},
+    {id:'request',  title:'Job requests',      sub:'Submit & track requests',        perm:'submit_request',    icon:'<path d="M3 3h10v10H3z" stroke="currentColor" stroke-width="1.4"/><path d="M6 7h4M6 10h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>'},
+    {id:'reports',  title:'Reports',           sub:'View analytics & exports',       perm:'view_reports',      icon:'<path d="M2 13l4-5 3 3 5-7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>'},
+    {id:'rooms',    title:'Rooms board',       sub:'Hotel room maintenance grid',    perm:'view_all_tasks',    icon:'<rect x="1" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="9" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="1" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="9" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/>'},
+    {id:'users',    title:'Users',             sub:'Manage user accounts',           perm:'manage_users',      icon:'<circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.4"/><path d="M2 14c0-3 3-5 6-5s6 2 6 5" stroke="currentColor" stroke-width="1.4"/>'},
+    {id:'permissions',title:'Permissions',     sub:'Role-based access control',      perm:'manage_permissions',icon:'<path d="M8 1l6 3v4c0 4-3 6-6 7-3-1-6-3-6-7V4z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>'},
+    {id:'admin',    title:'Field management',  sub:'Configure work types & areas',   perm:'manage_fields',     icon:'<circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.4"/><path d="M8 1v3M8 12v3M1 8h3M12 8h3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>'},
+  ];
+
+  pages.forEach(p => {
+    if (p.perm && typeof can === 'function' && !can(p.perm)) return;
+    if (!q || p.title.toLowerCase().includes(q) || p.sub.toLowerCase().includes(q)) {
+      items.push({...p, _kind:'page', _section:'Pages'});
+    }
+  });
+
+  // Jobs — search DATA
+  if (q && typeof DATA !== 'undefined' && DATA.length) {
+    const matched = DATA.filter(r => {
+      const hay = `${r.requestor||''} ${r.handler||''} ${r.workType||''} ${r.subType||''} ${r.location||''} ${r.details||''} ${r.area||''}`.toLowerCase();
+      return hay.includes(q);
+    }).slice(0, 6);
+    matched.forEach(r => {
+      items.push({
+        _kind: 'job',
+        _section: 'Jobs',
+        id: r.id,
+        title: `${r.workType.replace(/_/g,' ')} — ${r.location}`,
+        sub: `${r.requestor} · ${r.status} · ${r.priority}`,
+        icon: '<rect x="2" y="3" width="12" height="10" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M5 7h6M5 10h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>',
+        action: () => { cmdClose(); if(typeof vTask==='function') vTask(String(r.id)); }
+      });
+    });
+  }
+
+  // Users — search USERS
+  if (q && typeof USERS !== 'undefined' && USERS.length) {
+    const matched = USERS.filter(u => {
+      const hay = `${u.name||''} ${u.email||''} ${u.role||''} ${u.dept||''}`.toLowerCase();
+      return hay.includes(q);
+    }).slice(0, 5);
+    matched.forEach(u => {
+      items.push({
+        _kind: 'user',
+        _section: 'Users',
+        id: u.id,
+        title: u.name,
+        sub: `${u.role||'—'} · ${u.dept||u.email||''}`,
+        icon: '<circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.4"/><path d="M2 14c0-3 3-5 6-5s6 2 6 5" stroke="currentColor" stroke-width="1.4"/>'
+      });
+    });
+  }
+
+  // Actions
+  const actions = [
+    {title:'Toggle theme',          sub:'Switch between light and dark mode', icon:'<circle cx="8" cy="8" r="3.5" stroke="currentColor" stroke-width="1.4"/><path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>', action:()=>{ cmdClose(); if(typeof toggleTheme==='function') toggleTheme(); }},
+    {title:'Sign out',              sub:'End your session', icon:'<path d="M6 2H3v12h3M10 11l3-3-3-3M13 8H6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>', action:()=>{ cmdClose(); if(typeof doLogout==='function') doLogout(); }},
+  ];
+  actions.forEach(a => {
+    if (!q || a.title.toLowerCase().includes(q)) {
+      items.push({...a, _kind:'action', _section:'Actions'});
+    }
+  });
+
+  return items;
+}
+
+function cmdRender() {
+  const inp = document.getElementById('cmd-input');
+  const out = document.getElementById('cmd-results');
+  if (!out) return;
+  const q = inp ? inp.value : '';
+  _cmdItems = cmdBuildItems(q);
+  _cmdSel = 0;
+
+  if (!_cmdItems.length) {
+    out.innerHTML = `
+      <div class="cmd-empty">
+        <svg viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.4"/><path d="M11 11l3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+        No matches for "${q}"
+      </div>`;
+    return;
+  }
+
+  // Group by section
+  const grouped = {};
+  _cmdItems.forEach((it, i) => {
+    if (!grouped[it._section]) grouped[it._section] = [];
+    grouped[it._section].push({...it, _idx: i});
+  });
+
+  let html = '';
+  Object.keys(grouped).forEach(section => {
+    html += `<div class="cmd-section-label">${section}</div>`;
+    grouped[section].forEach(it => {
+      html += `<div class="cmd-item${it._idx === _cmdSel ? ' sel' : ''}" data-idx="${it._idx}" onclick="cmdSelect(${it._idx})">
+        <div class="cmd-item-ico"><svg viewBox="0 0 16 16" fill="none">${it.icon}</svg></div>
+        <div class="cmd-item-body">
+          <div class="cmd-item-title">${it.title}</div>
+          <div class="cmd-item-sub">${it.sub||''}</div>
+        </div>
+        <span class="cmd-item-tag">${it._kind}</span>
+      </div>`;
+    });
+  });
+  out.innerHTML = html;
+}
+
+function cmdSelect(idx) {
+  const it = _cmdItems[idx];
+  if (!it) return;
+  if (it._kind === 'page') {
+    cmdClose();
+    if (typeof go === 'function') go(it.id, null);
+  } else if (it.action) {
+    it.action();
+  }
+}
+
+function cmdKey(e) {
+  if (e.key === 'Escape') { cmdClose(); return; }
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    _cmdSel = Math.min(_cmdSel + 1, _cmdItems.length - 1);
+    cmdRender();
+    const sel = document.querySelector('.cmd-item.sel');
+    if (sel) sel.scrollIntoView({block:'nearest'});
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    _cmdSel = Math.max(_cmdSel - 1, 0);
+    cmdRender();
+    const sel = document.querySelector('.cmd-item.sel');
+    if (sel) sel.scrollIntoView({block:'nearest'});
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    cmdSelect(_cmdSel);
+  }
+}
+
+// Global keyboard shortcut: ⌘K / Ctrl+K
+document.addEventListener('keydown', e => {
+  // Only when user is logged in (auth screen hidden)
+  const auth = document.getElementById('auth-screen');
+  if (auth && auth.style.display !== 'none' && !auth.classList.contains('hidden')) return;
+  if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
+    e.preventDefault();
+    const p = document.getElementById('cmd-palette');
+    if (p && p.classList.contains('on')) cmdClose();
+    else cmdOpen();
+  }
+});
