@@ -238,6 +238,35 @@ function renderActivePage() {
 // ── Start Firebase ───────────────────────────
 initFirebase();
 
+
+
+// ═══════════════════════════════════════════════
+// AUDIT LOG — track important system events
+// Fire-and-forget — never blocks the main action
+// ═══════════════════════════════════════════════
+async function logAudit(action, details, severity, targetType, targetId) {
+  if (!FB_READY) return;
+  try {
+    const actor = (typeof currentUser !== 'undefined' && currentUser) ? currentUser : null;
+    await fbDb.collection('audit_logs').add({
+      action: action || 'unknown',
+      details: details || '',
+      severity: severity || 'info',           // 'info' | 'warning' | 'critical'
+      targetType: targetType || '',            // 'job' | 'user' | 'setting' | 'auth'
+      targetId: targetId ? String(targetId) : '',
+      actorUid: actor ? (actor.uid || actor.id || '') : '',
+      actorName: actor ? (actor.name || 'Unknown') : 'System',
+      actorRole: actor ? (actor.role || '') : '',
+      timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+      timestampISO: new Date().toISOString(),
+    });
+  } catch (e) {
+    // Silent fail — never break the main action
+    console.warn('Audit log failed:', e.message);
+  }
+}
+window.logAudit = logAudit;
+
 // ═══════════════════════════════════════════════
 // FCM — Push Notifications
 // ═══════════════════════════════════════════════

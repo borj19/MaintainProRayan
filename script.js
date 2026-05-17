@@ -92,6 +92,7 @@ const ALL_PERMS = {
   export_data:         'Export CSV / reports',
   send_email:          'Send email reports',
   manage_users:        'Manage users (create/edit/delete)',
+  view_audit_log:      'View audit log (admin-only)',
   manage_permissions:  'Manage role permissions',
   manage_fields:       'Manage field lists (work types etc.)',
   view_online_users:   'View online / active users',
@@ -161,6 +162,7 @@ const PAGE_PERM = {
   reports:     'view_reports',
   email:       'send_email',
   users:       'manage_users',
+  audit:       'view_audit_log',
   permissions: 'manage_permissions',
   admin:       'manage_fields',
   rooms:       'view_all_tasks',
@@ -214,6 +216,7 @@ async function doLogin(){
           return;
         }
       }catch(_){}
+      try{ if(typeof logAudit==='function') logAudit('auth.login', 'User signed in', 'info', 'auth', currentUser?.uid); }catch(_){}
       document.getElementById('auth-screen').style.display='none';
       showLoadingScreen();
     } catch(e){
@@ -394,6 +397,8 @@ function doLogout(){
   if(!confirm('Are you sure you want to sign out?'))return;
   if(typeof stopPresence==="function") stopPresence();
   if(typeof stopNotifListener==="function") stopNotifListener();
+  // Log logout BEFORE currentUser is cleared so actor info is captured
+  try{ if(typeof logAudit==='function') logAudit('auth.logout', 'User signed out', 'info', 'auth', currentUser?.uid); }catch(_){}
   // Hide app while logged out — prevents content flash
   const bodyEl=document.getElementById('body');
   if(bodyEl)bodyEl.style.visibility='hidden';
@@ -424,6 +429,10 @@ function applyUserSession(){
   // Start presence tracking when user logs in
   if(typeof startPresence==="function") setTimeout(startPresence, 1000);
   if(typeof startNotifListener==="function") setTimeout(startNotifListener, 2000);
+  // Start audit log listener for admins
+  if(currentUser && currentUser.role === 'admin' && typeof startAuditListener === 'function') {
+    setTimeout(startAuditListener, 2500);
+  }
   const u=currentUser;
   const av=document.getElementById('sb-av'); if(av) av.textContent=u.initials;
   const nm=document.getElementById('sb-name'); if(nm) nm.textContent=u.name;
@@ -453,6 +462,7 @@ function buildSidebarNav(){
     ['reports',    'Reports',         '<rect x="1" y="9" width="3" height="6" rx="1" fill="currentColor"/><rect x="6" y="5" width="3" height="10" rx="1" fill="currentColor"/><rect x="11" y="1" width="3" height="14" rx="1" fill="currentColor"/>','Analytics','view_reports'],
     ['email',      'Email report',    '<rect x="1" y="3" width="14" height="10" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M1 5l7 5 7-5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>','Analytics','send_email'],
     ['users',      'Users',           '<circle cx="6" cy="5" r="2.5" stroke="currentColor" stroke-width="1.4"/><path d="M1 13c0-2.761 2.239-4 5-4s5 1.239 5 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="13" cy="5" r="2" stroke="currentColor" stroke-width="1.2"/><path d="M11.5 13c0-1.5 1-2.5 2-2.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>','Administration','manage_users','nb-users-count'],
+    ['audit',      'Audit log',       '<rect x="2" y="2" width="12" height="12" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M5 6h6M5 9h6M5 12h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>','Administration','view_audit_log'],
     ['permissions','Permissions',     '<path d="M12 1l1.5 3L17 5l-2.5 2.5.5 3.5L12 9.5 9.5 11l.5-3.5L7.5 5l3.5-1L12 1z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="4" cy="12" r="2.5" stroke="currentColor" stroke-width="1.2"/>','Administration','manage_permissions'],
     ['rooms',      'Rooms board','<rect x="1" y="1" width="6" height="4" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="9" y="1" width="6" height="4" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="1" y="7" width="6" height="4" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="9" y="7" width="6" height="4" rx="1" stroke="currentColor" stroke-width="1.4"/>','Jobs','view_all_tasks'],
     ['admin',      'Field mgmt',      '<circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.4"/><path d="M2 14c0-3.314 2.686-5 6-5s6 1.686 6 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M11 8l1 1 2-2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>','Administration','manage_fields'],
@@ -685,7 +695,8 @@ function go(p,el){
     inprogress:'In Progress — Task board',contractor:'My assigned jobs',
     request:'Job request portal',reports:'Reports & analytics',
     email:'Email report',users:'User management',
-    permissions:'Role permissions',admin:'Field management',rooms:'Room maintenance board'};
+    permissions:'Role permissions',admin:'Field management',
+    audit:'Audit log',rooms:'Room maintenance board'};
   const ttl=document.getElementById('pg-ttl'); if(ttl) ttl.textContent=T[p]||p;
 
   if(p==='dash')          rDash();
@@ -699,6 +710,7 @@ function go(p,el){
   if(p==='permissions')   renderPermissionsPage();
   if(p==='admin')         renderAdminPanels();
   if(p==='rooms'&&typeof renderRoomsBoard==='function') renderRoomsBoard();
+  if(p==='audit'&&typeof renderAuditLog==='function') renderAuditLog();
 
   if(window.innerWidth<=768) closeMobileSB();
   syncMobileNav(p);
@@ -884,6 +896,7 @@ function vTask(id){
 function markJobComplete(id){
   id=String(id);
   const updates={status:'Completed',completion:getTODAY()};
+  try{ if(typeof logAudit==='function') logAudit('job.completed', `Job marked complete: ${r?.workType?.replace(/_/g,' ')||''} at ${r?.location||''}`, 'info', 'job', id); }catch(_){}
   fbUpdateJob(id,updates);
   if(!FB_READY){const r=DATA.find(x=>String(x.id)===id);if(r)Object.assign(r,updates);}
   cm('m-det');af();renderInProgress();
@@ -927,6 +940,7 @@ function saveEdit(){
   if(updates.status==='Completed'&&!r.completion)updates.completion=getTODAY();
   fbUpdateJob(String(eId),updates);
   if(!FB_READY)Object.assign(r,updates);
+  try{ if(typeof logAudit==='function') logAudit('job.updated', `Job updated: ${updates.workType?.replace(/_/g,' ')||r.workType?.replace(/_/g,' ')} at ${updates.location||r.location} (status: ${updates.status||r.status})`, 'info', 'job', eId); }catch(_){}
   cm('m-edit');af();rReady=false;fillDrops();toast('Task updated successfully');
   // Notify handler if changed or assigned; notify requestor of status change
   if (typeof notifyUser === 'function') {
@@ -936,6 +950,8 @@ function saveEdit(){
 }
 
 function dTask(id){
+  const _r=DATA.find(x=>String(x.id)===String(id));
+  try{ if(typeof logAudit==='function') logAudit('job.deleted', `Job deleted: ${_r?.workType?.replace(/_/g,' ')||''} at ${_r?.location||''}`, 'warning', 'job', id); }catch(_){}
   id=String(id);
   if(!confirm('Delete this task? This action cannot be undone.'))return;
   fbDeleteJob(id);
@@ -1170,6 +1186,7 @@ function submitJobRequest(){
     createdAt:    getTODAY()
   };
   fbAddJob(t);
+  try{ if(typeof logAudit==='function') logAudit('job.created', `Job created: ${t.workType.replace(/_/g,' ')} at ${t.location} (status: ${t.status})`, 'info', 'job', t.id); }catch(_){}
   if(!FB_READY){fillDrops();rReady=false;}
   clrJQ();renderRequestPage();
   toast(`Request submitted — assigned to ${handler}`);
@@ -1475,6 +1492,7 @@ function renderPermissionsPage(){
 function togglePerm(role,perm,btn){
   if(role==='admin'){ toast('Admin permissions cannot be changed.','e'); return; }
   ROLE_PERMS[role][perm]=!ROLE_PERMS[role][perm];
+  try{ if(typeof logAudit==='function') logAudit('permission.toggled', `Role '${role}' permission '${perm}' set to ${ROLE_PERMS[role][perm]}`, 'warning', 'setting', role); }catch(_){}
   const enabled=ROLE_PERMS[role][perm];
   btn.style.background=enabled?'var(--g)':'var(--b2)';
   btn.querySelector('span').style.left=enabled?'19px':'3px';
@@ -1707,6 +1725,7 @@ function init(){
       else if(p==='tasks'){bTKpis();af();}
       else if(p==='request') renderRequestPage();
       else if(p==='rooms'&&typeof renderRoomsBoard==='function') renderRoomsBoard();
+  if(p==='audit'&&typeof renderAuditLog==='function') renderAuditLog();
     }
   },60000);
 }
@@ -2130,3 +2149,190 @@ document.addEventListener('keydown', e => {
     else cmdOpen();
   }
 });
+
+
+// ═══════════════════════════════════════════════
+// AUDIT LOG PAGE RENDERER
+// ═══════════════════════════════════════════════
+let AUDIT_LOGS = [];
+let _auditUnsub = null;
+let _auditFilters = { category: 'all', timeRange: 'week', severity: 'all', search: '' };
+
+function startAuditListener() {
+  if (_auditUnsub) return;
+  if (!FB_READY || !fbDb) return;
+  if (!currentUser || currentUser.role !== 'admin') return;
+  _auditUnsub = fbDb.collection('audit_logs')
+    .orderBy('timestamp', 'desc')
+    .limit(500)
+    .onSnapshot(snap => {
+      AUDIT_LOGS = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      if (document.getElementById('page-audit')?.classList.contains('on')) {
+        renderAuditList();
+      }
+    }, err => console.warn('Audit listener error:', err.message));
+}
+
+function stopAuditListener() {
+  if (_auditUnsub) { _auditUnsub(); _auditUnsub = null; }
+}
+
+function renderAuditLog() {
+  if (!currentUser || currentUser.role !== 'admin') {
+    const el = document.getElementById('page-audit');
+    if (el) el.innerHTML = '<div class="empty-state"><p>Access denied</p><small>Audit log is admin-only.</small></div>';
+    return;
+  }
+  startAuditListener();
+
+  const el = document.getElementById('page-audit');
+  if (!el) return;
+
+  el.innerHTML = `
+    <div class="hero">
+      <h2>Audit log</h2>
+      <p>Track important system actions for security & compliance. <strong id="audit-count">${AUDIT_LOGS.length}</strong> events.</p>
+    </div>
+
+    <div class="card" style="margin-bottom:14px">
+      <div style="padding:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <input id="audit-search" type="text" placeholder="Search by actor, action, or details..." class="fi" style="flex:1;min-width:200px" oninput="setAuditFilter('search', this.value)">
+
+        <select class="fi" style="flex:0 0 auto;width:auto" onchange="setAuditFilter('category', this.value)">
+          <option value="all">All categories</option>
+          <option value="auth">Authentication</option>
+          <option value="job">Jobs</option>
+          <option value="user">Users</option>
+          <option value="setting">Settings</option>
+        </select>
+
+        <select class="fi" style="flex:0 0 auto;width:auto" onchange="setAuditFilter('timeRange', this.value)">
+          <option value="today">Today</option>
+          <option value="week" selected>Last 7 days</option>
+          <option value="month">Last 30 days</option>
+          <option value="all">All time</option>
+        </select>
+
+        <select class="fi" style="flex:0 0 auto;width:auto" onchange="setAuditFilter('severity', this.value)">
+          <option value="all">All severities</option>
+          <option value="info">Info</option>
+          <option value="warning">Warning</option>
+          <option value="critical">Critical</option>
+        </select>
+
+        <button class="btn btn-o btn-sm" onclick="exportAuditCSV()">
+          <svg viewBox="0 0 16 16" fill="none" style="width:14px;height:14px"><path d="M8 1v9M5 7l3 3 3-3M2 14h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Export CSV
+        </button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div id="audit-list"></div>
+    </div>
+  `;
+  renderAuditList();
+}
+
+function setAuditFilter(key, value) {
+  _auditFilters[key] = value;
+  renderAuditList();
+}
+
+function filterAuditLogs() {
+  const f = _auditFilters;
+  const now = Date.now();
+  return AUDIT_LOGS.filter(log => {
+    // Category filter
+    if (f.category !== 'all' && log.targetType !== f.category) return false;
+    // Severity filter
+    if (f.severity !== 'all' && log.severity !== f.severity) return false;
+    // Time range
+    const ts = log.timestampISO ? new Date(log.timestampISO).getTime() : 0;
+    if (f.timeRange === 'today') {
+      if (now - ts > 86400000) return false;
+    } else if (f.timeRange === 'week') {
+      if (now - ts > 7 * 86400000) return false;
+    } else if (f.timeRange === 'month') {
+      if (now - ts > 30 * 86400000) return false;
+    }
+    // Search
+    if (f.search) {
+      const q = f.search.toLowerCase();
+      const hay = `${log.actorName||''} ${log.action||''} ${log.details||''}`.toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+function renderAuditList() {
+  const list = document.getElementById('audit-list');
+  const cnt  = document.getElementById('audit-count');
+  if (!list) return;
+  const filtered = filterAuditLogs();
+  if (cnt) cnt.textContent = filtered.length;
+
+  if (!filtered.length) {
+    list.innerHTML = `
+      <div class="empty-state">
+        <svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="1.5" stroke="currentColor" stroke-width="1.2"/></svg>
+        <p>No audit events match your filters</p>
+        <small>Try adjusting the time range or category.</small>
+      </div>`;
+    return;
+  }
+
+  const sevColor = { info: 'var(--blue)', warning: 'var(--amber)', critical: 'var(--red)' };
+  const sevIcon  = { info: 'ℹ', warning: '⚠', critical: '🔴' };
+
+  list.innerHTML = filtered.map(log => {
+    const time = log.timestampISO ? new Date(log.timestampISO) : null;
+    const timeStr = time
+      ? time.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }) + ' · ' + time.toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' })
+      : '—';
+    const color = sevColor[log.severity] || sevColor.info;
+    return `
+      <div class="audit-row" style="border-left-color:${color}">
+        <div class="audit-dot" style="background:${color}"></div>
+        <div class="audit-body">
+          <div class="audit-head">
+            <span class="audit-actor">${log.actorName || 'System'}</span>
+            <span class="audit-sep">·</span>
+            <span class="audit-action">${log.action || '—'}</span>
+            <span class="audit-time">${timeStr}</span>
+          </div>
+          <div class="audit-details">${log.details || ''}</div>
+          ${log.actorRole ? `<span class="audit-role">${log.actorRole}</span>` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function exportAuditCSV() {
+  const filtered = filterAuditLogs();
+  if (!filtered.length) {
+    if (typeof toast === 'function') toast('No events to export', 'i');
+    return;
+  }
+  const headers = ['Timestamp', 'Actor', 'Role', 'Action', 'Category', 'Severity', 'Details'];
+  const rows = filtered.map(log => [
+    log.timestampISO || '',
+    log.actorName || '',
+    log.actorRole || '',
+    log.action || '',
+    log.targetType || '',
+    log.severity || '',
+    (log.details || '').replace(/"/g, '""')
+  ]);
+  const csv = [headers, ...rows].map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `audit-log-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  if (typeof toast === 'function') toast('Audit log exported','s');
+}
