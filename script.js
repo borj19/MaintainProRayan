@@ -637,7 +637,8 @@ function toggleOnlineList() {
 }
 let DATA=[]; // jobs loaded from Firestore in real-time
 let nid=1,fData=[...DATA],sKey=null,sDir=1,cPg=1,eId=null;
-const PGS=12,chs={};
+let PGS=parseInt(localStorage.getItem('mp_page_size')||'20',10);const chs={};
+let SELECTED_TASKS=new Set();
 let aR=new Set(),aW=new Set(),rReady=false;
 let dashFilter='all';
 
@@ -805,7 +806,9 @@ function af(){
     return true;
   });
   if(sKey)fData.sort((a,b)=>(a[sKey]>b[sKey]?1:-1)*sDir);
-  cPg=1;rTbl();
+  cPg=1;
+  SELECTED_TASKS.clear();
+  rTbl();
 }
 function clrF(){['fsrch','fst','far','fwt','fhd','fpr'].forEach(id=>{const el=document.getElementById(id);if(el){if(el.tagName==='INPUT')el.value='';else el.value='';}});af();}
 function srt(k){if(sKey===k)sDir*=-1;else{sKey=k;sDir=1;}af();}
@@ -813,11 +816,23 @@ function srt(k){if(sKey===k)sDir*=-1;else{sKey=k;sDir=1;}af();}
 function rTbl(){
   const tot=fData.length,pages=Math.max(1,Math.ceil(tot/PGS));
   if(cPg>pages)cPg=pages;
-  const rows=fData.slice((cPg-1)*PGS,cPg*PGS);
+  const startIdx=(cPg-1)*PGS;
+  const rows=fData.slice(startIdx,startIdx+PGS);
+  const showingStart=tot>0?startIdx+1:0;
+  const showingEnd=Math.min(startIdx+PGS,tot);
   document.getElementById('fi').textContent=`${tot} task${tot!==1?'s':''} · ${tot===DATA.length?'all records':'filtered from '+DATA.length}`;
   const isAdmin=currentUser&&(currentUser.role==='admin'||currentUser.role==='staff');
+  const isFullAdmin=currentUser&&currentUser.role==='admin';
   const tb=document.getElementById('t-body');
-  tb.innerHTML=rows.length?rows.map(r=>`<tr>
+
+  // Check if all currently visible rows are selected (for header checkbox state)
+  const visibleIds=rows.map(r=>String(r.id));
+  const allVisibleSelected=visibleIds.length>0 && visibleIds.every(id=>SELECTED_TASKS.has(id));
+
+  tb.innerHTML=rows.length?rows.map(r=>{
+    const checked=SELECTED_TASKS.has(String(r.id))?'checked':'';
+    return `<tr class="${SELECTED_TASKS.has(String(r.id))?'row-selected':''}">
+    ${isAdmin?`<td style="width:34px;padding-right:0"><input type="checkbox" class="t-chk" data-id="${r.id}" ${checked} onclick="toggleSelectTask('${r.id}',this.checked,event)" style="width:16px;height:16px;accent-color:var(--g);cursor:pointer"></td>`:''}
     <td>${fds(r.date)}</td><td class="td-h">${r.requestor}</td><td>${r.handler}</td>
     <td>${r.workType.replace(/_/g,' ')}</td><td>${r.subType}</td>
     <td>${r.area.replace(/_/g,' ')}</td><td>${r.location}</td>
@@ -826,14 +841,202 @@ function rTbl(){
     <td><div style="display:flex;gap:3px">
       <button class="btn btn-o btn-xs" onclick="vTask('${r.id}')" title="View" style="padding:3px 5px"><svg viewBox="0 0 16 16" fill="none" style="width:11px;height:11px"><circle cx="8" cy="8" r="5" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg></button>
       ${isAdmin?`<button class="btn btn-o btn-xs" onclick="eTask('${r.id}')" title="Edit" style="padding:3px 5px"><svg viewBox="0 0 16 16" fill="none" style="width:11px;height:11px"><path d="M11 2l3 3-9 9H2v-3L11 2z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`:''}
-      ${currentUser&&currentUser.role==='admin'?`<button class="btn btn-r btn-xs" onclick="dTask('${r.id}')" title="Delete" style="padding:3px 5px"><svg viewBox="0 0 16 16" fill="none" style="width:11px;height:11px"><path d="M3 4h10M6 4V2h4v2M5 4v8h6V4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`:''}
+      ${isFullAdmin?`<button class="btn btn-r btn-xs" onclick="dTask('${r.id}')" title="Delete" style="padding:3px 5px"><svg viewBox="0 0 16 16" fill="none" style="width:11px;height:11px"><path d="M3 4h10M6 4V2h4v2M5 4v8h6V4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`:''}
     </div></td>
-  </tr>`).join(''):`<tr><td colspan="11" style="text-align:center;padding:36px;color:var(--t2)">No tasks match the current filters.</td></tr>`;
-  document.getElementById('p-inf').textContent=`Page ${cPg} of ${pages} (${tot} tasks)`;
-  document.getElementById('p-pv').disabled=cPg<=1;
-  document.getElementById('p-nx').disabled=cPg>=pages;
+  </tr>`}).join(''):`<tr><td colspan="${isAdmin?12:11}" style="text-align:center;padding:36px;color:var(--t2)">No tasks match the current filters.</td></tr>`;
+
+  // Update header checkbox state
+  const headerChk=document.getElementById('t-chk-all');
+  if(headerChk){
+    headerChk.checked=allVisibleSelected;
+    headerChk.indeterminate=!allVisibleSelected && visibleIds.some(id=>SELECTED_TASKS.has(id));
+  }
+
+  // Render pagination controls
+  renderPagination(cPg, pages, tot, showingStart, showingEnd);
+  // Update bulk action bar
+  updateBulkBar();
 }
-function chPg(d){cPg+=d;rTbl();}
+
+// ─── Selection state management ───
+function toggleSelectTask(id, checked, event){
+  id=String(id);
+  if(event && event.shiftKey && window._lastSelectedTask){
+    // Shift-click range selection
+    const ids=fData.map(r=>String(r.id));
+    const a=ids.indexOf(window._lastSelectedTask);
+    const b=ids.indexOf(id);
+    if(a>=0 && b>=0){
+      const [s,e]=[Math.min(a,b),Math.max(a,b)];
+      for(let i=s;i<=e;i++){
+        if(checked) SELECTED_TASKS.add(ids[i]);
+        else        SELECTED_TASKS.delete(ids[i]);
+      }
+    }
+  } else {
+    if(checked) SELECTED_TASKS.add(id);
+    else        SELECTED_TASKS.delete(id);
+  }
+  window._lastSelectedTask=id;
+  rTbl();
+}
+
+function toggleSelectAllVisible(checked){
+  // Toggle all currently visible (current page) rows
+  const startIdx=(cPg-1)*PGS;
+  const rows=fData.slice(startIdx,startIdx+PGS);
+  rows.forEach(r=>{
+    if(checked) SELECTED_TASKS.add(String(r.id));
+    else        SELECTED_TASKS.delete(String(r.id));
+  });
+  rTbl();
+}
+
+function clearSelection(){
+  SELECTED_TASKS.clear();
+  rTbl();
+}
+
+// ─── Bulk action bar ───
+function updateBulkBar(){
+  const bar=document.getElementById('bulk-bar');
+  if(!bar) return;
+  const n=SELECTED_TASKS.size;
+  if(n===0){
+    bar.classList.remove('on');
+    return;
+  }
+  bar.classList.add('on');
+  const cnt=document.getElementById('bulk-count');
+  if(cnt) cnt.textContent=n;
+}
+
+async function bulkMarkComplete(){
+  const ids=Array.from(SELECTED_TASKS);
+  if(!ids.length) return;
+  if(!confirm(`Mark ${ids.length} job${ids.length!==1?'s':''} as Completed?`)) return;
+  const updates={status:'Completed',completion:getTODAY(),completedAt:typeof nowISO==='function'?nowISO():new Date().toISOString()};
+  for(const id of ids){
+    try{
+      await fbUpdateJob(id, updates);
+      if(typeof logAudit==='function') logAudit('job.completed', `Bulk complete: job ${id}`, 'info', 'job', id);
+    }catch(e){ console.warn('Bulk complete failed for', id, e.message); }
+  }
+  toast(`${ids.length} job${ids.length!==1?'s':''} marked complete`, 's');
+  clearSelection();
+}
+
+async function bulkChangePriority(){
+  const ids=Array.from(SELECTED_TASKS);
+  if(!ids.length) return;
+  const p=prompt('Set priority for ' + ids.length + ' jobs to: Urgent, High, Medium, or Low');
+  if(!p) return;
+  const priority=p.trim();
+  if(!['Urgent','High','Medium','Low'].includes(priority)){
+    toast('Invalid priority. Use: Urgent, High, Medium, or Low','e');
+    return;
+  }
+  for(const id of ids){
+    try{
+      await fbUpdateJob(id, {priority});
+      if(typeof logAudit==='function') logAudit('job.updated', `Bulk priority change: ${priority}`, 'info', 'job', id);
+    }catch(e){ console.warn('Bulk priority failed for', id, e.message); }
+  }
+  toast(`Priority set to ${priority} on ${ids.length} job${ids.length!==1?'s':''}`, 's');
+  clearSelection();
+}
+
+async function bulkDelete(){
+  const ids=Array.from(SELECTED_TASKS);
+  if(!ids.length) return;
+  if(currentUser?.role!=='admin'){ toast('Only admin can delete jobs','e'); return; }
+  const confirmed=prompt(`Type "${ids.length}" to confirm deleting ${ids.length} job${ids.length!==1?'s':''}. This cannot be undone.`);
+  if(confirmed!==String(ids.length)){
+    toast('Bulk delete cancelled','i');
+    return;
+  }
+  for(const id of ids){
+    try{
+      const r=DATA.find(x=>String(x.id)===String(id));
+      await fbDeleteJob(id);
+      if(typeof logAudit==='function') logAudit('job.deleted', `Bulk delete: ${r?.workType?.replace(/_/g,' ')||''} at ${r?.location||''}`, 'warning', 'job', id);
+    }catch(e){ console.warn('Bulk delete failed for', id, e.message); }
+  }
+  if(!FB_READY){ DATA=DATA.filter(x=>!ids.includes(String(x.id))); fData=fData.filter(x=>!ids.includes(String(x.id))); }
+  toast(`${ids.length} job${ids.length!==1?'s':''} deleted`, 's');
+  clearSelection();
+}
+
+// ─── Full pagination renderer ───
+function renderPagination(currentPage, totalPages, totalItems, showStart, showEnd){
+  const wrap=document.getElementById('pag-wrap');
+  if(!wrap) return;
+  if(totalItems===0){
+    wrap.innerHTML='';
+    return;
+  }
+  // Build page number buttons (smart truncation)
+  function pageBtns(){
+    const btns=[];
+    const maxShow=5;
+    if(totalPages<=maxShow+2){
+      for(let i=1;i<=totalPages;i++) btns.push(i);
+    } else {
+      btns.push(1);
+      let start=Math.max(2, currentPage-1);
+      let end=Math.min(totalPages-1, currentPage+1);
+      if(start>2) btns.push('…');
+      for(let i=start;i<=end;i++) btns.push(i);
+      if(end<totalPages-1) btns.push('…');
+      btns.push(totalPages);
+    }
+    return btns;
+  }
+  const btnHTML=pageBtns().map(b=>{
+    if(b==='…') return `<span class="pag-ellipsis">…</span>`;
+    const active=b===currentPage?'active':'';
+    return `<button class="pag-num ${active}" onclick="goToPage(${b})">${b}</button>`;
+  }).join('');
+
+  wrap.innerHTML=`
+    <div class="pag-info-wrap">
+      <span class="pag-info-text">Showing <strong>${showStart}–${showEnd}</strong> of <strong>${totalItems}</strong></span>
+      <select class="pag-size" onchange="setPageSize(this.value)" title="Page size">
+        <option value="10" ${PGS===10?'selected':''}>10 / page</option>
+        <option value="20" ${PGS===20?'selected':''}>20 / page</option>
+        <option value="50" ${PGS===50?'selected':''}>50 / page</option>
+        <option value="100" ${PGS===100?'selected':''}>100 / page</option>
+      </select>
+    </div>
+    <div class="pag-nav">
+      <button class="pag-arr" onclick="goToPage(${currentPage-1})" ${currentPage<=1?'disabled':''} title="Previous">
+        <svg viewBox="0 0 16 16" fill="none" style="width:14px;height:14px"><path d="M10 4l-4 4 4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      ${btnHTML}
+      <button class="pag-arr" onclick="goToPage(${currentPage+1})" ${currentPage>=totalPages?'disabled':''} title="Next">
+        <svg viewBox="0 0 16 16" fill="none" style="width:14px;height:14px"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+  `;
+}
+
+function goToPage(p){
+  const pages=Math.max(1,Math.ceil(fData.length/PGS));
+  cPg=Math.max(1,Math.min(p,pages));
+  rTbl();
+  // Smooth scroll to top of table
+  const tableWrap=document.querySelector('#page-tasks .tbl-wrap');
+  if(tableWrap) tableWrap.scrollTop=0;
+}
+
+function setPageSize(s){
+  PGS=parseInt(s,10)||20;
+  try{ localStorage.setItem('mp_page_size', String(PGS)); }catch(_){}
+  cPg=1;
+  rTbl();
+}
+// chPg replaced by goToPage()
+function chPg(d){goToPage(cPg+d);}
 
 // ═══════════════════════════════════════════════
 // TASK KPIs

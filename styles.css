@@ -2149,3 +2149,160 @@ svg{shape-rendering:geometricPrecision}
   .audit-time{margin-left:0;width:100%;margin-top:2px}
   .audit-head{font-size:12.5px}
 }
+
+
+/* ═══════════════════════════════════════════════
+   PHASE 2 — Pagination & Bulk Actions
+═══════════════════════════════════════════════ */
+
+/* Premium pagination controls */
+.pag-wrap{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 4px 4px;
+  gap:16px;
+  flex-wrap:wrap;
+}
+
+.pag-info-wrap{
+  display:flex;align-items:center;gap:12px;
+  font-size:13px;color:var(--t2);
+  flex-wrap:wrap;
+}
+.pag-info-text strong{
+  color:var(--t0);
+  font-variant-numeric:tabular-nums;
+  font-weight:700;
+}
+.pag-size{
+  background:var(--s1);
+  border:1px solid var(--b0);
+  border-radius:6px;
+  padding:5px 8px;
+  font-family:var(--font);
+  font-size:12px;
+  color:var(--t1);
+  cursor:pointer;
+  transition:border-color .15s ease;
+}
+.pag-size:hover{border-color:var(--b2)}
+.pag-size:focus{outline:none;border-color:var(--g)}
+
+.pag-nav{
+  display:flex;align-items:center;gap:4px;
+}
+.pag-num,.pag-arr{
+  min-width:32px;height:32px;
+  background:var(--s1);
+  border:1px solid var(--b0);
+  border-radius:6px;
+  color:var(--t1);
+  font-family:var(--font);
+  font-size:12.5px;
+  font-weight:600;
+  font-variant-numeric:tabular-nums;
+  cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;
+  padding:0 10px;
+  transition:all .15s ease;
+}
+.pag-num:hover:not(.active),.pag-arr:hover:not(:disabled){
+  background:var(--s2);
+  border-color:var(--b2);
+  color:var(--t0);
+}
+.pag-num.active{
+  background:var(--brand-gradient,var(--g));
+  border-color:transparent;
+  color:#fff;
+  box-shadow:0 2px 8px rgba(76,175,80,.3);
+}
+.pag-arr{padding:0 8px}
+.pag-arr:disabled{opacity:.35;cursor:not-allowed}
+.pag-ellipsis{
+  color:var(--t3);
+  font-size:13px;
+  padding:0 4px;
+  display:inline-flex;align-items:center;
+}
+
+/* Bulk action bar — floats at bottom */
+.bulk-bar{
+  position:fixed;
+  bottom:24px;
+  left:50%;
+  transform:translate(-50%, 100px);
+  z-index:9000;
+  opacity:0;
+  pointer-events:none;
+  transition:transform .35s cubic-bezier(.34,1.56,.64,1), opacity .25s ease;
+  max-width:calc(100vw - 32px);
+}
+.bulk-bar.on{
+  transform:translate(-50%, 0);
+  opacity:1;
+  pointer-events:auto;
+}
+.bulk-bar-inner{
+  display:flex;align-items:center;gap:14px;
+  background:var(--s0);
+  border:1px solid var(--b1);
+  border-radius:14px;
+  padding:10px 12px 10px 18px;
+  box-shadow:0 18px 40px rgba(0,0,0,.4), 0 6px 12px rgba(0,0,0,.2);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+}
+.bulk-bar-info{
+  display:flex;align-items:center;gap:8px;
+  padding-right:14px;
+  border-right:1px solid var(--b0);
+}
+.bulk-count-badge{
+  font-size:13px;font-weight:600;color:var(--t1);
+  white-space:nowrap;
+}
+.bulk-count-badge strong{
+  color:var(--g);
+  font-size:15px;
+  margin-right:2px;
+  font-variant-numeric:tabular-nums;
+}
+.bulk-bar-actions{
+  display:flex;align-items:center;gap:6px;
+  flex-wrap:wrap;
+}
+.bulk-bar-actions .btn{
+  white-space:nowrap;
+  font-weight:600;
+}
+
+/* Selected row highlight */
+tr.row-selected{
+  background:var(--g3) !important;
+}
+tr.row-selected td{
+  background:transparent;
+}
+tr.row-selected:hover{
+  background:color-mix(in srgb, var(--g) 12%, transparent) !important;
+}
+
+/* Checkbox column */
+.t-chk-col{cursor:default !important}
+.t-chk-col:hover{background:inherit !important}
+input.t-chk{cursor:pointer}
+
+/* Mobile: bulk bar adapts */
+@media(max-width:768px){
+  .bulk-bar{bottom:80px;left:12px;right:12px;transform:translate(0, 100px)}
+  .bulk-bar.on{transform:translate(0, 0)}
+  .bulk-bar-inner{padding:10px 12px;flex-direction:column;gap:10px;align-items:stretch}
+  .bulk-bar-info{padding-right:0;border-right:none;border-bottom:1px solid var(--b0);padding-bottom:8px;justify-content:center}
+  .bulk-bar-actions{justify-content:center}
+}
+
+@media(max-width:640px){
+  .pag-wrap{flex-direction:column;align-items:stretch;gap:10px}
+  .pag-nav{justify-content:center;flex-wrap:wrap}
+  .pag-info-wrap{justify-content:center}
+}

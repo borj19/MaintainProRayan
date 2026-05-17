@@ -362,6 +362,7 @@
     <div class="tbl-wrap">
       <table>
         <thead><tr>
+          <th class="t-chk-col" style="width:34px;padding-right:0"><input type="checkbox" id="t-chk-all" onclick="toggleSelectAllVisible(this.checked)" style="width:16px;height:16px;accent-color:var(--g);cursor:pointer" title="Select all on this page"></th>
           <th style="width:76px" onclick="srt('date')">Date ↕</th>
           <th style="width:95px" onclick="srt('requestor')">Requestor ↕</th>
           <th style="width:105px" onclick="srt('handler')">Handler ↕</th>
@@ -377,7 +378,36 @@
         <tbody id="t-body"></tbody>
       </table>
     </div>
-    <div class="pag"><button id="p-pv" onclick="chPg(-1)">← Prev</button><span class="pag-info" id="p-inf"></span><button id="p-nx" onclick="chPg(1)">Next →</button></div>
+    <!-- Pagination controls (rendered dynamically) -->
+    <div id="pag-wrap" class="pag-wrap"></div>
+    <!-- Legacy pagination kept for any code that still references it -->
+    <div style="display:none"><button id="p-pv">←</button><span id="p-inf"></span><button id="p-nx">→</button></div>
+  </div>
+
+  <!-- Bulk action bar — floats at bottom when rows are selected -->
+  <div id="bulk-bar" class="bulk-bar">
+    <div class="bulk-bar-inner">
+      <div class="bulk-bar-info">
+        <span class="bulk-count-badge"><strong id="bulk-count">0</strong> selected</span>
+      </div>
+      <div class="bulk-bar-actions">
+        <button class="btn btn-g btn-sm" onclick="bulkMarkComplete()">
+          <svg viewBox="0 0 16 16" fill="none" style="width:13px;height:13px"><path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Mark complete
+        </button>
+        <button class="btn btn-o btn-sm" onclick="bulkChangePriority()">
+          <svg viewBox="0 0 16 16" fill="none" style="width:13px;height:13px"><path d="M8 1v14M3 6l5-5 5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Set priority
+        </button>
+        <button class="btn btn-r btn-sm" onclick="bulkDelete()">
+          <svg viewBox="0 0 16 16" fill="none" style="width:13px;height:13px"><path d="M3 4h10M6 4V2h4v2M5 4v8h6V4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Delete
+        </button>
+        <button class="btn btn-o btn-sm" onclick="clearSelection()" title="Clear selection">
+          <svg viewBox="0 0 16 16" fill="none" style="width:13px;height:13px"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+    </div>
   </div>
 
   <!-- ══ ADD TASK ══ -->
