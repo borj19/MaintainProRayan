@@ -2423,3 +2423,28 @@ input.t-chk{cursor:pointer}
   }
   .kpi.kpi-featured{grid-column:span 1}
 }
+
+
+/* ═══════════════════════════════════════════════
+   LUCIDE ICONS — ensure consistent sizing/coloring
+═══════════════════════════════════════════════ */
+[data-lucide]{
+  display:inline-block;
+  vertical-align:middle;
+  stroke-width:1.75;
+  color:inherit;
+  flex-shrink:0;
+}
+.nav-btn [data-lucide]{
+  width:16px !important;
+  height:16px !important;
+}
+.btn [data-lucide]{
+  width:13px;
+  height:13px;
+  stroke-width:1.8;
+}
+.btn-xs [data-lucide]{
+  width:12px;
+  height:12px;
+}
