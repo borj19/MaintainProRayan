@@ -164,6 +164,58 @@ function renderDashHero() {
   `;
 }
 
+// ─── Sparkline generator — tiny 7-day trend line ───
+function buildSparkline(values, color){
+  if(!values || values.length < 2) return '';
+  const w = 100, h = 22, pad = 2;
+  const max = Math.max(...values, 1);
+  const min = Math.min(...values, 0);
+  const range = Math.max(1, max - min);
+  const xStep = (w - pad*2) / (values.length - 1);
+  // Build smooth path
+  const pts = values.map((v,i) => {
+    const x = pad + i * xStep;
+    const y = h - pad - ((v - min) / range) * (h - pad*2);
+    return [x, y];
+  });
+  let path = `M ${pts[0][0]} ${pts[0][1]}`;
+  for(let i = 1; i < pts.length; i++){
+    const [px, py] = pts[i-1];
+    const [cx, cy] = pts[i];
+    const mx = (px + cx) / 2;
+    path += ` Q ${px} ${py} ${mx} ${(py+cy)/2}`;
+    path += ` T ${cx} ${cy}`;
+  }
+  // Area fill path
+  const areaPath = path + ` L ${pts[pts.length-1][0]} ${h-pad} L ${pts[0][0]} ${h-pad} Z`;
+  const lastY = pts[pts.length-1][1];
+  const lastX = pts[pts.length-1][0];
+  return `<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+    <defs>
+      <linearGradient id="spg-${Date.now()}-${Math.random().toString(36).slice(2,6)}" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="${color}" stop-opacity=".25"/>
+        <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+    <path d="${areaPath}" fill="${color}" fill-opacity=".12"/>
+    <path d="${path}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="${lastX}" cy="${lastY}" r="2" fill="${color}"/>
+  </svg>`;
+}
+
+// ─── Build last-7-days values for sparkline ───
+function last7Days(allData, predicate){
+  const today = new Date(getTODAY());
+  const result = [];
+  for(let i = 6; i >= 0; i--){
+    const dt = new Date(today);
+    dt.setDate(dt.getDate() - i);
+    const iso = dt.toISOString().slice(0, 10);
+    result.push(allData.filter(r => r.date === iso && (!predicate || predicate(r))).length);
+  }
+  return result;
+}
+
 function rDash() {
   renderDashHero();
   const d = getDashData();
@@ -172,19 +224,28 @@ function rDash() {
   const ip = d.filter(r => r.status === 'In Progress' || r.status === 'In Progress - Contractor').length;
   const pending = d.filter(r => r.status === 'Pending').length;
 
+  // Build sparkline data — last 7 days from ALL data (not filtered)
+  const sparkTotal     = last7Days(DATA, null);
+  const sparkCompleted = last7Days(DATA, r => r.status === 'Completed');
+  const sparkInProg    = last7Days(DATA, r => r.status === 'In Progress' || r.status === 'In Progress - Contractor');
+  const sparkUrgent    = last7Days(DATA, r => r.priority === 'Urgent');
+  const sparkPending   = last7Days(DATA, r => r.status === 'Pending');
+
   const kpis = [
-    { c: '#6ebe2a', l: 'Total tasks', v: d.length, s: 'Filtered view' },
-    { c: '#6ebe2a', l: 'Completed',   v: c, tr: d.length ? `${Math.round(c / d.length * 100)}% rate` : '—', tc: 'up' },
-    { c: '#5599f5', l: 'In progress', v: ip },
-    { c: '#e8534a', l: 'Urgent',      v: u, tr: u > 0 ? u + ' critical' : 'All clear', tc: u > 0 ? 'dn' : 'up' },
-    { c: '#a87cf0', l: 'Pending',     v: pending, s: 'Awaiting action' },
-    { c: '#2dcfb3', l: 'Handlers',    v: new Set(d.map(r => r.handler)).size, s: 'Active staff' },
+    { c: '#6ebe2a', l: 'Total tasks', v: d.length,                                       s: 'Filtered view',  spark: sparkTotal,     featured: true },
+    { c: '#6ebe2a', l: 'Completed',   v: c,                                              tr: d.length ? `${Math.round(c / d.length * 100)}% rate` : '—', tc: 'up', spark: sparkCompleted },
+    { c: '#5599f5', l: 'In progress', v: ip,                                             spark: sparkInProg },
+    { c: '#e8534a', l: 'Urgent',      v: u,                                              tr: u > 0 ? u + ' critical' : 'All clear', tc: u > 0 ? 'dn' : 'up', spark: sparkUrgent },
+    { c: '#a87cf0', l: 'Pending',     v: pending,                                        s: 'Awaiting action', spark: sparkPending },
+    { c: '#2dcfb3', l: 'Handlers',    v: new Set(d.map(r => r.handler)).size,             s: 'Active staff' },
   ];
+
   document.getElementById('d-kpis').innerHTML = kpis.map(k =>
-    `<div class="kpi"><div class="kpi-bar" style="background:${k.c}"></div>
+    `<div class="kpi${k.featured ? ' kpi-featured' : ''}"><div class="kpi-bar" style="background:${k.c}"></div>
        <div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div>
        ${k.s ? `<div class="kpi-sub">${k.s}</div>` : ''}
        ${k.tr ? `<div class="kpi-trend ${k.tc}">${k.tr}</div>` : ''}
+       ${k.spark ? `<div class="kpi-spark">${buildSparkline(k.spark, k.c)}</div>` : ''}
      </div>`
   ).join('');
 

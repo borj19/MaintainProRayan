@@ -2306,3 +2306,120 @@ input.t-chk{cursor:pointer}
   .pag-nav{justify-content:center;flex-wrap:wrap}
   .pag-info-wrap{justify-content:center}
 }
+
+
+/* ═══════════════════════════════════════════════
+   PHASE 3a — BENTO DASHBOARD + SPARKLINES
+═══════════════════════════════════════════════ */
+
+/* Bento sections — vertical stack of grids */
+.bento{
+  margin-bottom:14px;
+}
+
+/* KPI row: keep responsive grid, but tighter spacing */
+.bento-kpis .kpi-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(160px, 1fr));
+  gap:12px;
+}
+
+/* Featured KPI takes 2 columns on bigger screens */
+@media(min-width:900px){
+  .bento-kpis .kpi-grid{
+    grid-template-columns:2fr 1fr 1fr 1fr 1fr 1fr;
+  }
+  .kpi.kpi-featured{
+    grid-column:span 1;       /* But spans wider */
+    grid-row:span 1;
+  }
+}
+.kpi.kpi-featured{
+  background:linear-gradient(135deg, var(--s1) 0%, color-mix(in srgb, var(--g) 7%, var(--s1)) 100%);
+  border-color:var(--g4);
+}
+.kpi.kpi-featured .kpi-val{
+  font-size:38px;
+  letter-spacing:-.04em;
+}
+
+/* Sparkline inside each KPI card */
+.kpi-spark{
+  margin-top:10px;
+  height:24px;
+  position:relative;
+  opacity:.85;
+  transition:opacity .2s ease;
+}
+.kpi:hover .kpi-spark{opacity:1}
+.kpi-spark svg.spark{
+  width:100%;
+  height:100%;
+  display:block;
+  overflow:visible;
+}
+
+/* ── Charts row: 2/3 + 1/3 split (bento asymmetry) ── */
+.bento-charts{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:14px;
+}
+@media(min-width:900px){
+  .bento-charts{
+    grid-template-columns:1.7fr 1fr;
+  }
+}
+.bento-chart-main,.bento-chart-side{
+  min-width:0;
+}
+
+/* ── Bottom section: activity (wide) + stack of 2 cards ── */
+.bento-bottom{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:14px;
+}
+@media(min-width:900px){
+  .bento-bottom{
+    grid-template-columns:1.4fr 1fr;
+  }
+}
+.bento-activity{min-width:0}
+.bento-stack{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  min-width:0;
+}
+.bento-stack .card{flex:1}
+
+/* ── Hover lift on bento cards ── */
+.bento .card{
+  transition:border-color .18s ease, transform .25s cubic-bezier(.4,0,.2,1), box-shadow .25s ease;
+}
+.bento .card:hover{
+  border-color:var(--b1);
+  box-shadow:0 8px 24px rgba(0,0,0,.12);
+}
+
+/* ── Mobile: stack everything ── */
+@media(max-width:640px){
+  .bento{margin-bottom:12px}
+  .bento-kpis .kpi-grid{
+    grid-template-columns:repeat(2, 1fr);
+    gap:10px;
+  }
+  .kpi.kpi-featured{
+    grid-column:span 2;
+  }
+  .kpi.kpi-featured .kpi-val{font-size:32px}
+  .kpi-spark{height:20px;margin-top:8px}
+}
+
+@media(max-width:400px){
+  .bento-kpis .kpi-grid{
+    grid-template-columns:1fr;
+  }
+  .kpi.kpi-featured{grid-column:span 1}
+}
