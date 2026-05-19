@@ -426,6 +426,43 @@
     </div>
   </div>
 
+  <!-- ══ ADD TASK ══ -->
+  <div id="page-add" class="page">
+    <div style="display:flex;gap:14px;flex-wrap:wrap">
+      <div class="card" style="flex:2;min-width:290px">
+        <div class="card-hd"><span class="card-t">New task</span><span class="card-badge" style="background:var(--g3);color:var(--g);border-color:var(--g4)">Auto → In Progress</span></div>
+        <div class="fsec">
+          <div class="fsec-t">Basic information</div>
+          <div class="fg">
+            <div class="fc"><label class="fl">Date <span class="r">*</span></label><input type="date" id="af-dt" class="fi"></div>
+            <div class="fc"><label class="fl">Requestor <span class="r">*</span></label><select id="af-rq" class="fi"></select></div>
+            <div class="fc"><label class="fl">Handled by <span class="r">*</span></label><select id="af-hd" class="fi"></select></div>
+            <div class="fc"><label class="fl">Priority</label><select id="af-pr" class="fi"><option>Low</option><option>Medium</option><option selected>High</option><option>Urgent</option></select></div>
+          </div>
+        </div>
+        <div class="fsec">
+          <div class="fsec-t">Work classification</div>
+          <div class="fg">
+            <div class="fc"><label class="fl">Work type <span class="r">*</span></label><select id="af-wt" class="fi" onchange="aus()"></select></div>
+            <div class="fc"><label class="fl">Sub type</label><select id="af-st" class="fi"></select></div>
+            <div class="fc"><label class="fl">Area / Level <span class="r">*</span></label><select id="af-ar" class="fi"></select></div>
+            <div class="fc"><label class="fl">Location / Room <span class="r">*</span></label><input type="text" id="af-lc" class="fi" placeholder="e.g. Room 810"></div>
+            <div class="fc"><label class="fl">Completion date</label><input type="date" id="af-cd" class="fi"></div>
+            <div class="fc ff"><label class="fl">Details / description <span class="r">*</span></label><textarea id="af-de" class="fi" rows="3" placeholder="Describe the maintenance issue in detail..."></textarea></div>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-o" onclick="clrAF()">Clear form</button>
+          <button class="btn btn-g" onclick="addTask()"><svg viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Add task</button>
+        </div>
+      </div>
+      <div style="flex:1;min-width:230px;display:flex;flex-direction:column;gap:12px">
+        <div class="card"><div class="card-hd"><span class="card-t">Platform stats</span></div><div id="add-qs"></div></div>
+        <div class="card"><div class="card-hd"><span class="card-t">Recent additions</span><span class="card-badge" id="add-rc">0 today</span></div><div id="add-rl"></div></div>
+      </div>
+    </div>
+  </div>
+
   <!-- ══ IN PROGRESS (CONTRACTOR VIEW) ══ -->
   <div id="page-inprogress" class="page">
     <div class="contractor-banner">
@@ -468,15 +505,7 @@
         <div class="fsec">
           <div class="fsec-t">What needs attention?</div>
           <div class="fg">
-            <div class="fc" id="jq-rq-wrap"><label class="fl">Requestor <span class="r">*</span></label>
-              <div class="jq-rq-locked">
-                <i data-lucide="user-circle" style="width:16px;height:16px;color:var(--g)"></i>
-                <span class="jq-rq-name" id="jq-rq-display">—</span>
-                <span class="jq-rq-badge" id="jq-rq-role">—</span>
-                <!-- Hidden input kept for backward compatibility -->
-                <input type="hidden" id="jq-rq" value="">
-              </div>
-            </div>
+            <div class="fc" id="jq-rq-wrap"><label class="fl">Requestor <span class="r">*</span></label><select id="jq-rq" class="fi"><option value="">— Select requestor —</option></select></div>
             <div class="fc"><label class="fl">Work type <span class="r">*</span></label><select id="jq-wt" class="fi" onchange="jqus()"></select></div>
             <div class="fc"><label class="fl">Sub type</label><select id="jq-st" class="fi"></select></div>
             <div class="fc"><label class="fl">Area / Level <span class="r">*</span></label><select id="jq-ar" class="fi"></select></div>
@@ -504,89 +533,137 @@
   <!-- ══ REPORTS ══ -->
   <div id="page-reports" class="page">
 
-    <!-- ── Filter bar ───────────────────────── -->
-    <div class="rpt-filter-bar">
+    <!-- ══ ZONE 1: Summary banner (quick-glance metrics) ══ -->
+    <div class="rpt-summary" id="rpt-summary"></div>
 
-      <!-- Quick period pills -->
-      <div class="rpt-filter-row">
-        <span class="rpt-filter-lbl">Period</span>
-        <div class="chip-row" id="rpt-period-chips">
-          <button class="chip on" data-period="all"    onclick="setRptPeriod('all',this)">All time</button>
-          <button class="chip"    data-period="month"  onclick="setRptPeriod('month',this)">This month</button>
-          <button class="chip"    data-period="week"   onclick="setRptPeriod('week',this)">Last 7 days</button>
-          <button class="chip"    data-period="today"  onclick="setRptPeriod('today',this)">Today</button>
-          <button class="chip"    data-period="custom" onclick="setRptPeriod('custom',this)">Custom…</button>
-        </div>
-      </div>
+    <!-- ══ ZONE 2: Compact filter card ══ -->
+    <div class="rpt-filter-card">
 
-      <!-- Custom date range (hidden until Custom selected) -->
-      <div class="rpt-filter-row" id="rpt-custom-dates" style="display:none">
-        <span class="rpt-filter-lbl">From / To</span>
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-          <input type="date" id="rpt-from" class="fi" style="width:auto;padding:6px 10px;font-size:12px" onchange="renderR()">
-          <span style="font-size:12px;color:var(--t2)">→</span>
-          <input type="date" id="rpt-to"   class="fi" style="width:auto;padding:6px 10px;font-size:12px" onchange="renderR()">
-          <span id="rpt-date-count" style="font-size:11px;color:var(--t3)"></span>
-        </div>
-      </div>
-
-      <!-- Single date shortcut -->
-      <div class="rpt-filter-row">
-        <span class="rpt-filter-lbl">Single date</span>
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-          <input type="date" id="rpt-single" class="fi" style="width:auto;padding:6px 10px;font-size:12px" onchange="setRptSingleDate(this.value)">
-          <button class="btn btn-o btn-sm" onclick="clearRptSingle()" style="height:30px;padding:0 10px">Clear</button>
-        </div>
-      </div>
-
-      <!-- Status filter -->
-      <div class="rpt-filter-row">
-        <span class="rpt-filter-lbl">Status</span>
-        <div class="chip-row" id="rpt-status-chips">
-          <button class="chip on" data-status="" onclick="setRptStatus('',this)">All</button>
-          <button class="chip" data-status="In Progress" onclick="setRptStatus('In Progress',this)">In Progress</button>
-          <button class="chip" data-status="In Progress - Contractor" onclick="setRptStatus('In Progress - Contractor',this)">Contractor</button>
-          <button class="chip" data-status="Completed" onclick="setRptStatus('Completed',this)">Completed</button>
-          <button class="chip" data-status="Pending" onclick="setRptStatus('Pending',this)">Pending</button>
-        </div>
-      </div>
-
-      <!-- Priority filter -->
-      <div class="rpt-filter-row">
-        <span class="rpt-filter-lbl">Priority</span>
-        <div class="chip-row" id="rpt-priority-chips">
-          <button class="chip on" data-prio="" onclick="setRptPriority('',this)">All</button>
-          <button class="chip" data-prio="Low"    onclick="setRptPriority('Low',this)">Low</button>
-          <button class="chip" data-prio="Medium" onclick="setRptPriority('Medium',this)">Medium</button>
-          <button class="chip" data-prio="High"   onclick="setRptPriority('High',this)">High</button>
-          <button class="chip" data-prio="Urgent" onclick="setRptPriority('Urgent',this)">Urgent</button>
-        </div>
-      </div>
-
-      <!-- Requestor & work-type chip filters -->
-      <div class="rpt-filter-row">
-        <span class="rpt-filter-lbl">Requestor</span>
-        <div class="chip-row" id="r-rchips"></div>
-      </div>
-      <div class="rpt-filter-row">
-        <span class="rpt-filter-lbl">Work type</span>
-        <div class="chip-row" id="r-wchips"></div>
-      </div>
-
-      <!-- Export buttons -->
-      <div class="rpt-filter-row" style="border-top:1px solid var(--b0);padding-top:12px;margin-top:4px">
-        <span class="rpt-filter-lbl">Export</span>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn btn-o btn-sm" onclick="expCSV()">
-            <svg viewBox="0 0 16 16" fill="none"><path d="M8 1v10M4 7l4 4 4-4M2 14h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            Export CSV / Excel
+      <!-- Smart preset row + action buttons -->
+      <div class="rpt-top-row">
+        <div class="rpt-preset-row" id="rpt-preset-chips">
+          <button class="rpt-preset on" data-preset="all" onclick="applyRptPreset('all',this)">
+            <i data-lucide="globe" style="width:14px;height:14px"></i><span>All time</span>
           </button>
-          <button class="btn btn-g btn-sm" onclick="expPDF()">
-            <svg viewBox="0 0 16 16" fill="none"><rect x="2" y="1" width="12" height="14" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M5 5h6M5 8h6M5 11h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-            Export PDF report
+          <button class="rpt-preset" data-preset="today" onclick="applyRptPreset('today',this)">
+            <i data-lucide="calendar" style="width:14px;height:14px"></i><span>Today</span>
           </button>
-          <span id="rpt-record-count" style="font-size:11px;color:var(--t3);align-self:center"></span>
+          <button class="rpt-preset" data-preset="week" onclick="applyRptPreset('week',this)">
+            <i data-lucide="calendar-days" style="width:14px;height:14px"></i><span>This week</span>
+          </button>
+          <button class="rpt-preset" data-preset="month" onclick="applyRptPreset('month',this)">
+            <i data-lucide="calendar-range" style="width:14px;height:14px"></i><span>This month</span>
+          </button>
+          <button class="rpt-preset" data-preset="urgent" onclick="applyRptPreset('urgent',this)">
+            <i data-lucide="alert-triangle" style="width:14px;height:14px"></i><span>Open urgent</span>
+          </button>
+          <button class="rpt-preset" data-preset="completed-today" onclick="applyRptPreset('completed-today',this)">
+            <i data-lucide="check-circle-2" style="width:14px;height:14px"></i><span>Done today</span>
+          </button>
         </div>
+
+        <div class="rpt-actions-row">
+          <button class="btn btn-o btn-sm" onclick="toggleRptAdvanced()" id="rpt-adv-toggle" title="More filters">
+            <i data-lucide="sliders-horizontal" style="width:13px;height:13px"></i>
+            <span>Filters</span>
+            <span class="rpt-active-count" id="rpt-active-count" style="display:none">0</span>
+          </button>
+          <button class="btn btn-o btn-sm" onclick="expCSV()" title="Export CSV / Excel">
+            <i data-lucide="download" style="width:13px;height:13px"></i>
+            <span>CSV</span>
+          </button>
+          <button class="btn btn-g btn-sm" onclick="expPDF()" title="Export PDF report">
+            <i data-lucide="file-text" style="width:13px;height:13px"></i>
+            <span>PDF</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Active filter chips (only visible when filters are applied) -->
+      <div class="rpt-active-bar" id="rpt-active-bar" style="display:none">
+        <span class="rpt-active-label">Filtering by:</span>
+        <div class="rpt-active-chips" id="rpt-active-chips"></div>
+        <button class="rpt-clear-all" onclick="clearAllRptFilters()">
+          <i data-lucide="x" style="width:12px;height:12px"></i>
+          Clear all
+        </button>
+      </div>
+
+      <!-- Advanced filters (collapsible, hidden by default) -->
+      <div class="rpt-advanced" id="rpt-advanced" style="display:none">
+
+        <!-- Period chips (kept for backward compat with setRptPeriod) -->
+        <div class="rpt-adv-row" style="display:none">
+          <div class="chip-row" id="rpt-period-chips">
+            <button class="chip on" data-period="all"    onclick="setRptPeriod('all',this)">All time</button>
+            <button class="chip"    data-period="month"  onclick="setRptPeriod('month',this)">This month</button>
+            <button class="chip"    data-period="week"   onclick="setRptPeriod('week',this)">Last 7 days</button>
+            <button class="chip"    data-period="today"  onclick="setRptPeriod('today',this)">Today</button>
+            <button class="chip"    data-period="custom" onclick="setRptPeriod('custom',this)">Custom…</button>
+          </div>
+        </div>
+
+        <!-- Date range -->
+        <div class="rpt-adv-row" id="rpt-custom-dates">
+          <span class="rpt-adv-lbl">Date range</span>
+          <div class="rpt-date-inputs">
+            <input type="date" id="rpt-from" class="fi rpt-date-fi" onchange="RPT.period='custom';renderR()">
+            <span class="rpt-date-arrow">→</span>
+            <input type="date" id="rpt-to"   class="fi rpt-date-fi" onchange="RPT.period='custom';renderR()">
+            <span id="rpt-date-count" class="rpt-date-count"></span>
+          </div>
+        </div>
+
+        <!-- Single date -->
+        <div class="rpt-adv-row">
+          <span class="rpt-adv-lbl">Single date</span>
+          <div class="rpt-date-inputs">
+            <input type="date" id="rpt-single" class="fi rpt-date-fi" onchange="setRptSingleDate(this.value)">
+            <button class="btn btn-o btn-xs" onclick="clearRptSingle()">Clear</button>
+          </div>
+        </div>
+
+        <!-- Status -->
+        <div class="rpt-adv-row">
+          <span class="rpt-adv-lbl">Status</span>
+          <div class="chip-row" id="rpt-status-chips">
+            <button class="chip on" data-status="" onclick="setRptStatus('',this)">All</button>
+            <button class="chip" data-status="In Progress" onclick="setRptStatus('In Progress',this)">In Progress</button>
+            <button class="chip" data-status="In Progress - Contractor" onclick="setRptStatus('In Progress - Contractor',this)">Contractor</button>
+            <button class="chip" data-status="Completed" onclick="setRptStatus('Completed',this)">Completed</button>
+            <button class="chip" data-status="Pending" onclick="setRptStatus('Pending',this)">Pending</button>
+          </div>
+        </div>
+
+        <!-- Priority -->
+        <div class="rpt-adv-row">
+          <span class="rpt-adv-lbl">Priority</span>
+          <div class="chip-row" id="rpt-priority-chips">
+            <button class="chip on" data-prio="" onclick="setRptPriority('',this)">All</button>
+            <button class="chip" data-prio="Low"    onclick="setRptPriority('Low',this)">Low</button>
+            <button class="chip" data-prio="Medium" onclick="setRptPriority('Medium',this)">Medium</button>
+            <button class="chip" data-prio="High"   onclick="setRptPriority('High',this)">High</button>
+            <button class="chip" data-prio="Urgent" onclick="setRptPriority('Urgent',this)">Urgent</button>
+          </div>
+        </div>
+
+        <!-- Requestor -->
+        <div class="rpt-adv-row">
+          <span class="rpt-adv-lbl">Requestor</span>
+          <div class="chip-row" id="r-rchips"></div>
+        </div>
+
+        <!-- Work type -->
+        <div class="rpt-adv-row">
+          <span class="rpt-adv-lbl">Work type</span>
+          <div class="chip-row" id="r-wchips"></div>
+        </div>
+      </div>
+
+      <!-- Record count footer -->
+      <div class="rpt-count-bar">
+        <i data-lucide="database" style="width:13px;height:13px;color:var(--t2)"></i>
+        <span id="rpt-record-count" class="rpt-record-count">0 records</span>
       </div>
     </div>
 
