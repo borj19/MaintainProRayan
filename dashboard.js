@@ -105,10 +105,6 @@ function renderDashHero() {
 
   const actions = [];
   if (typeof can === 'function') {
-    if (can('add_task')) actions.push({
-      label: 'New task', page: 'add',
-      icon: '<path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>'
-    });
     if (can('submit_request')) actions.push({
       label: 'Submit request', page: 'request',
       icon: '<path d="M3 3h10v10H3z" stroke="currentColor" stroke-width="1.5"/><path d="M6 7h4M6 10h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>'

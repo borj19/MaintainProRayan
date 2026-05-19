@@ -2448,3 +2448,47 @@ input.t-chk{cursor:pointer}
   width:12px;
   height:12px;
 }
+
+
+/* ═══════════════════════════════════════════════
+   JOB REQUEST — Locked requestor display
+═══════════════════════════════════════════════ */
+.jq-rq-locked{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:10px 14px;
+  background:var(--s1);
+  border:1px solid var(--b0);
+  border-radius:var(--r);
+  font-family:var(--font);
+  font-size:13px;
+  color:var(--t0);
+  min-height:38px;
+}
+.jq-rq-locked .jq-rq-name{
+  font-weight:600;
+  color:var(--t0);
+  flex:1;
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.jq-rq-locked .jq-rq-badge{
+  padding:3px 9px;
+  border-radius:99px;
+  background:var(--g3);
+  color:var(--g);
+  font-size:10.5px;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+  flex-shrink:0;
+}
+
+/* Mobile responsiveness */
+@media(max-width:640px){
+  .jq-rq-locked{padding:10px 12px;gap:8px;font-size:12.5px}
+  .jq-rq-locked .jq-rq-badge{font-size:10px;padding:2px 7px}
+}

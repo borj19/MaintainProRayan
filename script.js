@@ -455,7 +455,6 @@ function buildSidebarNav(){
     // [ pageId, label, svgPath, section, permKey ]
     ['dash',       'Dashboard',       '<rect x="1" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="9" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="1" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="9" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/>',  'Overview',        'view_dashboard'],
     ['tasks',      'All tasks',       '<path d="M2 4h12M2 8h8M2 12h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>',                                                             'Overview',        'view_all_tasks', 'nb-count'],
-    ['add',        'Add task',        '<circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.4"/><path d="M8 5v6M5 8h6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>','Jobs',            'add_task'],
     ['inprogress', 'In progress',     '<circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.4"/><path d="M8 5v3l2 2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>', 'Jobs',            'view_inprogress','nb-ip-count','amber'],
     ['contractor', 'My jobs',         '<rect x="2" y="6" width="12" height="8" rx="1" stroke="currentColor" stroke-width="1.4"/><path d="M5 6V4a3 3 0 016 0v2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>','Jobs','view_inprogress','nb-cont-count','amber'],
     ['request',    'Job requests',    '<rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M5 8h6M8 5v6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>','Jobs','submit_request','nb-jq-count'],
@@ -702,7 +701,6 @@ function go(p,el){
 
   if(p==='dash')          rDash();
   if(p==='tasks')         {bTKpis();af();}
-  if(p==='add')           rAddSide();
   if(p==='inprogress')    renderInProgress();
   if(p==='contractor')    renderContractorPanel();
   if(p==='request')       renderRequestPage();
@@ -752,10 +750,6 @@ function fillDrops(){
   if(nbCount)nbCount.textContent=DATA.length;
 
   // Add task form
-  const afRq=document.getElementById('af-rq');if(afRq)afRq.innerHTML=REQS.map(v=>`<option>${v}</option>`).join('');
-  const afHd=document.getElementById('af-hd');if(afHd)afHd.innerHTML=HNDS.map(v=>`<option>${v}</option>`).join('');
-  const afWt=document.getElementById('af-wt');if(afWt){afWt.innerHTML=Object.keys(SUBTYPES).map(v=>`<option>${v}</option>`).join('');aus();}
-  const afAr=document.getElementById('af-ar');if(afAr)afAr.innerHTML=AREAS.map(v=>`<option>${v}</option>`).join('');
 
   // Job request form
   const jqWt=document.getElementById('jq-wt');if(jqWt){jqWt.innerHTML=Object.keys(SUBTYPES).map(v=>`<option>${v}</option>`).join('');jqus();}
@@ -782,7 +776,6 @@ function fillDrops(){
   const jqPill=document.getElementById('nb-jq-count');if(jqPill)jqPill.textContent=jqCount;
 }
 
-function aus(){const wt=document.getElementById('af-wt');if(!wt)return;document.getElementById('af-st').innerHTML=(SUBTYPES[wt.value]||['Other']).map(o=>`<option>${o}</option>`).join('')}
 function eus(){const wt=document.getElementById('em-wt');if(!wt)return;document.getElementById('em-st').innerHTML=(SUBTYPES[wt.value]||['Other']).map(o=>`<option value="${o}">${o}</option>`).join('')}
 function jqus(){const wt=document.getElementById('jq-wt');if(!wt)return;document.getElementById('jq-st').innerHTML=(SUBTYPES[wt.value]||['Other']).map(o=>`<option>${o}</option>`).join('')}
 
@@ -1171,50 +1164,6 @@ function dTask(id){
 // ═══════════════════════════════════════════════
 // ADD TASK — auto sets In Progress
 // ═══════════════════════════════════════════════
-function addTask(){
-  const loc=document.getElementById('af-lc').value.trim();
-  const det=document.getElementById('af-de').value.trim();
-  if(!loc||!det){toast('Location and details are required.','e');return;}
-  const t={
-    id:nid++,date:document.getElementById('af-dt').value||getTODAY(),
-    createdBy:currentUser?(currentUser.email||currentUser.username||'staff'):'staff',
-    createdByUid:currentUser?(currentUser.uid||currentUser.id||''):'',
-    createdAt:getTODAY(),
-    requestor:document.getElementById('af-rq').value,
-    handler:document.getElementById('af-hd').value,
-    workType:document.getElementById('af-wt').value,
-    subType:document.getElementById('af-st').value,
-    area:document.getElementById('af-ar').value,
-    location:loc,details:det,
-    status:'In Progress', // always In Progress on creation
-    priority:document.getElementById('af-pr').value,
-    completion:document.getElementById('af-cd').value||'',
-    createdBy:currentUser?currentUser.role:'staff'
-  };
-  DATA.unshift(t);fillDrops();rReady=false;clrAF();rAddSide();
-  document.getElementById('nb-count').textContent=DATA.length;
-  toast(`Task #${t.id} added — marked In Progress`);
-  // Notify assigned handler
-  if (typeof notifyUser === 'function') notifyUser(t.handler, '🔧 New job assigned', t.workType.replace(/_/g,' ') + ' — ' + t.location + ' (' + t.area.replace(/_/g,' ') + ')', t.id);
-}
-function clrAF(){
-  ['af-lc','af-de','af-cd'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-}
-
-function rAddSide(){
-  const d=DATA,tc=d.filter(r=>r.date===TODAY).length;
-  const co=d.filter(r=>r.status==='Completed').length;
-  const arc=document.getElementById('add-rc');if(arc)arc.textContent=tc+' today';
-  const qs=document.getElementById('add-qs');
-  if(qs)qs.innerHTML=[
-    {bg:'rgba(110,190,42,.12)',c:'#6ebe2a',l:'Total tasks',v:d.length},
-    {bg:'rgba(45,207,179,.1)',c:'#2dcfb3',l:'Completed',v:`${co} (${Math.round(co/d.length*100)}%)`},
-    {bg:'rgba(85,153,245,.1)',c:'#5599f5',l:'In progress',v:d.filter(r=>r.status==='In Progress').length},
-    {bg:'rgba(232,83,74,.1)',c:'#e8534a',l:'High / Urgent',v:d.filter(r=>r.priority==='High'||r.priority==='Urgent').length},
-  ].map(x=>`<div class="qsi"><div class="qsi-ico" style="background:${x.bg};color:${x.c}"><svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5" stroke="currentColor" stroke-width="1.4"/></svg></div><div><div class="qsi-l">${x.l}</div><div class="qsi-v">${x.v}</div></div></div>`).join('');
-  const rl=document.getElementById('add-rl');
-  if(rl)rl.innerHTML=DATA.slice(0,5).map(r=>`<div class="act-i"><div class="act-dot" style="background:${r.status==='Completed'?'var(--g)':r.status==='In Progress'?'var(--blue)':'var(--amber)'}"></div><div class="act-body"><div class="act-txt"><strong style="color:var(--t0)">${r.requestor}</strong> · ${r.workType.replace(/_/g,' ')}</div><div class="act-sub">${r.location} · ${r.area.replace(/_/g,' ')}</div><div class="act-time">${fd(r.date)}</div></div></div>`).join('');
-}
 
 // ═══════════════════════════════════════════════
 // IN PROGRESS — KANBAN + TABLE
@@ -1277,6 +1226,19 @@ function setReqFilter(f){
 }
 
 function renderRequestPage(){
+  // Update locked requestor display with current user info
+  if(currentUser){
+    const nameEl = document.getElementById('jq-rq-display');
+    const roleEl = document.getElementById('jq-rq-role');
+    const hiddenEl = document.getElementById('jq-rq');
+    if(nameEl) nameEl.textContent = currentUser.name || currentUser.email || 'Unknown';
+    if(roleEl){
+      const roleLabel = (typeof ROLE_LABELS !== 'undefined' && ROLE_LABELS[currentUser.role]) ? ROLE_LABELS[currentUser.role] : (currentUser.role || 'User');
+      roleEl.textContent = roleLabel;
+    }
+    if(hiddenEl) hiddenEl.value = currentUser.name || currentUser.email || '';
+  }
+  if(typeof refreshLucide === 'function') setTimeout(refreshLucide, 0);
   const u=currentUser;
   if(!u) return; // guard — Firebase not ready yet
   const heroSub=document.getElementById('request-hero-sub');
@@ -1365,39 +1327,48 @@ function renderRequestPage(){
 }
 
 function submitJobRequest(){
-  const loc=document.getElementById('jq-lc').value.trim();
-  const det=document.getElementById('jq-de').value.trim();
-  if(!loc||!det){toast('Please fill in all required fields.','e');return;}
-  const wt=document.getElementById('jq-wt').value;
-  const handler=AUTO_ASSIGN[wt]||HNDS[0];
-  const isRequester=currentUser.role==='requester';
-  const jqRqEl=document.getElementById('jq-rq');
-  const req=isRequester
-    ? currentUser.name
-    : (jqRqEl&&jqRqEl.value ? jqRqEl.value : (USERS[0]?USERS[0].name:'Guest'));
-  if(!isRequester&&(!jqRqEl||!jqRqEl.value)){toast('Please select a requestor.','e');return;}
+  // SECURITY: Requestor is ALWAYS the logged-in user — no spoofing possible
+  if(!currentUser){ toast('You must be signed in to submit a request.','e'); return; }
+
+  const loc = document.getElementById('jq-lc').value.trim();
+  const det = document.getElementById('jq-de').value.trim();
+  if(!loc || !det){ toast('Please fill in all required fields.','e'); return; }
+
+  const wt = document.getElementById('jq-wt').value;
+  const handler = (typeof AUTO_ASSIGN !== 'undefined' && AUTO_ASSIGN[wt]) ? AUTO_ASSIGN[wt] : HNDS[0];
+
+  // Requestor = logged-in user (locked, no override)
+  const req = currentUser.name || currentUser.email || 'Unknown';
+
   // Allow custom date if entered, default to today
-  const dtField=document.getElementById('jq-dt');
-  const jobDate=(dtField&&dtField.value)?dtField.value:getTODAY();
-  const t={
-    id:nid++,date:jobDate,
-    requestor:req,
-    handler:handler,
-    workType:wt,
-    subType:document.getElementById('jq-st').value,
-    area:document.getElementById('jq-ar').value,
-    location:loc,details:det,
-    status:'In Progress',
-    priority:document.getElementById('jq-pr').value,
-    completion:'',
-    createdBy:    currentUser?(currentUser.email||currentUser.username||'guest'):'guest',
-    createdByUid: currentUser?(currentUser.uid||currentUser.id||''):'',
-    createdAt:    getTODAY()
+  const dtField = document.getElementById('jq-dt');
+  const jobDate = (dtField && dtField.value) ? dtField.value : getTODAY();
+
+  const t = {
+    id: nid++,
+    date: jobDate,
+    requestor:    req,
+    handler:      handler,
+    workType:     wt,
+    subType:      document.getElementById('jq-st').value,
+    area:         document.getElementById('jq-ar').value,
+    location:     loc,
+    details:      det,
+    status:       'In Progress',
+    priority:     document.getElementById('jq-pr').value,
+    completion:   '',
+    createdBy:    currentUser.email || currentUser.username || req,
+    createdByUid: currentUser.uid || currentUser.id || '',
+    createdAt:    getTODAY(),
+    submittedAt:  (typeof nowISO === 'function') ? nowISO() : new Date().toISOString(),
+    assignedAt:   (typeof nowISO === 'function') ? nowISO() : new Date().toISOString()
   };
+
   fbAddJob(t);
-  try{ if(typeof logAudit==='function') logAudit('job.created', `Job created: ${t.workType.replace(/_/g,' ')} at ${t.location} (status: ${t.status})`, 'info', 'job', t.id); }catch(_){}
-  if(!FB_READY){fillDrops();rReady=false;}
-  clrJQ();renderRequestPage();
+  try{ if(typeof logAudit==='function') logAudit('job.created', `Request submitted: ${t.workType.replace(/_/g,' ')} at ${t.location} (by ${req}, assigned to ${handler})`, 'info', 'job', t.id); }catch(_){}
+  if(!FB_READY){ fillDrops(); rReady=false; }
+  clrJQ();
+  renderRequestPage();
   toast(`Request submitted — assigned to ${handler}`);
   // Notify handler of new job request
   if (typeof notifyUser === 'function') notifyUser(handler, '📥 New job request', t.workType.replace(/_/g,' ') + ' — ' + t.location + ' (' + t.area.replace(/_/g,' ') + ')', t.id);
@@ -1420,7 +1391,6 @@ function assignRequest(id){
 
 function clrJQ(){
   ['jq-lc','jq-de'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  const jqRq=document.getElementById('jq-rq');if(jqRq)jqRq.value='';
 }
 
 // ═══════════════════════════════════════════════
@@ -1891,8 +1861,6 @@ function delArea(name){
 // ═══════════════════════════════════════════════
 function init(){
   // Loading screen is now hidden by firebase.js after data is ready (not here)
-  const dtEl=document.getElementById('af-dt'); if(dtEl) dtEl.value=TODAY;
-  const cdEl=document.getElementById('af-cd'); if(cdEl) cdEl.value=TODAY;
   function updateClock(){
     const el=document.getElementById('tb-dt');if(!el)return;
     const now=new Date();
@@ -2206,7 +2174,6 @@ function cmdBuildItems(query) {
   const pages = [
     {id:'dash',     title:'Dashboard',         sub:'Overview & analytics',          perm:'view_dashboard',    icon:'<path d="M2 2h5v5H2zM9 2h5v5H9zM2 9h5v5H2zM9 9h5v5H9z" stroke="currentColor" stroke-width="1.4"/>'},
     {id:'tasks',    title:'All tasks',         sub:'Manage all jobs',                perm:'view_all_tasks',    icon:'<path d="M2 4h12M2 8h8M2 12h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>'},
-    {id:'add',      title:'Add new task',      sub:'Create a maintenance job',       perm:'add_task',          icon:'<path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>'},
     {id:'inprogress',title:'In progress',      sub:'Active tasks',                   perm:'view_inprogress',   icon:'<circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.4"/><path d="M8 5v3l2 2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>'},
     {id:'request',  title:'Job requests',      sub:'Submit & track requests',        perm:'submit_request',    icon:'<path d="M3 3h10v10H3z" stroke="currentColor" stroke-width="1.4"/><path d="M6 7h4M6 10h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>'},
     {id:'reports',  title:'Reports',           sub:'View analytics & exports',       perm:'view_reports',      icon:'<path d="M2 13l4-5 3 3 5-7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>'},
