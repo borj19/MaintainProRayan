@@ -428,8 +428,6 @@ function applyUserSession(){
   if(sbEl)sbEl.style.visibility='visible';
   // Start presence tracking when user logs in
   if(typeof startPresence==="function") setTimeout(startPresence, 1000);
-  // Refresh Lucide icons once after login UI is rendered
-  setTimeout(()=>{ if(typeof refreshLucide==="function") refreshLucide(); }, 300);
   if(typeof startNotifListener==="function") setTimeout(startNotifListener, 2000);
   // Start audit log listener for admins
   if(currentUser && currentUser.role === 'admin' && typeof startAuditListener === 'function') {
@@ -454,20 +452,20 @@ function applyUserSession(){
 function buildSidebarNav(){
   const r=currentUser.role;
   const navDef=[
-    // [ pageId, label, lucideIconName, section, permKey, pillId?, pillClass? ]
-    ['dash',       'Dashboard',       'layout-dashboard', 'Overview',        'view_dashboard'],
-    ['tasks',      'All tasks',       'list-checks',      'Overview',        'view_all_tasks', 'nb-count'],
-    ['add',        'Add task',        'plus-circle',      'Jobs',            'add_task'],
-    ['inprogress', 'In progress',     'loader-circle',    'Jobs',            'view_inprogress','nb-ip-count','amber'],
-    ['contractor', 'My jobs',         'briefcase',        'Jobs',            'view_inprogress','nb-cont-count','amber'],
-    ['request',    'Job requests',    'inbox',            'Jobs',            'submit_request', 'nb-jq-count'],
-    ['reports',    'Reports',         'bar-chart-3',      'Analytics',       'view_reports'],
-    ['email',      'Email report',    'mail',             'Analytics',       'send_email'],
-    ['users',      'Users',           'users',            'Administration',  'manage_users','nb-users-count'],
-    ['audit',      'Audit log',       'scroll-text',      'Administration',  'view_audit_log'],
-    ['permissions','Permissions',     'shield-check',     'Administration',  'manage_permissions'],
-    ['rooms',      'Rooms board',     'grid-3x3',         'Jobs',            'view_all_tasks'],
-    ['admin',      'Field mgmt',      'settings-2',       'Administration',  'manage_fields'],
+    // [ pageId, label, svgPath, section, permKey ]
+    ['dash',       'Dashboard',       '<rect x="1" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="9" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="1" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="9" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/>',  'Overview',        'view_dashboard'],
+    ['tasks',      'All tasks',       '<path d="M2 4h12M2 8h8M2 12h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>',                                                             'Overview',        'view_all_tasks', 'nb-count'],
+    ['add',        'Add task',        '<circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.4"/><path d="M8 5v6M5 8h6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>','Jobs',            'add_task'],
+    ['inprogress', 'In progress',     '<circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.4"/><path d="M8 5v3l2 2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>', 'Jobs',            'view_inprogress','nb-ip-count','amber'],
+    ['contractor', 'My jobs',         '<rect x="2" y="6" width="12" height="8" rx="1" stroke="currentColor" stroke-width="1.4"/><path d="M5 6V4a3 3 0 016 0v2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>','Jobs','view_inprogress','nb-cont-count','amber'],
+    ['request',    'Job requests',    '<rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M5 8h6M8 5v6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>','Jobs','submit_request','nb-jq-count'],
+    ['reports',    'Reports',         '<rect x="1" y="9" width="3" height="6" rx="1" fill="currentColor"/><rect x="6" y="5" width="3" height="10" rx="1" fill="currentColor"/><rect x="11" y="1" width="3" height="14" rx="1" fill="currentColor"/>','Analytics','view_reports'],
+    ['email',      'Email report',    '<rect x="1" y="3" width="14" height="10" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M1 5l7 5 7-5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>','Analytics','send_email'],
+    ['users',      'Users',           '<circle cx="6" cy="5" r="2.5" stroke="currentColor" stroke-width="1.4"/><path d="M1 13c0-2.761 2.239-4 5-4s5 1.239 5 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="13" cy="5" r="2" stroke="currentColor" stroke-width="1.2"/><path d="M11.5 13c0-1.5 1-2.5 2-2.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>','Administration','manage_users','nb-users-count'],
+    ['audit',      'Audit log',       '<rect x="2" y="2" width="12" height="12" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M5 6h6M5 9h6M5 12h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>','Administration','view_audit_log'],
+    ['permissions','Permissions',     '<path d="M12 1l1.5 3L17 5l-2.5 2.5.5 3.5L12 9.5 9.5 11l.5-3.5L7.5 5l3.5-1L12 1z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="4" cy="12" r="2.5" stroke="currentColor" stroke-width="1.2"/>','Administration','manage_permissions'],
+    ['rooms',      'Rooms board','<rect x="1" y="1" width="6" height="4" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="9" y="1" width="6" height="4" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="1" y="7" width="6" height="4" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="9" y="7" width="6" height="4" rx="1" stroke="currentColor" stroke-width="1.4"/>','Jobs','view_all_tasks'],
+    ['admin',      'Field mgmt',      '<circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.4"/><path d="M2 14c0-3.314 2.686-5 6-5s6 1.686 6 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M11 8l1 1 2-2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>','Administration','manage_fields'],
   ];
 
   // Contractor sees 'My jobs' instead of 'In progress', plus request
@@ -487,14 +485,13 @@ function buildSidebarNav(){
     }
     const pillHtml=pillId?`<span class="nav-pill${pillClass?' '+pillClass:''}" id="${pillId}">0</span>`:'';
     html+=`<button class="nav-btn" id="nb-${page}" onclick="go('${page}',this)">
-      <i data-lucide="${icon}" style="width:16px;height:16px;flex-shrink:0"></i>
+      <svg viewBox="0 0 16 16" fill="none" style="width:15px;height:15px;flex-shrink:0">${icon}</svg>
       <span class="lbl">${label}</span>${pillHtml}
     </button>`;
   });
   if(curSection) html+='</div>';
   document.getElementById('sb-nav').innerHTML=html;
   updateNavPills();
-  refreshLucide();
 }
 
 function updateNavPills(){
@@ -588,20 +585,6 @@ function startPresence() {
     renderOnlineBadge();
   }, e=>console.warn('Presence listener:',e.message));
 }
-
-// ═══════════════════════════════════════════════
-// LUCIDE ICONS — refresh after dynamic renders
-// Safe: if Lucide didn't load, this silently no-ops
-// ═══════════════════════════════════════════════
-function refreshLucide(){
-  try{
-    if(typeof lucide!=='undefined' && lucide && typeof lucide.createIcons==='function'){
-      lucide.createIcons();
-    }
-  }catch(_){}
-}
-window.refreshLucide = refreshLucide;
-
 
 function stopPresence() {
   if (_presenceInterval) { clearInterval(_presenceInterval); _presenceInterval=null; }
@@ -856,9 +839,9 @@ function rTbl(){
     <td title="${r.details}" style="color:var(--t2)">${r.details}</td>
     <td>${sbadge(r.status)}</td><td>${pbadge(r.priority)}</td>
     <td><div style="display:flex;gap:3px">
-      <button class="btn btn-o btn-xs" onclick="vTask('${r.id}')" title="View" style="padding:3px 5px"><i data-lucide="eye" style="width:13px;height:13px"></i></button>
-      ${isAdmin?`<button class="btn btn-o btn-xs" onclick="eTask('${r.id}')" title="Edit" style="padding:3px 5px"><i data-lucide="pencil" style="width:13px;height:13px"></i></button>`:''}
-      ${isFullAdmin?`<button class="btn btn-r btn-xs" onclick="dTask('${r.id}')" title="Delete" style="padding:3px 5px"><i data-lucide="trash-2" style="width:13px;height:13px"></i></button>`:''}
+      <button class="btn btn-o btn-xs" onclick="vTask('${r.id}')" title="View" style="padding:3px 5px"><svg viewBox="0 0 16 16" fill="none" style="width:11px;height:11px"><circle cx="8" cy="8" r="5" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg></button>
+      ${isAdmin?`<button class="btn btn-o btn-xs" onclick="eTask('${r.id}')" title="Edit" style="padding:3px 5px"><svg viewBox="0 0 16 16" fill="none" style="width:11px;height:11px"><path d="M11 2l3 3-9 9H2v-3L11 2z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`:''}
+      ${isFullAdmin?`<button class="btn btn-r btn-xs" onclick="dTask('${r.id}')" title="Delete" style="padding:3px 5px"><svg viewBox="0 0 16 16" fill="none" style="width:11px;height:11px"><path d="M3 4h10M6 4V2h4v2M5 4v8h6V4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`:''}
     </div></td>
   </tr>`}).join(''):`<tr><td colspan="${isAdmin?12:11}" style="text-align:center;padding:36px;color:var(--t2)">No tasks match the current filters.</td></tr>`;
 
@@ -873,7 +856,6 @@ function rTbl(){
   renderPagination(cPg, pages, tot, showingStart, showingEnd);
   // Update bulk action bar
   updateBulkBar();
-  refreshLucide();
 }
 
 // ─── Selection state management ───
@@ -1116,10 +1098,16 @@ function vTask(id){
 
 function markJobComplete(id){
   id=String(id);
-  const updates={status:'Completed',completion:getTODAY()};
+  // Get the job reference FIRST so audit log + UI updates can reference it safely
+  const r=DATA.find(x=>String(x.id)===id);
+  const updates={
+    status:'Completed',
+    completion:getTODAY(),
+    completedAt: (typeof nowISO === 'function') ? nowISO() : new Date().toISOString()
+  };
   try{ if(typeof logAudit==='function') logAudit('job.completed', `Job marked complete: ${r?.workType?.replace(/_/g,' ')||''} at ${r?.location||''}`, 'info', 'job', id); }catch(_){}
   fbUpdateJob(id,updates);
-  if(!FB_READY){const r=DATA.find(x=>String(x.id)===id);if(r)Object.assign(r,updates);}
+  if(!FB_READY && r) Object.assign(r, updates);
   cm('m-det');af();renderInProgress();
   toast('Job marked as completed ✓','s');
 }
@@ -2488,7 +2476,6 @@ function filterAuditLogs() {
 }
 
 function renderAuditList() {
-  setTimeout(refreshLucide, 0);
   const list = document.getElementById('audit-list');
   const cnt  = document.getElementById('audit-count');
   if (!list) return;
