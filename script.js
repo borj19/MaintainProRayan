@@ -104,7 +104,7 @@ let ROLE_PERMS = {
   staff: {
     view_dashboard:true, view_all_tasks:true, add_task:true,
     edit_task:true, delete_task:false, view_inprogress:true,
-    update_task_status:true, view_own_tasks:true, submit_request:false,
+    update_task_status:true, view_own_tasks:true, submit_request:true,
     view_reports:false, export_data:true, send_email:false,
     manage_users:false, manage_permissions:false, manage_fields:false,
     view_online_users:false,
@@ -443,7 +443,8 @@ function applyUserSession(){
   const sw=document.getElementById('global-search-wrap');
   const nb=document.getElementById('topbar-new-btn');
   if(sw) sw.style.display=(isReq||isCont)?'none':'';
-  if(nb) nb.style.display=(isReq||isCont)?'none':'';
+  // Show topbar "+ New request" button ONLY for users who can submit requests
+  if(nb) nb.style.display = (typeof can==='function' && can('submit_request')) ? '' : 'none';
 }
 
 // ═══════════════════════════════════════════════
