@@ -105,6 +105,10 @@ function renderDashHero() {
 
   const actions = [];
   if (typeof can === 'function') {
+    if (can('add_task')) actions.push({
+      label: 'New task', page: 'add',
+      icon: '<path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>'
+    });
     if (can('submit_request')) actions.push({
       label: 'Submit request', page: 'request',
       icon: '<path d="M3 3h10v10H3z" stroke="currentColor" stroke-width="1.5"/><path d="M6 7h4M6 10h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>'
@@ -333,7 +337,7 @@ function rDash() {
           <strong style="color:var(--t1)">${r.subType || '—'}</strong>${r.details ? ' · ' + (r.details.length > 60 ? r.details.substring(0, 60) + '…' : r.details) : ''}
         </div>
         <div class="act-sub" style="margin-top:2px">${r.location}</div>
-        <div class="act-time">${fd(r.date)}</div>
+        <div class="act-time" title="${typeof formatTimestamp==='function' ? formatTimestamp(r.submittedAt||r.createdAt) : ''}">${typeof fdts==='function' ? fdts(r) : fd(r.date)}</div>
       </div>
       ${sbadge(r.status)}
     </div>

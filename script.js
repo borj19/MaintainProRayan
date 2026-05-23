@@ -216,7 +216,7 @@ async function doLogin(){
           return;
         }
       }catch(_){}
-      try{ if(typeof logAudit==='function') logAudit('auth.login', 'User signed in', 'info', 'auth', currentUser?.uid); }catch(_){}
+      try{ if(typeof logAudit==='function') logAudit('auth.login', `Signed in: ${currentUser?.email || 'unknown'} (${currentUser?.role || 'user'}) on ${typeof getDeviceInfo === 'function' ? getDeviceInfo() : 'device'}`, 'info', 'auth', currentUser?.uid); }catch(_){}
       document.getElementById('auth-screen').style.display='none';
       showLoadingScreen();
     } catch(e){
@@ -398,7 +398,7 @@ function doLogout(){
   if(typeof stopPresence==="function") stopPresence();
   if(typeof stopNotifListener==="function") stopNotifListener();
   // Log logout BEFORE currentUser is cleared so actor info is captured
-  try{ if(typeof logAudit==='function') logAudit('auth.logout', 'User signed out', 'info', 'auth', currentUser?.uid); }catch(_){}
+  try{ if(typeof logAudit==='function') logAudit('auth.logout', `Signed out: ${currentUser?.email || currentUser?.name || 'unknown'} (${currentUser?.role || 'user'})`, 'info', 'auth', currentUser?.uid); }catch(_){}
   // Hide app while logged out — prevents content flash
   const bodyEl=document.getElementById('body');
   if(bodyEl)bodyEl.style.visibility='hidden';
@@ -455,6 +455,7 @@ function buildSidebarNav(){
     // [ pageId, label, svgPath, section, permKey ]
     ['dash',       'Dashboard',       '<rect x="1" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="9" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="1" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="9" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/>',  'Overview',        'view_dashboard'],
     ['tasks',      'All tasks',       '<path d="M2 4h12M2 8h8M2 12h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>',                                                             'Overview',        'view_all_tasks', 'nb-count'],
+    ['add',        'Add task',        '<circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.4"/><path d="M8 5v6M5 8h6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>','Jobs',            'add_task'],
     ['inprogress', 'In progress',     '<circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.4"/><path d="M8 5v3l2 2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>', 'Jobs',            'view_inprogress','nb-ip-count','amber'],
     ['contractor', 'My jobs',         '<rect x="2" y="6" width="12" height="8" rx="1" stroke="currentColor" stroke-width="1.4"/><path d="M5 6V4a3 3 0 016 0v2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>','Jobs','view_inprogress','nb-cont-count','amber'],
     ['request',    'Job requests',    '<rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M5 8h6M8 5v6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>','Jobs','submit_request','nb-jq-count'],
@@ -585,6 +586,93 @@ function startPresence() {
   }, e=>console.warn('Presence listener:',e.message));
 }
 
+// ═══════════════════════════════════════════════
+// TIMESTAMP HELPERS — date + time display
+// ═══════════════════════════════════════════════
+function nowISO(){return new Date().toISOString();}
+
+function timeAgo(iso){
+  if(!iso) return '';
+  const t = new Date(iso).getTime();
+  if(isNaN(t)) return '';
+  const s = Math.floor((Date.now() - t) / 1000);
+  if(s < 5)     return 'just now';
+  if(s < 60)    return s + 's ago';
+  if(s < 3600)  return Math.floor(s/60)  + 'm ago';
+  if(s < 86400) return Math.floor(s/3600)+ 'h ago';
+  if(s < 604800)return Math.floor(s/86400)+ 'd ago';
+  return new Date(iso).toLocaleDateString('en-AU', {day:'numeric',month:'short'});
+}
+
+function formatTimestamp(iso){
+  if(!iso) return '—';
+  const d = new Date(iso);
+  if(isNaN(d)) return '—';
+  return d.toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'})
+    + ' · ' + d.toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});
+}
+
+
+function elapsedBetween(startISO, endISO){
+  if(!startISO || !endISO) return '';
+  const a = new Date(startISO).getTime();
+  const b = new Date(endISO).getTime();
+  if(isNaN(a) || isNaN(b) || b < a) return '';
+  const m = Math.floor((b - a) / 60000);
+  if(m < 1)   return '<1min';
+  if(m < 60)  return m + 'min';
+  const h = Math.floor(m / 60);
+  const mm = m % 60;
+  if(h < 24)  return h + 'h' + (mm ? ' ' + mm + 'm' : '');
+  const d = Math.floor(h / 24);
+  return d + 'd ' + (h % 24) + 'h';
+}
+// fdt = formatted date + time (uses ISO timestamp if available, falls back to date)
+function fdt(r){
+  if(!r) return '—';
+  const ts = r.submittedAt || r.createdAt;
+  if(ts && typeof ts === 'string' && ts.includes('T')){
+    // Full ISO timestamp — show date + time
+    const d = new Date(ts);
+    if(!isNaN(d)){
+      return d.toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'})
+        + ' · ' + d.toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});
+    }
+  }
+  // Fallback to date only (for old jobs without ISO timestamps)
+  return r.date ? fd(r.date) : '—';
+}
+
+// fdts = short version for tables (DD MMM · HH:MM)
+function fdts(r){
+  if(!r) return '—';
+  const ts = r.submittedAt || r.createdAt;
+  if(ts && typeof ts === 'string' && ts.includes('T')){
+    const d = new Date(ts);
+    if(!isNaN(d)){
+      return d.toLocaleDateString('en-AU',{day:'numeric',month:'short'})
+        + ' · ' + d.toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});
+    }
+  }
+  return r.date ? fds(r.date) : '—';
+}
+
+// Get device info for audit log
+function getDeviceInfo(){
+  const ua = navigator.userAgent || '';
+  let device = 'Unknown';
+  if(/mobile/i.test(ua)) device = 'Mobile';
+  else if(/tablet|ipad/i.test(ua)) device = 'Tablet';
+  else device = 'Desktop';
+  let browser = 'Unknown';
+  if(/edg/i.test(ua)) browser = 'Edge';
+  else if(/chrome/i.test(ua)) browser = 'Chrome';
+  else if(/safari/i.test(ua)) browser = 'Safari';
+  else if(/firefox/i.test(ua)) browser = 'Firefox';
+  return `${device}/${browser}`;
+}
+
+
 function stopPresence() {
   if (_presenceInterval) { clearInterval(_presenceInterval); _presenceInterval=null; }
   if (window._presenceUnsub) { window._presenceUnsub(); window._presenceUnsub=null; }
@@ -701,6 +789,7 @@ function go(p,el){
 
   if(p==='dash')          rDash();
   if(p==='tasks')         {bTKpis();af();}
+  if(p==='add')           rAddSide();
   if(p==='inprogress')    renderInProgress();
   if(p==='contractor')    renderContractorPanel();
   if(p==='request')       renderRequestPage();
@@ -750,6 +839,10 @@ function fillDrops(){
   if(nbCount)nbCount.textContent=DATA.length;
 
   // Add task form
+  const afRq=document.getElementById('af-rq');if(afRq)afRq.innerHTML=REQS.map(v=>`<option>${v}</option>`).join('');
+  const afHd=document.getElementById('af-hd');if(afHd)afHd.innerHTML=HNDS.map(v=>`<option>${v}</option>`).join('');
+  const afWt=document.getElementById('af-wt');if(afWt){afWt.innerHTML=Object.keys(SUBTYPES).map(v=>`<option>${v}</option>`).join('');aus();}
+  const afAr=document.getElementById('af-ar');if(afAr)afAr.innerHTML=AREAS.map(v=>`<option>${v}</option>`).join('');
 
   // Job request form
   const jqWt=document.getElementById('jq-wt');if(jqWt){jqWt.innerHTML=Object.keys(SUBTYPES).map(v=>`<option>${v}</option>`).join('');jqus();}
@@ -776,6 +869,7 @@ function fillDrops(){
   const jqPill=document.getElementById('nb-jq-count');if(jqPill)jqPill.textContent=jqCount;
 }
 
+function aus(){const wt=document.getElementById('af-wt');if(!wt)return;document.getElementById('af-st').innerHTML=(SUBTYPES[wt.value]||['Other']).map(o=>`<option>${o}</option>`).join('')}
 function eus(){const wt=document.getElementById('em-wt');if(!wt)return;document.getElementById('em-st').innerHTML=(SUBTYPES[wt.value]||['Other']).map(o=>`<option value="${o}">${o}</option>`).join('')}
 function jqus(){const wt=document.getElementById('jq-wt');if(!wt)return;document.getElementById('jq-st').innerHTML=(SUBTYPES[wt.value]||['Other']).map(o=>`<option>${o}</option>`).join('')}
 
@@ -826,7 +920,7 @@ function rTbl(){
     const checked=SELECTED_TASKS.has(String(r.id))?'checked':'';
     return `<tr class="${SELECTED_TASKS.has(String(r.id))?'row-selected':''}">
     ${isAdmin?`<td style="width:34px;padding-right:0"><input type="checkbox" class="t-chk" data-id="${r.id}" ${checked} onclick="toggleSelectTask('${r.id}',this.checked,event)" style="width:16px;height:16px;accent-color:var(--g);cursor:pointer"></td>`:''}
-    <td>${fds(r.date)}</td><td class="td-h">${r.requestor}</td><td>${r.handler}</td>
+    <td>${fdts(r)}</td><td class="td-h">${r.requestor}</td><td>${r.handler}</td>
     <td>${r.workType.replace(/_/g,' ')}</td><td>${r.subType}</td>
     <td>${r.area.replace(/_/g,' ')}</td><td>${r.location}</td>
     <td title="${r.details}" style="color:var(--t2)">${r.details}</td>
@@ -912,7 +1006,8 @@ async function bulkMarkComplete(){
   for(const id of ids){
     try{
       await fbUpdateJob(id, updates);
-      if(typeof logAudit==='function') logAudit('job.completed', `Bulk complete: job ${id}`, 'info', 'job', id);
+      const _bj = DATA.find(x=>String(x.id)===String(id));
+      if(typeof logAudit==='function') logAudit('job.completed', `Bulk complete: ${_bj?.workType?.replace(/_/g,' ')||'job'} at ${_bj?.location||''} (handler: ${_bj?.handler||'—'})`, 'info', 'job', id);
     }catch(e){ console.warn('Bulk complete failed for', id, e.message); }
   }
   toast(`${ids.length} job${ids.length!==1?'s':''} marked complete`, 's');
@@ -932,7 +1027,8 @@ async function bulkChangePriority(){
   for(const id of ids){
     try{
       await fbUpdateJob(id, {priority});
-      if(typeof logAudit==='function') logAudit('job.updated', `Bulk priority change: ${priority}`, 'info', 'job', id);
+      const _bj2 = DATA.find(x=>String(x.id)===String(id));
+      if(typeof logAudit==='function') logAudit('job.updated', `Bulk priority: ${_bj2?.workType?.replace(/_/g,' ')||'job'} at ${_bj2?.location||''} → priority: ${priority}`, 'info', 'job', id);
     }catch(e){ console.warn('Bulk priority failed for', id, e.message); }
   }
   toast(`Priority set to ${priority} on ${ids.length} job${ids.length!==1?'s':''}`, 's');
@@ -952,7 +1048,7 @@ async function bulkDelete(){
     try{
       const r=DATA.find(x=>String(x.id)===String(id));
       await fbDeleteJob(id);
-      if(typeof logAudit==='function') logAudit('job.deleted', `Bulk delete: ${r?.workType?.replace(/_/g,' ')||''} at ${r?.location||''}`, 'warning', 'job', id);
+      if(typeof logAudit==='function') logAudit('job.deleted', `Bulk delete: ${r?.workType?.replace(/_/g,' ')||'job'} at ${r?.location||''} (status: ${r?.status||'—'}, priority: ${r?.priority||'—'}, handler: ${r?.handler||'—'})`, 'warning', 'job', id);
     }catch(e){ console.warn('Bulk delete failed for', id, e.message); }
   }
   if(!FB_READY){ DATA=DATA.filter(x=>!ids.includes(String(x.id))); fData=fData.filter(x=>!ids.includes(String(x.id))); }
@@ -1058,7 +1154,7 @@ function vTask(id){
   const canEdit=currentUser&&(currentUser.role==='admin'||currentUser.role==='staff');
   document.getElementById('det-body').innerHTML=`
     <div class="dg">
-      <div class="di"><div class="dl">Date</div><div class="dv">${fd(r.date)}</div></div>
+      <div class="di"><div class="dl">Submitted</div><div class="dv">${fdt(r)}</div></div>
       <div class="di"><div class="dl">Status</div><div class="dv">${sbadge(r.status)}</div></div>
       <div class="di"><div class="dl">Requestor</div><div class="dv">${r.requestor}</div></div>
       <div class="di"><div class="dl">Handled by</div><div class="dv">${r.handler}</div></div>
@@ -1067,7 +1163,13 @@ function vTask(id){
       <div class="di"><div class="dl">Area</div><div class="dv">${r.area.replace(/_/g,' ')}</div></div>
       <div class="di"><div class="dl">Location</div><div class="dv">${r.location}</div></div>
       <div class="di"><div class="dl">Priority</div><div class="dv">${pbadge(r.priority)}</div></div>
-      <div class="di"><div class="dl">Completion date</div><div class="dv">${fd(r.completion)}</div></div>
+      <div class="di"><div class="dl">Completion</div><div class="dv">${(()=>{
+        if(r.completedAt){
+          const d=new Date(r.completedAt);
+          if(!isNaN(d)) return d.toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'})+' · '+d.toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});
+        }
+        return r.completion ? fd(r.completion) : '—';
+      })()}</div></div>
     </div>
     <div style="padding:12px;background:var(--s2);border-radius:var(--r);border:1px solid var(--b0)">
       <div class="dl" style="margin-bottom:5px">Details</div>
@@ -1098,7 +1200,7 @@ function markJobComplete(id){
     completion:getTODAY(),
     completedAt: (typeof nowISO === 'function') ? nowISO() : new Date().toISOString()
   };
-  try{ if(typeof logAudit==='function') logAudit('job.completed', `Job marked complete: ${r?.workType?.replace(/_/g,' ')||''} at ${r?.location||''}`, 'info', 'job', id); }catch(_){}
+  try{ if(typeof logAudit==='function') logAudit('job.completed', `Completed: ${r?.workType?.replace(/_/g,' ')||'Job'} at ${r?.location||''} (priority: ${r?.priority||'—'}, handled by ${r?.handler||'—'}, requestor: ${r?.requestor||'—'})${r?.submittedAt ? ', duration: ' + (typeof elapsedBetween==='function' ? elapsedBetween(r.submittedAt, nowISO()) : '—') : ''}`, 'info', 'job', id); }catch(_){}
   fbUpdateJob(id,updates);
   if(!FB_READY && r) Object.assign(r, updates);
   cm('m-det');af();renderInProgress();
@@ -1140,9 +1242,21 @@ function saveEdit(){
     details:document.getElementById('em-de').value,
   };
   if(updates.status==='Completed'&&!r.completion)updates.completion=getTODAY();
+  // Add precise timestamps when status changes
+  if(updates.status==='Completed'&&!r.completedAt) updates.completedAt = (typeof nowISO==='function')?nowISO():new Date().toISOString();
+  if((updates.status==='In Progress'||updates.status==='In Progress - Contractor')&&!r.assignedAt) updates.assignedAt = (typeof nowISO==='function')?nowISO():new Date().toISOString();
   fbUpdateJob(String(eId),updates);
   if(!FB_READY)Object.assign(r,updates);
-  try{ if(typeof logAudit==='function') logAudit('job.updated', `Job updated: ${updates.workType?.replace(/_/g,' ')||r.workType?.replace(/_/g,' ')} at ${updates.location||r.location} (status: ${updates.status||r.status})`, 'info', 'job', eId); }catch(_){}
+  try{ if(typeof logAudit==='function') logAudit('job.updated', (()=>{
+    const changes = [];
+    if(updates.status && updates.status !== r.status) changes.push(`status: ${r.status} → ${updates.status}`);
+    if(updates.priority && updates.priority !== r.priority) changes.push(`priority: ${r.priority} → ${updates.priority}`);
+    if(updates.handler && updates.handler !== r.handler) changes.push(`handler: ${r.handler} → ${updates.handler}`);
+    if(updates.location && updates.location !== r.location) changes.push(`location: ${r.location} → ${updates.location}`);
+    if(updates.workType && updates.workType !== r.workType) changes.push(`type: ${r.workType.replace(/_/g,' ')} → ${updates.workType.replace(/_/g,' ')}`);
+    const what = changes.length ? changes.join(', ') : 'minor edits';
+    return `Edited job at ${r.location} (${r.workType?.replace(/_/g,' ')||'—'}): ${what}`;
+  })(), 'info', 'job', eId); }catch(_){}
   cm('m-edit');af();rReady=false;fillDrops();toast('Task updated successfully');
   // Notify handler if changed or assigned; notify requestor of status change
   if (typeof notifyUser === 'function') {
@@ -1153,7 +1267,7 @@ function saveEdit(){
 
 function dTask(id){
   const _r=DATA.find(x=>String(x.id)===String(id));
-  try{ if(typeof logAudit==='function') logAudit('job.deleted', `Job deleted: ${_r?.workType?.replace(/_/g,' ')||''} at ${_r?.location||''}`, 'warning', 'job', id); }catch(_){}
+  try{ if(typeof logAudit==='function') logAudit('job.deleted', `Deleted: ${_r?.workType?.replace(/_/g,' ')||'job'} at ${_r?.location||''} (was ${_r?.status||'—'}, priority: ${_r?.priority||'—'}, handler: ${_r?.handler||'—'}, requestor: ${_r?.requestor||'—'})`, 'warning', 'job', id); }catch(_){}
   id=String(id);
   if(!confirm('Delete this task? This action cannot be undone.'))return;
   fbDeleteJob(id);
@@ -1164,6 +1278,53 @@ function dTask(id){
 // ═══════════════════════════════════════════════
 // ADD TASK — auto sets In Progress
 // ═══════════════════════════════════════════════
+function addTask(){
+  const loc=document.getElementById('af-lc').value.trim();
+  const det=document.getElementById('af-de').value.trim();
+  if(!loc||!det){toast('Location and details are required.','e');return;}
+  const t={
+    id:nid++,date:document.getElementById('af-dt').value||getTODAY(),
+    createdBy:currentUser?(currentUser.email||currentUser.username||'staff'):'staff',
+    createdByUid:currentUser?(currentUser.uid||currentUser.id||''):'',
+    createdAt:getTODAY(),
+    submittedAt: (typeof nowISO === 'function') ? nowISO() : new Date().toISOString(),
+    assignedAt:  (typeof nowISO === 'function') ? nowISO() : new Date().toISOString(),
+    requestor:document.getElementById('af-rq').value,
+    handler:document.getElementById('af-hd').value,
+    workType:document.getElementById('af-wt').value,
+    subType:document.getElementById('af-st').value,
+    area:document.getElementById('af-ar').value,
+    location:loc,details:det,
+    status:'In Progress',
+    priority:document.getElementById('af-pr').value,
+    completion:document.getElementById('af-cd').value||''
+  };
+  DATA.unshift(t);
+  if(typeof fbAddJob==='function') fbAddJob(t);
+  try{ if(typeof logAudit==='function') logAudit('job.created', `Created: ${t.workType.replace(/_/g,' ')} at ${t.location} (priority: ${t.priority}, requestor: ${t.requestor}, handler: ${t.handler}, status: ${t.status})`, 'info', 'job', t.id); }catch(_){}
+  fillDrops();rReady=false;clrAF();rAddSide();
+  document.getElementById('nb-count').textContent=DATA.length;
+  toast(`Task added — marked In Progress`);
+  if (typeof notifyUser === 'function') notifyUser(t.handler, '🔧 New job assigned', t.workType.replace(/_/g,' ') + ' — ' + t.location + ' (' + t.area.replace(/_/g,' ') + ')', t.id);
+}
+function clrAF(){
+  ['af-lc','af-de','af-cd'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+}
+
+function rAddSide(){
+  const d=DATA,tc=d.filter(r=>r.date===TODAY).length;
+  const co=d.filter(r=>r.status==='Completed').length;
+  const arc=document.getElementById('add-rc');if(arc)arc.textContent=tc+' today';
+  const qs=document.getElementById('add-qs');
+  if(qs)qs.innerHTML=[
+    {bg:'rgba(110,190,42,.12)',c:'#6ebe2a',l:'Total tasks',v:d.length},
+    {bg:'rgba(45,207,179,.1)',c:'#2dcfb3',l:'Completed',v:`${co} (${Math.round(co/d.length*100)}%)`},
+    {bg:'rgba(85,153,245,.1)',c:'#5599f5',l:'In progress',v:d.filter(r=>r.status==='In Progress').length},
+    {bg:'rgba(232,83,74,.1)',c:'#e8534a',l:'High / Urgent',v:d.filter(r=>r.priority==='High'||r.priority==='Urgent').length},
+  ].map(x=>`<div class="qsi"><div class="qsi-ico" style="background:${x.bg};color:${x.c}"><svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5" stroke="currentColor" stroke-width="1.4"/></svg></div><div><div class="qsi-l">${x.l}</div><div class="qsi-v">${x.v}</div></div></div>`).join('');
+  const rl=document.getElementById('add-rl');
+  if(rl)rl.innerHTML=DATA.slice(0,5).map(r=>`<div class="act-i"><div class="act-dot" style="background:${r.status==='Completed'?'var(--g)':r.status==='In Progress'?'var(--blue)':'var(--amber)'}"></div><div class="act-body"><div class="act-txt"><strong style="color:var(--t0)">${r.requestor}</strong> · ${r.workType.replace(/_/g,' ')}</div><div class="act-sub">${r.location} · ${r.area.replace(/_/g,' ')}</div><div class="act-time">${fd(r.date)}</div></div></div>`).join('');
+}
 
 // ═══════════════════════════════════════════════
 // IN PROGRESS — KANBAN + TABLE
@@ -1207,7 +1368,7 @@ function renderInProgress(){
   const allActive=[...pend,...ip];
   const ipBody=document.getElementById('ip-body');
   if(ipBody)ipBody.innerHTML=allActive.length?allActive.map(r=>`<tr>
-    <td>${fds(r.date)}</td><td class="td-h">${r.requestor}</td><td>${r.handler}</td>
+    <td>${fdts(r)}</td><td class="td-h">${r.requestor}</td><td>${r.handler}</td>
     <td>${r.workType.replace(/_/g,' ')}</td><td>${r.subType}</td>
     <td>${r.area.replace(/_/g,' ')}</td><td>${r.location}</td>
     <td title="${r.details}" style="color:var(--t2)">${r.details}</td>
@@ -1226,19 +1387,6 @@ function setReqFilter(f){
 }
 
 function renderRequestPage(){
-  // Update locked requestor display with current user info
-  if(currentUser){
-    const nameEl = document.getElementById('jq-rq-display');
-    const roleEl = document.getElementById('jq-rq-role');
-    const hiddenEl = document.getElementById('jq-rq');
-    if(nameEl) nameEl.textContent = currentUser.name || currentUser.email || 'Unknown';
-    if(roleEl){
-      const roleLabel = (typeof ROLE_LABELS !== 'undefined' && ROLE_LABELS[currentUser.role]) ? ROLE_LABELS[currentUser.role] : (currentUser.role || 'User');
-      roleEl.textContent = roleLabel;
-    }
-    if(hiddenEl) hiddenEl.value = currentUser.name || currentUser.email || '';
-  }
-  if(typeof refreshLucide === 'function') setTimeout(refreshLucide, 0);
   const u=currentUser;
   if(!u) return; // guard — Firebase not ready yet
   const heroSub=document.getElementById('request-hero-sub');
@@ -1327,48 +1475,39 @@ function renderRequestPage(){
 }
 
 function submitJobRequest(){
-  // SECURITY: Requestor is ALWAYS the logged-in user — no spoofing possible
+  // SECURITY: Requestor is ALWAYS the logged-in user — no spoofing
   if(!currentUser){ toast('You must be signed in to submit a request.','e'); return; }
-
-  const loc = document.getElementById('jq-lc').value.trim();
-  const det = document.getElementById('jq-de').value.trim();
-  if(!loc || !det){ toast('Please fill in all required fields.','e'); return; }
-
-  const wt = document.getElementById('jq-wt').value;
-  const handler = (typeof AUTO_ASSIGN !== 'undefined' && AUTO_ASSIGN[wt]) ? AUTO_ASSIGN[wt] : HNDS[0];
-
-  // Requestor = logged-in user (locked, no override)
+  const loc=document.getElementById('jq-lc').value.trim();
+  const det=document.getElementById('jq-de').value.trim();
+  if(!loc||!det){toast('Please fill in all required fields.','e');return;}
+  const wt=document.getElementById('jq-wt').value;
+  const handler=AUTO_ASSIGN[wt]||HNDS[0];
+  // Requestor = logged-in user (locked)
   const req = currentUser.name || currentUser.email || 'Unknown';
-
   // Allow custom date if entered, default to today
-  const dtField = document.getElementById('jq-dt');
-  const jobDate = (dtField && dtField.value) ? dtField.value : getTODAY();
-
-  const t = {
-    id: nid++,
-    date: jobDate,
-    requestor:    req,
-    handler:      handler,
-    workType:     wt,
-    subType:      document.getElementById('jq-st').value,
-    area:         document.getElementById('jq-ar').value,
-    location:     loc,
-    details:      det,
-    status:       'In Progress',
-    priority:     document.getElementById('jq-pr').value,
-    completion:   '',
-    createdBy:    currentUser.email || currentUser.username || req,
-    createdByUid: currentUser.uid || currentUser.id || '',
+  const dtField=document.getElementById('jq-dt');
+  const jobDate=(dtField&&dtField.value)?dtField.value:getTODAY();
+  const t={
+    id:nid++,date:jobDate,
+    requestor:req,
+    handler:handler,
+    workType:wt,
+    subType:document.getElementById('jq-st').value,
+    area:document.getElementById('jq-ar').value,
+    location:loc,details:det,
+    status:'In Progress',
+    priority:document.getElementById('jq-pr').value,
+    completion:'',
+    createdBy:    currentUser.email||currentUser.username||req,
+    createdByUid: currentUser.uid||currentUser.id||'',
     createdAt:    getTODAY(),
     submittedAt:  (typeof nowISO === 'function') ? nowISO() : new Date().toISOString(),
     assignedAt:   (typeof nowISO === 'function') ? nowISO() : new Date().toISOString()
   };
-
   fbAddJob(t);
-  try{ if(typeof logAudit==='function') logAudit('job.created', `Request submitted: ${t.workType.replace(/_/g,' ')} at ${t.location} (by ${req}, assigned to ${handler})`, 'info', 'job', t.id); }catch(_){}
-  if(!FB_READY){ fillDrops(); rReady=false; }
-  clrJQ();
-  renderRequestPage();
+  try{ if(typeof logAudit==='function') logAudit('job.created', `Request submitted: ${t.workType.replace(/_/g,' ')} at ${t.location} (priority: ${t.priority}, by ${req} [${currentUser.role||'user'}], handler: ${handler}, status: ${t.status})`, 'info', 'job', t.id); }catch(_){}
+  if(!FB_READY){fillDrops();rReady=false;}
+  clrJQ();renderRequestPage();
   toast(`Request submitted — assigned to ${handler}`);
   // Notify handler of new job request
   if (typeof notifyUser === 'function') notifyUser(handler, '📥 New job request', t.workType.replace(/_/g,' ') + ' — ' + t.location + ' (' + t.area.replace(/_/g,' ') + ')', t.id);
@@ -1391,6 +1530,7 @@ function assignRequest(id){
 
 function clrJQ(){
   ['jq-lc','jq-de'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const jqRq=document.getElementById('jq-rq');if(jqRq)jqRq.value='';
 }
 
 // ═══════════════════════════════════════════════
@@ -1861,6 +2001,8 @@ function delArea(name){
 // ═══════════════════════════════════════════════
 function init(){
   // Loading screen is now hidden by firebase.js after data is ready (not here)
+  const dtEl=document.getElementById('af-dt'); if(dtEl) dtEl.value=TODAY;
+  const cdEl=document.getElementById('af-cd'); if(cdEl) cdEl.value=TODAY;
   function updateClock(){
     const el=document.getElementById('tb-dt');if(!el)return;
     const now=new Date();
@@ -2174,6 +2316,7 @@ function cmdBuildItems(query) {
   const pages = [
     {id:'dash',     title:'Dashboard',         sub:'Overview & analytics',          perm:'view_dashboard',    icon:'<path d="M2 2h5v5H2zM9 2h5v5H9zM2 9h5v5H2zM9 9h5v5H9z" stroke="currentColor" stroke-width="1.4"/>'},
     {id:'tasks',    title:'All tasks',         sub:'Manage all jobs',                perm:'view_all_tasks',    icon:'<path d="M2 4h12M2 8h8M2 12h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>'},
+    {id:'add',      title:'Add new task',      sub:'Create a maintenance job',       perm:'add_task',          icon:'<path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>'},
     {id:'inprogress',title:'In progress',      sub:'Active tasks',                   perm:'view_inprogress',   icon:'<circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.4"/><path d="M8 5v3l2 2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>'},
     {id:'request',  title:'Job requests',      sub:'Submit & track requests',        perm:'submit_request',    icon:'<path d="M3 3h10v10H3z" stroke="currentColor" stroke-width="1.4"/><path d="M6 7h4M6 10h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>'},
     {id:'reports',  title:'Reports',           sub:'View analytics & exports',       perm:'view_reports',      icon:'<path d="M2 13l4-5 3 3 5-7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>'},
