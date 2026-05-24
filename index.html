@@ -98,7 +98,7 @@
     <svg viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h8M2 12h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
     <span>Tasks</span>
   </button>
-  <button class="mbn-btn mbn-fab" id="mbn-add" onclick="mbnNav('request')" style="position:relative;overflow:visible" title="Submit a job request">
+  <button class="mbn-btn mbn-fab" id="mbn-add" onclick="mbnNav('request')" style="position:relative;overflow:visible">
     <div style="position:absolute;top:-16px;left:50%;transform:translateX(-50%);width:48px;height:48px;border-radius:50%;background:var(--g);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 18px rgba(110,190,42,.5)">
       <svg viewBox="0 0 16 16" fill="none" style="width:20px;height:20px;color:#fff"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
     </div>
@@ -422,43 +422,6 @@
         <button class="btn btn-o btn-sm" onclick="clearSelection()" title="Clear selection">
           <svg viewBox="0 0 16 16" fill="none" style="width:13px;height:13px"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
         </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ══ ADD TASK ══ -->
-  <div id="page-add" class="page">
-    <div style="display:flex;gap:14px;flex-wrap:wrap">
-      <div class="card" style="flex:2;min-width:290px">
-        <div class="card-hd"><span class="card-t">New task</span><span class="card-badge" style="background:var(--g3);color:var(--g);border-color:var(--g4)">Auto → In Progress</span></div>
-        <div class="fsec">
-          <div class="fsec-t">Basic information</div>
-          <div class="fg">
-            <div class="fc"><label class="fl">Date <span class="r">*</span></label><input type="date" id="af-dt" class="fi"></div>
-            <div class="fc"><label class="fl">Requestor <span class="r">*</span></label><select id="af-rq" class="fi"></select></div>
-            <div class="fc"><label class="fl">Handled by <span class="r">*</span></label><select id="af-hd" class="fi"></select></div>
-            <div class="fc"><label class="fl">Priority</label><select id="af-pr" class="fi"><option>Low</option><option>Medium</option><option selected>High</option><option>Urgent</option></select></div>
-          </div>
-        </div>
-        <div class="fsec">
-          <div class="fsec-t">Work classification</div>
-          <div class="fg">
-            <div class="fc"><label class="fl">Work type <span class="r">*</span></label><select id="af-wt" class="fi" onchange="aus()"></select></div>
-            <div class="fc"><label class="fl">Sub type</label><select id="af-st" class="fi"></select></div>
-            <div class="fc"><label class="fl">Area / Level <span class="r">*</span></label><select id="af-ar" class="fi"></select></div>
-            <div class="fc"><label class="fl">Location / Room <span class="r">*</span></label><input type="text" id="af-lc" class="fi" placeholder="e.g. Room 810"></div>
-            <div class="fc"><label class="fl">Completion date</label><input type="date" id="af-cd" class="fi"></div>
-            <div class="fc ff"><label class="fl">Details / description <span class="r">*</span></label><textarea id="af-de" class="fi" rows="3" placeholder="Describe the maintenance issue in detail..."></textarea></div>
-          </div>
-        </div>
-        <div class="form-actions">
-          <button class="btn btn-o" onclick="clrAF()">Clear form</button>
-          <button class="btn btn-g" onclick="addTask()"><svg viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Add task</button>
-        </div>
-      </div>
-      <div style="flex:1;min-width:230px;display:flex;flex-direction:column;gap:12px">
-        <div class="card"><div class="card-hd"><span class="card-t">Platform stats</span></div><div id="add-qs"></div></div>
-        <div class="card"><div class="card-hd"><span class="card-t">Recent additions</span><span class="card-badge" id="add-rc">0 today</span></div><div id="add-rl"></div></div>
       </div>
     </div>
   </div>

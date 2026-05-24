@@ -438,15 +438,14 @@ function applyUserSession(){
   const nm=document.getElementById('sb-name'); if(nm) nm.textContent=u.name;
   const rl=document.getElementById('sb-role'); if(rl) rl.textContent=ROLE_LABELS[u.role]||u.role;
   buildSidebarNav();
-  // Topbar visibility — based on permissions, not hardcoded role
+  // Topbar visibility
   const isReq=u.role==='requester', isCont=u.role==='contractor';
   const sw=document.getElementById('global-search-wrap');
   const nb=document.getElementById('topbar-new-btn');
-  const fab=document.getElementById('mbn-add');
   if(sw) sw.style.display=(isReq||isCont)?'none':'';
-  // Topbar "+ New request" button: show only for users who can submit_request
+  // Topbar "+ New request" + mobile FAB shown only to users with submit_request permission
   if(nb) nb.style.display = (typeof can==='function' && can('submit_request')) ? '' : 'none';
-  // Mobile FAB: same rule — only visible to users who can submit_request
+  const fab = document.getElementById('mbn-add');
   if(fab) fab.style.display = (typeof can==='function' && can('submit_request')) ? '' : 'none';
 }
 
@@ -459,16 +458,15 @@ function buildSidebarNav(){
     // [ pageId, label, svgPath, section, permKey ]
     ['dash',       'Dashboard',       '<rect x="1" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="9" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="1" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="9" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/>',  'Overview',        'view_dashboard'],
     ['tasks',      'All tasks',       '<path d="M2 4h12M2 8h8M2 12h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>',                                                             'Overview',        'view_all_tasks', 'nb-count'],
-    ['add',        'Add task',        '<circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.4"/><path d="M8 5v6M5 8h6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>','Jobs',            'add_task'],
     ['inprogress', 'In progress',     '<circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.4"/><path d="M8 5v3l2 2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>', 'Jobs',            'view_inprogress','nb-ip-count','amber'],
     ['contractor', 'My jobs',         '<rect x="2" y="6" width="12" height="8" rx="1" stroke="currentColor" stroke-width="1.4"/><path d="M5 6V4a3 3 0 016 0v2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>','Jobs','view_inprogress','nb-cont-count','amber'],
     ['request',    'Job requests',    '<rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M5 8h6M8 5v6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>','Jobs','submit_request','nb-jq-count'],
+    ['rooms',      'Rooms board',     '<rect x="1" y="1" width="6" height="4" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="9" y="1" width="6" height="4" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="1" y="7" width="6" height="4" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="9" y="7" width="6" height="4" rx="1" stroke="currentColor" stroke-width="1.4"/>','Jobs','view_all_tasks'],
     ['reports',    'Reports',         '<rect x="1" y="9" width="3" height="6" rx="1" fill="currentColor"/><rect x="6" y="5" width="3" height="10" rx="1" fill="currentColor"/><rect x="11" y="1" width="3" height="14" rx="1" fill="currentColor"/>','Analytics','view_reports'],
     ['email',      'Email report',    '<rect x="1" y="3" width="14" height="10" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M1 5l7 5 7-5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>','Analytics','send_email'],
     ['users',      'Users',           '<circle cx="6" cy="5" r="2.5" stroke="currentColor" stroke-width="1.4"/><path d="M1 13c0-2.761 2.239-4 5-4s5 1.239 5 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="13" cy="5" r="2" stroke="currentColor" stroke-width="1.2"/><path d="M11.5 13c0-1.5 1-2.5 2-2.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>','Administration','manage_users','nb-users-count'],
     ['audit',      'Audit log',       '<rect x="2" y="2" width="12" height="12" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M5 6h6M5 9h6M5 12h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>','Administration','view_audit_log'],
     ['permissions','Permissions',     '<path d="M12 1l1.5 3L17 5l-2.5 2.5.5 3.5L12 9.5 9.5 11l.5-3.5L7.5 5l3.5-1L12 1z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="4" cy="12" r="2.5" stroke="currentColor" stroke-width="1.2"/>','Administration','manage_permissions'],
-    ['rooms',      'Rooms board','<rect x="1" y="1" width="6" height="4" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="9" y="1" width="6" height="4" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="1" y="7" width="6" height="4" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="9" y="7" width="6" height="4" rx="1" stroke="currentColor" stroke-width="1.4"/>','Jobs','view_all_tasks'],
     ['admin',      'Field mgmt',      '<circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.4"/><path d="M2 14c0-3.314 2.686-5 6-5s6 1.686 6 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M11 8l1 1 2-2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>','Administration','manage_fields'],
   ];
 
@@ -557,11 +555,7 @@ function wc(k){return WTC[k]||PAL[Object.keys(SUBTYPES).indexOf(k)%PAL.length]||
 // ═══════════════════════════════════════════════
 function getTODAY(){return new Date().toISOString().slice(0,10);}
 
-// ═══════════════════════════════════════════════
-// TIME HELPERS
-// ═══════════════════════════════════════════════
 function nowISO(){return new Date().toISOString();}
-
 function timeAgo(iso){
   if(!iso) return '';
   const t = new Date(iso).getTime();
@@ -574,6 +568,62 @@ function timeAgo(iso){
   if(s < 604800)return Math.floor(s/86400)+ 'd ago';
   return new Date(iso).toLocaleDateString('en-AU', {day:'numeric',month:'short'});
 }
+function formatTimestamp(iso){
+  if(!iso) return '—';
+  const d = new Date(iso);
+  if(isNaN(d)) return '—';
+  return d.toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'})
+    + ' · ' + d.toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});
+}
+function fdt(r){
+  if(!r) return '—';
+  const ts = r.submittedAt || r.createdAt;
+  if(ts && typeof ts === 'string' && ts.includes('T')){
+    const d = new Date(ts);
+    if(!isNaN(d)){
+      return d.toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'})
+        + ' · ' + d.toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});
+    }
+  }
+  return r.date ? fd(r.date) : '—';
+}
+function fdts(r){
+  if(!r) return '—';
+  const ts = r.submittedAt || r.createdAt;
+  if(ts && typeof ts === 'string' && ts.includes('T')){
+    const d = new Date(ts);
+    if(!isNaN(d)){
+      return d.toLocaleDateString('en-AU',{day:'numeric',month:'short'})
+        + ' · ' + d.toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});
+    }
+  }
+  return r.date ? fds(r.date) : '—';
+}
+function elapsedBetween(startISO, endISO){
+  if(!startISO || !endISO) return '';
+  const a = new Date(startISO).getTime();
+  const b = new Date(endISO).getTime();
+  if(isNaN(a) || isNaN(b) || b < a) return '';
+  const m = Math.floor((b - a) / 60000);
+  if(m < 1)   return '<1min';
+  if(m < 60)  return m + 'min';
+  const h = Math.floor(m / 60);
+  const mm = m % 60;
+  if(h < 24)  return h + 'h' + (mm ? ' ' + mm + 'm' : '');
+  const d = Math.floor(h / 24);
+  return d + 'd ' + (h % 24) + 'h';
+}
+function getDeviceInfo(){
+  const ua = navigator.userAgent || '';
+  let device = /mobile/i.test(ua) ? 'Mobile' : (/tablet|ipad/i.test(ua) ? 'Tablet' : 'Desktop');
+  let browser = 'Unknown';
+  if(/edg/i.test(ua)) browser = 'Edge';
+  else if(/chrome/i.test(ua)) browser = 'Chrome';
+  else if(/safari/i.test(ua)) browser = 'Safari';
+  else if(/firefox/i.test(ua)) browser = 'Firefox';
+  return `${device}/${browser}`;
+}
+
 const TODAY=getTODAY();
 
 // ═══════════════════════════════════════════════
@@ -714,8 +764,7 @@ function go(p,el){
   pageEl.classList.add('on');
   if(el) el.classList.add('on');
 
-  const T={dash:'Dashboard',tasks:'All tasks',add:'Add new task',
-    inprogress:'In Progress — Task board',contractor:'My assigned jobs',
+  const T={dash:'Dashboard',tasks:'All tasks',inprogress:'In Progress — Task board',contractor:'My assigned jobs',
     request:'Job request portal',reports:'Reports & analytics',
     email:'Email report',users:'User management',
     permissions:'Role permissions',admin:'Field management',
@@ -724,7 +773,6 @@ function go(p,el){
 
   if(p==='dash')          rDash();
   if(p==='tasks')         {bTKpis();af();}
-  if(p==='add')           rAddSide();
   if(p==='inprogress')    renderInProgress();
   if(p==='contractor')    renderContractorPanel();
   if(p==='request')       renderRequestPage();
@@ -774,10 +822,6 @@ function fillDrops(){
   if(nbCount)nbCount.textContent=DATA.length;
 
   // Add task form
-  const afRq=document.getElementById('af-rq');if(afRq)afRq.innerHTML=REQS.map(v=>`<option>${v}</option>`).join('');
-  const afHd=document.getElementById('af-hd');if(afHd)afHd.innerHTML=HNDS.map(v=>`<option>${v}</option>`).join('');
-  const afWt=document.getElementById('af-wt');if(afWt){afWt.innerHTML=Object.keys(SUBTYPES).map(v=>`<option>${v}</option>`).join('');aus();}
-  const afAr=document.getElementById('af-ar');if(afAr)afAr.innerHTML=AREAS.map(v=>`<option>${v}</option>`).join('');
 
   // Job request form
   const jqWt=document.getElementById('jq-wt');if(jqWt){jqWt.innerHTML=Object.keys(SUBTYPES).map(v=>`<option>${v}</option>`).join('');jqus();}
@@ -804,34 +848,6 @@ function fillDrops(){
   const jqPill=document.getElementById('nb-jq-count');if(jqPill)jqPill.textContent=jqCount;
 }
 
-function aus(){const wt=document.getElementById('af-wt');if(!wt)return;document.getElementById('af-st').innerHTML=(SUBTYPES[wt.value]||['Other']).map(o=>`<option>${o}</option>`).join('')}
-function eus(){const wt=document.getElementById('em-wt');if(!wt)return;document.getElementById('em-st').innerHTML=(SUBTYPES[wt.value]||['Other']).map(o=>`<option value="${o}">${o}</option>`).join('')}
-function jqus(){const wt=document.getElementById('jq-wt');if(!wt)return;document.getElementById('jq-st').innerHTML=(SUBTYPES[wt.value]||['Other']).map(o=>`<option>${o}</option>`).join('')}
-
-// ═══════════════════════════════════════════════
-// FILTER + SORT + TABLE
-// ═══════════════════════════════════════════════
-function af(){
-  const q=(document.getElementById('fsrch').value||'').toLowerCase();
-  const st=document.getElementById('fst').value;
-  const ar=document.getElementById('far').value;
-  const wt=document.getElementById('fwt').value;
-  const hd=document.getElementById('fhd').value;
-  const pr=document.getElementById('fpr').value;
-  fData=DATA.filter(r=>{
-    if(st&&r.status!==st&&!(st==='Urgent'&&r.priority==='Urgent'))return false;
-    if(ar&&r.area!==ar)return false;
-    if(wt&&r.workType!==wt)return false;
-    if(hd&&r.handler!==hd)return false;
-    if(pr&&r.priority!==pr)return false;
-    if(q&&!Object.values(r).join(' ').toLowerCase().includes(q))return false;
-    return true;
-  });
-  if(sKey)fData.sort((a,b)=>(a[sKey]>b[sKey]?1:-1)*sDir);
-  cPg=1;
-  SELECTED_TASKS.clear();
-  rTbl();
-}
 function clrF(){['fsrch','fst','far','fwt','fhd','fpr'].forEach(id=>{const el=document.getElementById(id);if(el){if(el.tagName==='INPUT')el.value='';else el.value='';}});af();}
 function srt(k){if(sKey===k)sDir*=-1;else{sKey=k;sDir=1;}af();}
 
@@ -1193,50 +1209,7 @@ function dTask(id){
 // ═══════════════════════════════════════════════
 // ADD TASK — auto sets In Progress
 // ═══════════════════════════════════════════════
-function addTask(){
-  const loc=document.getElementById('af-lc').value.trim();
-  const det=document.getElementById('af-de').value.trim();
-  if(!loc||!det){toast('Location and details are required.','e');return;}
-  const t={
-    id:nid++,date:document.getElementById('af-dt').value||getTODAY(),
-    createdBy:currentUser?(currentUser.email||currentUser.username||'staff'):'staff',
-    createdByUid:currentUser?(currentUser.uid||currentUser.id||''):'',
-    createdAt:getTODAY(),
-    requestor:document.getElementById('af-rq').value,
-    handler:document.getElementById('af-hd').value,
-    workType:document.getElementById('af-wt').value,
-    subType:document.getElementById('af-st').value,
-    area:document.getElementById('af-ar').value,
-    location:loc,details:det,
-    status:'In Progress', // always In Progress on creation
-    priority:document.getElementById('af-pr').value,
-    completion:document.getElementById('af-cd').value||'',
-    createdBy:currentUser?currentUser.role:'staff'
-  };
-  DATA.unshift(t);fillDrops();rReady=false;clrAF();rAddSide();
-  document.getElementById('nb-count').textContent=DATA.length;
-  toast(`Task #${t.id} added — marked In Progress`);
-  // Notify assigned handler
-  if (typeof notifyUser === 'function') notifyUser(t.handler, '🔧 New job assigned', t.workType.replace(/_/g,' ') + ' — ' + t.location + ' (' + t.area.replace(/_/g,' ') + ')', t.id);
-}
-function clrAF(){
-  ['af-lc','af-de','af-cd'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-}
 
-function rAddSide(){
-  const d=DATA,tc=d.filter(r=>r.date===TODAY).length;
-  const co=d.filter(r=>r.status==='Completed').length;
-  const arc=document.getElementById('add-rc');if(arc)arc.textContent=tc+' today';
-  const qs=document.getElementById('add-qs');
-  if(qs)qs.innerHTML=[
-    {bg:'rgba(110,190,42,.12)',c:'#6ebe2a',l:'Total tasks',v:d.length},
-    {bg:'rgba(45,207,179,.1)',c:'#2dcfb3',l:'Completed',v:`${co} (${Math.round(co/d.length*100)}%)`},
-    {bg:'rgba(85,153,245,.1)',c:'#5599f5',l:'In progress',v:d.filter(r=>r.status==='In Progress').length},
-    {bg:'rgba(232,83,74,.1)',c:'#e8534a',l:'High / Urgent',v:d.filter(r=>r.priority==='High'||r.priority==='Urgent').length},
-  ].map(x=>`<div class="qsi"><div class="qsi-ico" style="background:${x.bg};color:${x.c}"><svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5" stroke="currentColor" stroke-width="1.4"/></svg></div><div><div class="qsi-l">${x.l}</div><div class="qsi-v">${x.v}</div></div></div>`).join('');
-  const rl=document.getElementById('add-rl');
-  if(rl)rl.innerHTML=DATA.slice(0,5).map(r=>`<div class="act-i"><div class="act-dot" style="background:${r.status==='Completed'?'var(--g)':r.status==='In Progress'?'var(--blue)':'var(--amber)'}"></div><div class="act-body"><div class="act-txt"><strong style="color:var(--t0)">${r.requestor}</strong> · ${r.workType.replace(/_/g,' ')}</div><div class="act-sub">${r.location} · ${r.area.replace(/_/g,' ')}</div><div class="act-time">${fd(r.date)}</div></div></div>`).join('');
-}
 
 // ═══════════════════════════════════════════════
 // IN PROGRESS — KANBAN + TABLE
@@ -1577,7 +1550,7 @@ function renderUserPage(){
           style="background:${ROLE_COLORS[u.role]}22;color:${ROLE_COLORS[u.role]}">${ROLE_LABELS[u.role]||u.role}</span>
       </div>
       <div style="font-size:10px;color:var(--t3);margin-top:2px">
-        Last login: ${u.lastLogin ? (typeof timeAgo === 'function' ? timeAgo(u.lastLogin) + ' (' + new Date(u.lastLogin).toLocaleString('en-AU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) + ')' : new Date(u.lastLogin).toLocaleString('en-AU',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})) : 'Never'}
+        Last login: ${u.lastLogin ? new Date(u.lastLogin).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : 'Never'}
       </div>
     </div>
     <div class="user-card-actions" style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end">
@@ -1913,8 +1886,6 @@ function delArea(name){
 // ═══════════════════════════════════════════════
 function init(){
   // Loading screen is now hidden by firebase.js after data is ready (not here)
-  const dtEl=document.getElementById('af-dt'); if(dtEl) dtEl.value=TODAY;
-  const cdEl=document.getElementById('af-cd'); if(cdEl) cdEl.value=TODAY;
   function updateClock(){
     const el=document.getElementById('tb-dt');if(!el)return;
     const now=new Date();
@@ -2228,7 +2199,6 @@ function cmdBuildItems(query) {
   const pages = [
     {id:'dash',     title:'Dashboard',         sub:'Overview & analytics',          perm:'view_dashboard',    icon:'<path d="M2 2h5v5H2zM9 2h5v5H9zM2 9h5v5H2zM9 9h5v5H9z" stroke="currentColor" stroke-width="1.4"/>'},
     {id:'tasks',    title:'All tasks',         sub:'Manage all jobs',                perm:'view_all_tasks',    icon:'<path d="M2 4h12M2 8h8M2 12h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>'},
-    {id:'add',      title:'Add new task',      sub:'Create a maintenance job',       perm:'add_task',          icon:'<path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>'},
     {id:'inprogress',title:'In progress',      sub:'Active tasks',                   perm:'view_inprogress',   icon:'<circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.4"/><path d="M8 5v3l2 2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>'},
     {id:'request',  title:'Job requests',      sub:'Submit & track requests',        perm:'submit_request',    icon:'<path d="M3 3h10v10H3z" stroke="currentColor" stroke-width="1.4"/><path d="M6 7h4M6 10h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>'},
     {id:'reports',  title:'Reports',           sub:'View analytics & exports',       perm:'view_reports',      icon:'<path d="M2 13l4-5 3 3 5-7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>'},
