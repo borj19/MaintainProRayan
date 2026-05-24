@@ -438,12 +438,16 @@ function applyUserSession(){
   const nm=document.getElementById('sb-name'); if(nm) nm.textContent=u.name;
   const rl=document.getElementById('sb-role'); if(rl) rl.textContent=ROLE_LABELS[u.role]||u.role;
   buildSidebarNav();
-  // Topbar visibility
+  // Topbar visibility — based on permissions, not hardcoded role
   const isReq=u.role==='requester', isCont=u.role==='contractor';
   const sw=document.getElementById('global-search-wrap');
   const nb=document.getElementById('topbar-new-btn');
+  const fab=document.getElementById('mbn-add');
   if(sw) sw.style.display=(isReq||isCont)?'none':'';
-  if(nb) nb.style.display=(isReq||isCont)?'none':'';
+  // Topbar "+ New request" button: show only for users who can submit_request
+  if(nb) nb.style.display = (typeof can==='function' && can('submit_request')) ? '' : 'none';
+  // Mobile FAB: same rule — only visible to users who can submit_request
+  if(fab) fab.style.display = (typeof can==='function' && can('submit_request')) ? '' : 'none';
 }
 
 // ═══════════════════════════════════════════════
@@ -552,6 +556,24 @@ function wc(k){return WTC[k]||PAL[Object.keys(SUBTYPES).indexOf(k)%PAL.length]||
 // DATA
 // ═══════════════════════════════════════════════
 function getTODAY(){return new Date().toISOString().slice(0,10);}
+
+// ═══════════════════════════════════════════════
+// TIME HELPERS
+// ═══════════════════════════════════════════════
+function nowISO(){return new Date().toISOString();}
+
+function timeAgo(iso){
+  if(!iso) return '';
+  const t = new Date(iso).getTime();
+  if(isNaN(t)) return '';
+  const s = Math.floor((Date.now() - t) / 1000);
+  if(s < 5)     return 'just now';
+  if(s < 60)    return s + 's ago';
+  if(s < 3600)  return Math.floor(s/60)  + 'm ago';
+  if(s < 86400) return Math.floor(s/3600)+ 'h ago';
+  if(s < 604800)return Math.floor(s/86400)+ 'd ago';
+  return new Date(iso).toLocaleDateString('en-AU', {day:'numeric',month:'short'});
+}
 const TODAY=getTODAY();
 
 // ═══════════════════════════════════════════════
@@ -1063,182 +1085,23 @@ function vTask(id){
   id=String(id);
   const r=DATA.find(x=>String(x.id)===id);if(!r)return;
   const canEdit=currentUser&&(currentUser.role==='admin'||currentUser.role==='staff');
-
-  // Determine status pulse class for active jobs
-  const isActive = r.status === 'In Progress' || r.status === 'In Progress - Contractor';
-  const isUrgent = r.priority === 'Urgent' && r.status !== 'Completed';
-
-  // Build the timeline data
-  const submitted = r.submittedAt || (r.createdAt && r.createdAt.includes('T') ? r.createdAt : (r.date ? r.date + 'T08:00:00' : null));
-  const assigned = r.assignedAt;
-  const completed = r.completedAt || (r.completion && r.status === 'Completed' ? r.completion + 'T12:00:00' : null);
-
-  const tlSteps = [];
-  if(submitted) {
-    tlSteps.push({
-      lbl: 'Submitted',
-      iso: submitted,
-      icon: 'inbox',
-      color: 'var(--blue)',
-      done: true
-    });
-  }
-  if(assigned && assigned !== submitted) {
-    const wait = (typeof elapsedBetween === 'function') ? elapsedBetween(submitted, assigned) : '';
-    tlSteps.push({
-      lbl: 'Assigned',
-      iso: assigned,
-      icon: 'user-check',
-      color: 'var(--amber)',
-      sub: wait ? wait + ' wait' : '',
-      done: true
-    });
-  }
-  if(r.status !== 'Completed' && r.status !== 'Pending') {
-    tlSteps.push({
-      lbl: 'In Progress',
-      iso: null,
-      icon: 'loader',
-      color: 'var(--blue)',
-      sub: 'Active',
-      done: false,
-      pulse: true
-    });
-  }
-  if(completed) {
-    const work = (typeof elapsedBetween === 'function') ? elapsedBetween(submitted, completed) : '';
-    tlSteps.push({
-      lbl: 'Completed',
-      iso: completed,
-      icon: 'check-circle-2',
-      color: 'var(--g)',
-      sub: work ? work + ' total' : '',
-      done: true
-    });
-  } else if(r.status === 'Pending') {
-    tlSteps.push({
-      lbl: 'Awaiting assignment',
-      iso: null,
-      icon: 'clock',
-      color: 'var(--amber)',
-      done: false,
-      pulse: true
-    });
-  } else if(!completed) {
-    tlSteps.push({
-      lbl: 'Pending completion',
-      iso: null,
-      icon: 'clock',
-      color: 'var(--t3)',
-      done: false
-    });
-  }
-
-  // Format dates for timeline
-  function tlTime(iso){
-    if(!iso) return '';
-    const d = new Date(iso);
-    if(isNaN(d)) return '';
-    return d.toLocaleDateString('en-AU',{day:'numeric',month:'short'}) +
-           ' · ' + d.toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});
-  }
-
   document.getElementById('det-body').innerHTML=`
-    <!-- HERO HEADER -->
-    <div class="vt-hero">
-      <div class="vt-hero-main">
-        <div class="vt-hero-type">
-          <span class="vt-worktype">${r.workType.replace(/_/g,' ')}</span>
-          ${r.subType ? `<span class="vt-subtype">· ${r.subType}</span>` : ''}
-        </div>
-        <div class="vt-hero-location">
-          <i data-lucide="map-pin" style="width:14px;height:14px"></i>
-          <strong>${r.location}</strong>
-          <span class="vt-area">${r.area.replace(/_/g,' ')}</span>
-        </div>
-      </div>
-      <div class="vt-hero-badges">
-        ${sbadge(r.status)}
-        ${pbadge(r.priority)}
-        ${isUrgent ? '<span class="vt-urgent-pulse"></span>' : ''}
-      </div>
+    <div class="dg">
+      <div class="di"><div class="dl">Date</div><div class="dv">${fd(r.date)}</div></div>
+      <div class="di"><div class="dl">Status</div><div class="dv">${sbadge(r.status)}</div></div>
+      <div class="di"><div class="dl">Requestor</div><div class="dv">${r.requestor}</div></div>
+      <div class="di"><div class="dl">Handled by</div><div class="dv">${r.handler}</div></div>
+      <div class="di"><div class="dl">Work type</div><div class="dv">${r.workType.replace(/_/g,' ')}</div></div>
+      <div class="di"><div class="dl">Sub type</div><div class="dv">${r.subType}</div></div>
+      <div class="di"><div class="dl">Area</div><div class="dv">${r.area.replace(/_/g,' ')}</div></div>
+      <div class="di"><div class="dl">Location</div><div class="dv">${r.location}</div></div>
+      <div class="di"><div class="dl">Priority</div><div class="dv">${pbadge(r.priority)}</div></div>
+      <div class="di"><div class="dl">Completion date</div><div class="dv">${fd(r.completion)}</div></div>
     </div>
-
-    <!-- TIMELINE -->
-    <div class="vt-timeline-wrap">
-      <div class="vt-timeline">
-        ${tlSteps.map((s, i) => `
-          <div class="vt-tl-step ${s.done ? 'done' : ''} ${s.pulse ? 'pulse' : ''}">
-            <div class="vt-tl-dot" style="background:${s.color}">
-              <i data-lucide="${s.icon}" style="width:13px;height:13px;color:#fff"></i>
-            </div>
-            <div class="vt-tl-info">
-              <div class="vt-tl-lbl">${s.lbl}</div>
-              ${s.iso ? `<div class="vt-tl-time">${tlTime(s.iso)}</div>` : ''}
-              ${s.sub ? `<div class="vt-tl-sub" style="color:${s.color}">${s.sub}</div>` : ''}
-            </div>
-            ${i < tlSteps.length - 1 ? `<div class="vt-tl-line ${tlSteps[i+1].done ? 'done' : ''}"></div>` : ''}
-          </div>
-        `).join('')}
-      </div>
-    </div>
-
-    <!-- DETAILS DESCRIPTION -->
-    <div class="vt-desc">
-      <div class="vt-desc-label">
-        <i data-lucide="file-text" style="width:13px;height:13px"></i>
-        Description
-      </div>
-      <div class="vt-desc-text">${r.details || '<em style="color:var(--t3)">No description provided</em>'}</div>
-    </div>
-
-    <!-- INFO GROUPS -->
-    <div class="vt-info-groups">
-      <div class="vt-info-grp">
-        <div class="vt-grp-title">Assignment</div>
-        <div class="vt-grp-rows">
-          <div class="vt-row">
-            <i data-lucide="user" style="width:13px;height:13px;color:var(--t2)"></i>
-            <span class="vt-row-lbl">Requestor</span>
-            <span class="vt-row-val"><strong>${r.requestor}</strong></span>
-          </div>
-          <div class="vt-row">
-            <i data-lucide="wrench" style="width:13px;height:13px;color:var(--t2)"></i>
-            <span class="vt-row-lbl">Handled by</span>
-            <span class="vt-row-val"><strong>${r.handler}</strong></span>
-          </div>
-        </div>
-      </div>
-
-      <div class="vt-info-grp">
-        <div class="vt-grp-title">Schedule</div>
-        <div class="vt-grp-rows">
-          <div class="vt-row">
-            <i data-lucide="calendar" style="width:13px;height:13px;color:var(--t2)"></i>
-            <span class="vt-row-lbl">Job date</span>
-            <span class="vt-row-val">${fd(r.date)}</span>
-          </div>
-          ${r.completion || r.completedAt ? `
-          <div class="vt-row">
-            <i data-lucide="check" style="width:13px;height:13px;color:var(--g)"></i>
-            <span class="vt-row-lbl">Completion</span>
-            <span class="vt-row-val">${(()=>{
-              if(r.completedAt){
-                const d=new Date(r.completedAt);
-                if(!isNaN(d)) return d.toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'})+' · '+d.toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});
-              }
-              return r.completion ? fd(r.completion) : '—';
-            })()}</span>
-          </div>` : ''}
-        </div>
-      </div>
-    </div>
-  `;
-
-  // Update modal title to be more dynamic
-  const titleEl = document.querySelector('#m-det .mt');
-  if(titleEl) titleEl.textContent = `Job · ${r.location}`;
-
+    <div style="padding:12px;background:var(--s2);border-radius:var(--r);border:1px solid var(--b0)">
+      <div class="dl" style="margin-bottom:5px">Details</div>
+      <div style="font-size:13px;color:var(--t0);line-height:1.6">${r.details}</div>
+    </div>`;
   const editBtn=document.getElementById('det-edit');
   editBtn.style.display=canEdit?'':'none';
   editBtn.onclick=()=>{cm('m-det');eTask(id);};
@@ -1247,15 +1110,12 @@ function vTask(id){
     const ex=document.getElementById('btn-mark-complete');if(ex)ex.remove();
     if(r.status!=='Completed'){
       const btn=document.createElement('button');
-      btn.id='btn-mark-complete';btn.className='btn btn-g';
-      btn.innerHTML='<i data-lucide="check-circle-2" style="width:14px;height:14px"></i> Mark complete';
+      btn.id='btn-mark-complete';btn.className='btn btn-g';btn.textContent='✓ Mark complete';
       btn.onclick=()=>markJobComplete(id);
       mft.insertBefore(btn,mft.lastElementChild);
     }
   }
   om('m-det');
-  // Refresh Lucide icons in the modal
-  if(typeof refreshLucide === 'function') setTimeout(refreshLucide, 30);
 }
 
 function markJobComplete(id){
@@ -1717,7 +1577,7 @@ function renderUserPage(){
           style="background:${ROLE_COLORS[u.role]}22;color:${ROLE_COLORS[u.role]}">${ROLE_LABELS[u.role]||u.role}</span>
       </div>
       <div style="font-size:10px;color:var(--t3);margin-top:2px">
-        Last login: ${u.lastLogin ? new Date(u.lastLogin).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : 'Never'}
+        Last login: ${u.lastLogin ? (typeof timeAgo === 'function' ? timeAgo(u.lastLogin) + ' (' + new Date(u.lastLogin).toLocaleString('en-AU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) + ')' : new Date(u.lastLogin).toLocaleString('en-AU',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})) : 'Never'}
       </div>
     </div>
     <div class="user-card-actions" style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end">

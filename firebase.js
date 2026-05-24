@@ -77,6 +77,12 @@ function initFirebase() {
           const snap = await fbDb.collection('users').doc(fbUser.uid).get();
           if (snap.exists) {
             currentUser = { uid: fbUser.uid, email: fbUser.email, ...snap.data() };
+            // ── Update lastLogin in Firestore (fire-and-forget) ──
+            try {
+              fbDb.collection('users').doc(fbUser.uid).update({
+                lastLogin: new Date().toISOString()
+              }).catch(e => console.warn('lastLogin update failed:', e.message));
+            } catch(_){}
             const authEl = document.getElementById('auth-screen');
             if (authEl) authEl.style.display = 'none';
             if (typeof applyUserSession === 'function') applyUserSession();
@@ -84,13 +90,13 @@ function initFirebase() {
               window._appStarted = true;
               init();
             }
-            // Smart hide: wait for data ready AND minimum display time so it never flashes
+            // Smart hide: wait for data ready AND minimum 3s display so it never flashes
             const lsStart = window._lsShownAt || Date.now();
-            const MIN_DISPLAY = 1800;
+            const MIN_DISPLAY = 3000;
             const startWait = Date.now();
             const tickWait = setInterval(() => {
               const dataReady = Array.isArray(DATA);
-              const timeoutReached = Date.now() - startWait > 4000;
+              const timeoutReached = Date.now() - startWait > 5000;
               if (dataReady || timeoutReached) {
                 clearInterval(tickWait);
                 const elapsed = Date.now() - lsStart;
