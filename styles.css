@@ -2692,10 +2692,11 @@ input.t-chk{cursor:pointer}
   max-width:640px !important;
 }
 
+
 /* ═══════════════════════════════════════════════
-   JOB REQUEST — Locked requestor display
+   LOCKED REQUESTOR DISPLAY — Submit Request + Edit Task
 ═══════════════════════════════════════════════ */
-.jq-rq-locked{
+.jq-rq-locked, .em-rq-locked {
   display:flex;
   align-items:center;
   gap:10px;
@@ -2708,7 +2709,8 @@ input.t-chk{cursor:pointer}
   color:var(--t0);
   min-height:38px;
 }
-.jq-rq-locked .jq-rq-name{
+.jq-rq-locked .jq-rq-name,
+.em-rq-locked .em-rq-name {
   font-weight:600;
   color:var(--t0);
   flex:1;
@@ -2717,7 +2719,8 @@ input.t-chk{cursor:pointer}
   text-overflow:ellipsis;
   white-space:nowrap;
 }
-.jq-rq-locked .jq-rq-badge{
+.jq-rq-locked .jq-rq-badge,
+.em-rq-locked .em-rq-badge {
   padding:3px 9px;
   border-radius:99px;
   background:var(--g3);
@@ -2729,13 +2732,14 @@ input.t-chk{cursor:pointer}
   flex-shrink:0;
 }
 @media(max-width:640px){
-  .jq-rq-locked{padding:10px 12px;gap:8px;font-size:12.5px}
-  .jq-rq-locked .jq-rq-badge{font-size:10px;padding:2px 7px}
+  .jq-rq-locked, .em-rq-locked {padding:10px 12px;gap:8px;font-size:12.5px}
+  .jq-rq-locked .jq-rq-badge,
+  .em-rq-locked .em-rq-badge {font-size:10px;padding:2px 7px}
 }
 
 
 /* ═══════════════════════════════════════════════
-   JOB REQUESTS PAGE — Pending workflow UI
+   PENDING WORKFLOW UI — Assign to me + handler picker
 ═══════════════════════════════════════════════ */
 .mri-pending-for{
   display:inline-flex;

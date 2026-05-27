@@ -177,7 +177,14 @@
 <div class="mbd">
 <div class="fg">
 <div class="fc"><label class="fl">Date</label><input type="date" id="em-dt" class="fi"></div>
-<div class="fc"><label class="fl">Requestor</label><select id="em-rq" class="fi"></select></div>
+<div class="fc"><label class="fl">Requestor</label>
+  <div class="em-rq-locked">
+    <i data-lucide="user-circle" style="width:16px;height:16px;color:var(--g)"></i>
+    <span class="em-rq-name" id="em-rq-display">—</span>
+    <span class="em-rq-badge" id="em-rq-role-badge" style="display:none">—</span>
+    <input type="hidden" id="em-rq" value="">
+  </div>
+</div>
 <div class="fc"><label class="fl">Handled by</label><select id="em-hd" class="fi"></select></div>
 <div class="fc"><label class="fl">Work type</label><select id="em-wt" class="fi" onchange="eus()"></select></div>
 <div class="fc"><label class="fl">Sub type</label><select id="em-st" class="fi"></select></div>

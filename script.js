@@ -534,7 +534,7 @@ let AREAS=['Basement_2','Basement_1','Ground Floor','Level_1','Level_2','Level_3
 // No static dummy data — driven entirely by Firebase Auth + Firestore
 let REQS = [];
 function refreshReqsFromUsers(){
-  // Include both requesters AND staff — both can submit requests
+  // Include both requesters AND maintenance staff (both can submit requests)
   REQS = USERS.filter(u => (u.role==='requester' || u.role==='staff') && !u.disabled)
               .map(u => u.name)
               .filter(Boolean);
@@ -1192,10 +1192,28 @@ function eTask(id){
   const emSt=document.getElementById('em-st');
   const emSubs=SUBTYPES[r.workType]||['Other'];
   emSt.innerHTML=emSubs.map(s=>`<option value="${s}" ${s===r.subType?'selected':''}>${s}</option>`).join('');
-document.getElementById('em-rq').innerHTML=REQS.map(v=>`<option ${v===r.requestor?'selected':''}>${v}</option>`).join('');
+  // Requestor is LOCKED in Edit (read-only) — prevents silent data loss when requestor isn't in REQS
+  const emRqDisplay = document.getElementById('em-rq-display');
+  const emRqBadge   = document.getElementById('em-rq-role-badge');
+  const emRqHidden  = document.getElementById('em-rq');
+  if(emRqDisplay) emRqDisplay.textContent = r.requestor || '—';
+  if(emRqHidden)  emRqHidden.value = r.requestor || '';
+  // Show role badge if we can resolve the requestor's role from USERS
+  if(emRqBadge){
+    const resolvedUser = (typeof USERS !== 'undefined' ? USERS : []).find(u => u.name === r.requestor);
+    if(resolvedUser && resolvedUser.role){
+      const lbl = (typeof ROLE_LABELS !== 'undefined' && ROLE_LABELS[resolvedUser.role]) ? ROLE_LABELS[resolvedUser.role] : resolvedUser.role;
+      emRqBadge.textContent = lbl;
+      emRqBadge.style.display = '';
+    } else {
+      emRqBadge.style.display = 'none';
+    }
+  }
   document.getElementById('em-hd').innerHTML=HNDS.map(v=>`<option ${v===r.handler?'selected':''}>${v}</option>`).join('');
   document.getElementById('em-ar').innerHTML=AREAS.map(v=>`<option ${v===r.area?'selected':''}>${v}</option>`).join('');
   om('m-edit');
+  // Refresh Lucide icon inside the modal
+  if(typeof refreshLucide==='function') setTimeout(refreshLucide, 30);
 }
 
 function saveEdit(){
@@ -1319,7 +1337,7 @@ function setReqFilter(f){
 function renderRequestPage(){
   const u=currentUser;
   if(!u) return; // guard — Firebase not ready yet
-  // Update locked requestor display
+  // Populate locked requestor display (top of form)
   const nameEl = document.getElementById('jq-rq-display');
   const roleEl = document.getElementById('jq-rq-role');
   const hiddenEl = document.getElementById('jq-rq');
@@ -1398,18 +1416,17 @@ function renderRequestPage(){
   }
 
   if(!shown.length){list.innerHTML=filterHtml+`<div class="empty-state"><svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.2"/><path d="M5 8h6M8 5v6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg><p>${u.role==='requester'?(f==='all'?'No requests submitted yet.':'No requests with this status.'):'No pending requests.'}</p><small>${u.role==='requester'&&f==='all'?'Use the form above to submit your first request.':''}</small></div>`;return;}
-  // Build handler options for assign dropdown (only used in pending UI)
+  // Handler options for assign dropdown
   const handlerOpts = (HNDS||[]).map(h => `<option value="${h.replace(/"/g,'&quot;')}">${h}</option>`).join('');
   const canAssign = u && (u.role==='admin' || u.role==='staff');
 
   list.innerHTML=filterHtml+shown.map(r=>{
-    // Compute pending duration if pending
+    // Pending duration if status is Pending
     let pendingFor = '';
     if(r.status==='Pending' && r.submittedAt && typeof elapsedBetween === 'function'){
       const dur = elapsedBetween(r.submittedAt, (typeof nowISO==='function' ? nowISO() : new Date().toISOString()));
       if(dur) pendingFor = `<span class="mri-pending-for" title="Pending duration">⏱ ${dur}</span>`;
     }
-    // Click handler is on row but stop propagation on assign buttons/dropdowns
     return `<div class="my-request-item" onclick="vTask('${r.id}')" style="cursor:pointer">
     <div class="mri-top">
       <span class="mri-id">#${r.id}</span>
@@ -1442,45 +1459,46 @@ function renderRequestPage(){
     </div>
   </div>`}).join('');
 
-  // Refresh Lucide icons after rendering
+  // Refresh Lucide icons in the just-rendered list
   if(typeof refreshLucide==='function') setTimeout(refreshLucide, 30);
 }
 
 function submitJobRequest(){
-  // SECURITY: Requestor is always the logged-in user
+  // SECURITY: Requestor is ALWAYS the logged-in user — no spoofing
   if(!currentUser){ toast('You must be signed in to submit a request.','e'); return; }
   const loc=document.getElementById('jq-lc').value.trim();
   const det=document.getElementById('jq-de').value.trim();
   if(!loc||!det){toast('Please fill in all required fields.','e');return;}
   const wt=document.getElementById('jq-wt').value;
-  // ── NEW WORKFLOW: requestor = logged-in user, handler = Unassigned, status = Pending ──
+  // Requestor = logged-in user (locked)
   const req = currentUser.name || currentUser.email || 'Unknown';
   // Allow custom date if entered, default to today
   const dtField=document.getElementById('jq-dt');
   const jobDate=(dtField&&dtField.value)?dtField.value:getTODAY();
   const t={
     id:nid++,date:jobDate,
-    requestor:req,
-    handler:'Unassigned',
-    workType:wt,
-    subType:document.getElementById('jq-st').value,
-    area:document.getElementById('jq-ar').value,
-    location:loc,details:det,
-    status:'Pending',
-    priority:document.getElementById('jq-pr').value,
-    completion:'',
+    requestor:    req,
+    handler:      'Unassigned',
+    workType:     wt,
+    subType:      document.getElementById('jq-st').value,
+    area:         document.getElementById('jq-ar').value,
+    location:     loc,
+    details:      det,
+    status:       'Pending',
+    priority:     document.getElementById('jq-pr').value,
+    completion:   '',
     createdBy:    currentUser.email||currentUser.username||req,
     createdByUid: currentUser.uid||currentUser.id||'',
     createdAt:    getTODAY(),
     submittedAt:  (typeof nowISO === 'function') ? nowISO() : new Date().toISOString()
-    // NOTE: assignedAt is NOT set here — gets set when admin/staff assigns
+    // NOTE: assignedAt is NOT set here — set when admin/staff assigns
   };
   fbAddJob(t);
   try{ if(typeof logAudit==='function') logAudit('job.created', `Request submitted: ${t.workType.replace(/_/g,' ')} at ${t.location} (priority: ${t.priority}, by ${req} [${currentUser.role||'user'}], status: Pending — awaiting assignment)`, 'info', 'job', t.id); }catch(_){}
   if(!FB_READY){fillDrops();rReady=false;}
   clrJQ();renderRequestPage();
   toast('Request submitted — awaiting assignment');
-  // Notify all admins + staff of new pending request
+  // Notify all admins + staff (anyone who can assign jobs) — except the submitter themselves
   if (typeof USERS !== 'undefined' && typeof notifyUser === 'function') {
     USERS.filter(u => (u.role==='admin' || u.role==='staff') && !u.disabled && u.name !== req)
          .forEach(u => notifyUser(u.name, '📥 New pending request', `${t.workType.replace(/_/g,' ')} at ${t.location} — submitted by ${req}`, t.id));
@@ -1488,18 +1506,17 @@ function submitJobRequest(){
 }
 
 // ═══════════════════════════════════════════════
-// JOB ASSIGNMENT — admin/staff assigns pending jobs to handlers
+// JOB ASSIGNMENT — admin/staff assigns Pending jobs
 // ═══════════════════════════════════════════════
 function assignJob(id, handlerName){
   id = String(id);
   const r = DATA.find(x => String(x.id) === id);
   if(!r){ toast('Job not found','e'); return; }
-  if(!handlerName || handlerName === 'Unassigned'){ toast('Please select a handler','e'); return; }
-  // Permission check: only admin or staff can assign
+  if(!handlerName || handlerName === 'Unassigned' || handlerName === ''){ toast('Please select a handler','e'); return; }
+  // Permission: admin OR staff
   if(!(currentUser && (currentUser.role==='admin' || currentUser.role==='staff'))){
     toast('You do not have permission to assign jobs','e'); return;
   }
-  // Calculate pending duration for audit log
   const pendingDuration = (r.submittedAt && typeof elapsedBetween === 'function')
     ? elapsedBetween(r.submittedAt, (typeof nowISO === 'function' ? nowISO() : new Date().toISOString()))
     : '';
@@ -1524,13 +1541,13 @@ function assignJob(id, handlerName){
   if (typeof notifyUser === 'function') {
     notifyUser(handlerName, '🔧 Job assigned to you', `${r.workType?.replace(/_/g,' ')||'Job'} at ${r.location||''} — ${r.priority||''} priority`, id);
   }
-  // Notify requestor that their job is now being actioned
-  if (typeof notifyUser === 'function' && r.requestor && r.requestor !== currentUser?.name) {
+  // Notify requestor (their job is being actioned) — unless they're the same person
+  if (typeof notifyUser === 'function' && r.requestor && r.requestor !== currentUser?.name && r.requestor !== handlerName) {
     notifyUser(r.requestor, '✅ Your request is being actioned', `${r.workType?.replace(/_/g,' ')||'Your job'} at ${r.location||''} — assigned to ${handlerName}`, id);
   }
 }
 
-// Quick self-assign for admin/staff
+// Quick self-assign
 function assignToMe(id){
   if(!currentUser || !(currentUser.role==='admin' || currentUser.role==='staff')){
     toast('You do not have permission to self-assign','e'); return;
