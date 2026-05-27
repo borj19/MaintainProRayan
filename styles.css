@@ -3101,3 +3101,454 @@ input.t-chk{cursor:pointer}
     padding: 22px 18px;
   }
 }
+
+
+/* ═══════════════════════════════════════════════
+   PREMIUM POLISH LAYER (Path C-2 ++)
+   Pushes Claude-inspired refinement further:
+   • Larger serif headings, refined sizing
+   • Subtle hover lift on cards
+   • Soft brand glow on CTAs
+   • Tabular numerals throughout
+   • Refined sidebar nav active state
+   • Smoother transitions
+═══════════════════════════════════════════════ */
+
+/* ── Larger, more deliberate serif sizing ── */
+.hero-text,
+.hero-text strong,
+.hero-greeting {
+  font-size: 28px;
+  letter-spacing: -0.018em;
+  line-height: 1.15;
+}
+.hero-text strong {
+  font-weight: 600;
+  color: var(--t0);
+}
+
+/* Page titles slightly larger + tighter */
+#pg-ttl {
+  font-size: 19px;
+  letter-spacing: -0.012em;
+  line-height: 1.2;
+}
+
+/* KPI numbers: bigger, more editorial */
+.kpi-val,
+.bento-kpi .kpi-val,
+.bento-kpi-number {
+  font-size: 30px;
+  letter-spacing: -0.025em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.rpt-sum-val {
+  font-size: 26px;
+  letter-spacing: -0.022em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Card titles refined */
+.card-t {
+  font-size: 15.5px;
+  letter-spacing: -0.005em;
+  line-height: 1.3;
+}
+
+/* Modal titles: slightly larger for presence */
+.mhd .mt,
+.modal .mt,
+.modal-title {
+  font-size: 18px;
+  letter-spacing: -0.015em;
+}
+
+/* ── Tabular numerals everywhere they matter ── */
+.kpi-val,
+.kpi-num,
+.nb-count,
+.nav-pill,
+.bento-kpi-number,
+.rpt-sum-val,
+.rsc-count,
+.al-time,
+.t-date,
+.t-table td,
+.act-time,
+.mri-date,
+.mri-pending-for {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* ── Soft brand glow on primary CTAs ── */
+.btn-g {
+  box-shadow: 0 0 0 0 rgba(76,175,80,.4), 0 2px 8px rgba(76,175,80,.18);
+  transition: all .2s cubic-bezier(.4,0,.2,1);
+}
+.btn-g:hover {
+  box-shadow: 0 0 0 4px rgba(76,175,80,.15), 0 4px 14px rgba(76,175,80,.28);
+  transform: translateY(-1px);
+}
+.btn-g:active {
+  transform: translateY(0);
+  box-shadow: 0 0 0 2px rgba(76,175,80,.2), 0 1px 4px rgba(76,175,80,.18);
+}
+
+/* ── Card hover: subtle lift (premium feel) ── */
+.card,
+.bento-kpi,
+.kpi,
+.my-request-item,
+.user-card {
+  transition: border-color .2s cubic-bezier(.4,0,.2,1),
+              transform .2s cubic-bezier(.4,0,.2,1),
+              box-shadow .2s cubic-bezier(.4,0,.2,1),
+              background .2s cubic-bezier(.4,0,.2,1);
+}
+.bento-kpi:hover,
+.kpi:hover {
+  transform: translateY(-1px);
+  border-color: var(--b1);
+  box-shadow: 0 4px 16px rgba(0,0,0,.18);
+}
+
+/* ── Featured KPI card: subtle brand-tinted background + glow ── */
+.bento-kpi-featured,
+.kpi-featured,
+.bento-kpis .bento-kpi:first-child {
+  background: linear-gradient(135deg, var(--s1) 0%, color-mix(in srgb, var(--g) 6%, var(--s1)) 100%);
+  border-color: var(--g4);
+  box-shadow: inset 0 0 0 1px rgba(76,175,80,.08);
+}
+.bento-kpi-featured:hover {
+  border-color: rgba(76,175,80,.35);
+  box-shadow: 0 4px 20px rgba(76,175,80,.12), inset 0 0 0 1px rgba(76,175,80,.12);
+}
+
+/* ── Refined sidebar nav: active state premium ── */
+.sb-link.active,
+.nav-link.active,
+.sidebar a.active {
+  background: linear-gradient(90deg, var(--g3) 0%, transparent 100%);
+  border-left: 3px solid var(--g);
+  padding-left: 13px;
+  font-weight: 600;
+  color: var(--g);
+}
+.sb-link.active .nav-pill,
+.nav-link.active .nav-pill {
+  background: var(--g);
+  color: #fff;
+}
+
+/* Sidebar nav default: smoother */
+.sb-link,
+.nav-link,
+.sidebar a {
+  transition: all .15s cubic-bezier(.4,0,.2,1);
+  border-left: 3px solid transparent;
+  padding-left: 13px;
+}
+.sb-link:hover:not(.active),
+.nav-link:hover:not(.active),
+.sidebar a:hover:not(.active) {
+  background: var(--s2);
+  border-left-color: var(--b1);
+}
+
+/* ── Hero: subtle gradient underline (premium accent) ── */
+.d-hero,
+.r-hero {
+  position: relative;
+}
+.d-hero::after,
+.r-hero::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    var(--g4) 30%,
+    var(--g4) 70%,
+    transparent 100%);
+}
+
+/* ── Layered focus ring on inputs (premium feel) ── */
+.fi:focus,
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--g);
+  box-shadow: 0 0 0 3px rgba(76,175,80,.15),
+              0 0 0 1px var(--g);
+}
+
+/* ── Refined status badges: very subtle gradient ── */
+.badge.b-pend {
+  background: linear-gradient(135deg, rgba(168,124,240,.08) 0%, rgba(168,124,240,.12) 100%);
+}
+.badge.b-prog,
+.badge.b-progress {
+  background: linear-gradient(135deg, rgba(66,165,245,.08) 0%, rgba(66,165,245,.12) 100%);
+}
+.badge.b-done,
+.badge.b-completed {
+  background: linear-gradient(135deg, rgba(76,175,80,.08) 0%, rgba(76,175,80,.12) 100%);
+}
+.badge.p-urgent {
+  background: linear-gradient(135deg, rgba(239,83,80,.12) 0%, rgba(239,83,80,.18) 100%);
+  box-shadow: 0 0 0 0 rgba(239,83,80,.3);
+  animation: urgent-pulse-soft 3s ease-in-out infinite;
+}
+@keyframes urgent-pulse-soft {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239,83,80,.3); }
+  50%      { box-shadow: 0 0 0 4px rgba(239,83,80,0); }
+}
+
+/* ── Refined buttons: smoother hover ── */
+.btn-o {
+  transition: all .15s cubic-bezier(.4,0,.2,1);
+}
+.btn-o:hover {
+  background: var(--s2);
+  border-color: var(--b2);
+  transform: translateY(-1px);
+}
+.btn-o:active {
+  transform: translateY(0);
+}
+
+/* ── Recent activity rows: refined ── */
+.act-row,
+.recent-activity-item {
+  transition: background .15s ease, padding .15s ease;
+  border-radius: var(--r);
+  padding: 10px 12px;
+  margin: 0 -12px;
+}
+.act-row:hover,
+.recent-activity-item:hover {
+  background: var(--s2);
+}
+
+/* ── Section dividers: soft gradient instead of hard border ── */
+.section-divider,
+.sb-section-end,
+hr.soft {
+  border: none;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    var(--b0) 20%,
+    var(--b0) 80%,
+    transparent 100%);
+  margin: 14px 0;
+}
+
+/* ── Sparkline cards: subtle glow ── */
+.bento-spark {
+  position: relative;
+  overflow: hidden;
+}
+.bento-spark::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at bottom right, rgba(76,175,80,.06), transparent 70%);
+  pointer-events: none;
+}
+
+/* ── Table rows: subtle hover ── */
+.t-table tbody tr {
+  transition: background .12s ease;
+}
+.t-table tbody tr:hover {
+  background: rgba(76,175,80,.04);
+}
+
+/* ── Audit log entries: more editorial ── */
+.audit-log-item {
+  transition: background .15s ease, border-color .15s ease;
+}
+.audit-log-item:hover {
+  background: var(--s2);
+}
+.audit-log-item .al-action {
+  font-size: 14px;
+}
+.audit-log-item .al-time {
+  font-variant-numeric: tabular-nums;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  opacity: 0.75;
+}
+
+/* ── Brand wordmark: refined ── */
+.brand-name {
+  font-size: 19px;
+  letter-spacing: -0.015em;
+  font-weight: 500;
+  color: var(--t0);
+}
+.brand-sub {
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--t2);
+  font-weight: 500;
+  margin-top: 2px;
+}
+
+/* ── Locked requestor display: more refined ── */
+.jq-rq-locked,
+.em-rq-locked {
+  background: linear-gradient(135deg, var(--s1) 0%, color-mix(in srgb, var(--g) 3%, var(--s1)) 100%);
+  border-color: var(--g4);
+  transition: border-color .2s ease, background .2s ease;
+}
+.jq-rq-locked:hover,
+.em-rq-locked:hover {
+  border-color: rgba(76,175,80,.3);
+}
+
+/* ── Reports summary banner: more polish ── */
+.rpt-summary {
+  background: linear-gradient(135deg, var(--s1) 0%, color-mix(in srgb, var(--g) 4%, var(--s1)) 100%);
+  border: 1px solid var(--b0);
+  box-shadow: inset 0 0 0 1px rgba(76,175,80,.04);
+}
+.rpt-sum-icon {
+  transition: transform .15s ease, background .15s ease;
+}
+.rpt-sum-metric:hover .rpt-sum-icon {
+  transform: scale(1.05);
+}
+
+/* ── Topbar: subtle accent ── */
+#topbar {
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  background: color-mix(in srgb, var(--s0) 92%, transparent);
+}
+
+/* ── Notification bell badge: refined ── */
+#notif-badge {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  box-shadow: 0 0 0 2px var(--s0), 0 2px 6px rgba(232,83,74,.4);
+}
+
+/* ── Pending duration indicator: refined ── */
+.mri-pending-for {
+  background: linear-gradient(135deg, rgba(168,124,240,.10) 0%, rgba(168,124,240,.18) 100%);
+  box-shadow: 0 0 0 0 rgba(168,124,240,.2);
+  animation: pending-pulse-soft 3.5s ease-in-out infinite;
+}
+@keyframes pending-pulse-soft {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(168,124,240,.2); }
+  50%      { box-shadow: 0 0 0 3px rgba(168,124,240,0); }
+}
+
+/* ── "Assign to me" + handler picker: refined ── */
+.mri-assign-actions {
+  background: linear-gradient(135deg, transparent 0%, rgba(76,175,80,.03) 100%);
+  border-radius: var(--r);
+  padding: 8px 10px;
+  margin-top: 8px;
+  border-top: 1px solid var(--b0);
+}
+
+/* ── Greeting pre-text (Tuesday afternoon, etc.) ── */
+.hero-meta,
+.greet-pre,
+.d-hero-meta,
+.r-hero-meta {
+  font-size: 12.5px;
+  color: var(--t2);
+  letter-spacing: 0.005em;
+  margin-bottom: 6px;
+}
+
+/* ── Smoother modal entry ── */
+.modal.show,
+.modal[style*="display:flex"],
+.modal[style*="display: flex"] {
+  animation: modal-in .25s cubic-bezier(.4,0,.2,1);
+}
+@keyframes modal-in {
+  from { opacity: 0; transform: scale(0.98) translateY(8px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* ── Empty states: refined editorial ── */
+.empty-state,
+.no-data-msg {
+  text-align: center;
+  padding: 32px 20px;
+  font-style: italic;
+  color: var(--t2);
+  opacity: 0.65;
+  line-height: 1.7;
+}
+
+/* ── Light theme polish adjustments ── */
+[data-theme="light"] .btn-g {
+  box-shadow: 0 0 0 0 rgba(56,142,60,.4), 0 2px 8px rgba(56,142,60,.15);
+}
+[data-theme="light"] .btn-g:hover {
+  box-shadow: 0 0 0 4px rgba(56,142,60,.12), 0 4px 14px rgba(56,142,60,.22);
+}
+[data-theme="light"] .bento-kpi-featured,
+[data-theme="light"] .kpi-featured {
+  background: linear-gradient(135deg, var(--s1) 0%, color-mix(in srgb, var(--g) 4%, var(--s1)) 100%);
+}
+[data-theme="light"] .t-table tbody tr:hover {
+  background: rgba(56,142,60,.04);
+}
+
+/* ── Mobile: scale down premium sizes ── */
+@media (max-width: 640px) {
+  .hero-text,
+  .hero-text strong,
+  .hero-greeting {
+    font-size: 22px;
+    letter-spacing: -0.012em;
+  }
+  #pg-ttl { font-size: 16px; }
+  .kpi-val,
+  .bento-kpi .kpi-val,
+  .bento-kpi-number { font-size: 24px; }
+  .rpt-sum-val { font-size: 22px; }
+  .card-t { font-size: 14.5px; }
+  .mhd .mt { font-size: 16px; }
+  .brand-name { font-size: 17px; }
+
+  /* Disable hover lift on touch devices */
+  .bento-kpi:hover,
+  .kpi:hover,
+  .btn-g:hover,
+  .btn-o:hover {
+    transform: none;
+  }
+}
+
+/* ── Respect reduced motion preference ── */
+@media (prefers-reduced-motion: reduce) {
+  .btn-g, .btn-o, .card, .bento-kpi, .kpi,
+  .sb-link, .nav-link, .modal,
+  .rpt-sum-icon, .audit-log-item,
+  .t-table tbody tr {
+    transition: none !important;
+    animation: none !important;
+  }
+  .badge.p-urgent,
+  .mri-pending-for {
+    animation: none !important;
+  }
+}
