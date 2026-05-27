@@ -3,7 +3,7 @@
    Redesigned 2026 · All class names preserved
    Fonts: DM Sans (body) + DM Mono (mono)
 ═══════════════════════════════════════════════ */
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&display=swap');
 
 /* ═══════════════════════════════════════════════
    DESIGN TOKENS — DARK (default)
@@ -44,6 +44,7 @@
 
   --font:     'DM Sans', system-ui, sans-serif;
   --mono:     'DM Mono', 'JetBrains Mono', monospace;
+  --font-serif: 'Source Serif 4', 'Tiempos Text', Georgia, serif;
 
   --shadow:   0 2px 12px rgba(0,0,0,.5), 0 1px 3px rgba(0,0,0,.4);
   --shadow-lg:0 8px 32px rgba(0,0,0,.6), 0 2px 8px rgba(0,0,0,.4);
@@ -2782,4 +2783,321 @@ input.t-chk{cursor:pointer}
 @media(max-width:640px){
   .mri-assign-actions{gap:5px}
   .mri-handler-pick{flex:1;min-width:120px}
+}
+
+
+/* ═══════════════════════════════════════════════
+   CLAUDE-INSPIRED REFINEMENT LAYER (Path C-2)
+   Pure additions — dark theme + brand colors preserved
+   • Serif headings for editorial calm
+   • Refined spacing and borders
+   • Calmer status pills
+═══════════════════════════════════════════════ */
+
+/* ── Hero greeting in serif ── */
+.hero-text,
+.hero-text strong,
+.hero-greeting,
+.d-hero-greet,
+.r-hero-greet,
+.d-hero h1,
+.d-hero .greeting,
+#d-hero-greeting,
+#r-hero-greeting{
+  font-family: var(--font-serif);
+  font-weight: 500;
+  letter-spacing: -0.015em;
+}
+.hero-text strong{
+  font-weight: 600;
+}
+
+/* ── Page titles in serif (sidebar nav active label stays sans) ── */
+#pg-ttl,
+.page-title,
+.topbar-title,
+.topb-title,
+#topbar h1,
+#topbar .topb-t{
+  font-family: var(--font-serif);
+  font-weight: 500;
+  letter-spacing: -0.012em;
+}
+
+/* ── Section headers (card titles) — refined serif feel ── */
+.card-t,
+.section-title{
+  font-family: var(--font-serif);
+  font-weight: 500;
+  font-size: 15px;
+  letter-spacing: -0.005em;
+  text-transform: none;
+}
+
+/* ── KPI numbers in serif (editorial weight) ── */
+.kpi-val,
+.kpi-num,
+.bento-kpi .kpi-val,
+.bento-kpi-number,
+.rpt-sum-val,
+.rsc-count{
+  font-family: var(--font-serif);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+/* ── Modal titles in serif ── */
+.mhd .mt,
+.modal .mt,
+.modal-title{
+  font-family: var(--font-serif);
+  font-weight: 500;
+  font-size: 17px;
+  letter-spacing: -0.012em;
+}
+
+/* ── KPI labels softer (less shouting) ── */
+.kpi-lbl,
+.bento-kpi-label{
+  text-transform: none;
+  letter-spacing: 0.005em;
+  font-weight: 500;
+  opacity: 0.85;
+}
+
+/* ── Refined small uppercase labels (still uppercase but lighter) ── */
+.fl,
+.section-lbl,
+.uppercase-lbl,
+.rpt-adv-lbl,
+.rpt-active-label,
+.rsc-label{
+  font-weight: 600;
+  letter-spacing: 0.045em;
+  opacity: 0.88;
+}
+
+/* ── Calmer card borders (less ornate) ── */
+.card,
+.kpi,
+.bento-kpi,
+.request-status-card,
+.user-card,
+.my-request-item,
+.audit-log-item{
+  border-color: var(--b0);
+  transition: border-color var(--transition), transform var(--transition);
+}
+.card:hover,
+.bento-kpi:hover,
+.user-card:hover,
+.my-request-item:hover{
+  border-color: var(--b1);
+}
+
+/* ── Cards: more generous padding (Claude breathing room) ── */
+.card{
+  padding: 18px 20px;
+}
+.card-hd{
+  margin-bottom: 14px;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+/* ── Hero gets more vertical air ── */
+.d-hero,
+.r-hero{
+  padding: 28px 24px;
+}
+
+/* ── Refined status badges (calmer with stronger text for urgency) ── */
+.badge{
+  font-weight: 500;
+  letter-spacing: 0.005em;
+  border-radius: 99px;
+  padding: 3px 11px;
+  font-size: 11.5px;
+  text-transform: none;
+  border: 1px solid transparent;
+}
+.badge.b-pend{
+  background: rgba(168,124,240,.10);
+  color: var(--purple);
+  border-color: rgba(168,124,240,.22);
+}
+.badge.b-prog,
+.badge.b-progress{
+  background: rgba(66,165,245,.10);
+  color: var(--blue);
+  border-color: rgba(66,165,245,.22);
+}
+.badge.b-cont,
+.badge.b-contractor{
+  background: rgba(255,179,0,.10);
+  color: var(--amber);
+  border-color: rgba(255,179,0,.22);
+}
+.badge.b-done,
+.badge.b-completed{
+  background: rgba(76,175,80,.10);
+  color: var(--g);
+  border-color: rgba(76,175,80,.22);
+}
+/* Priority badges keep their punchy contrast — Urgent still demands attention */
+.badge.p-urgent{
+  background: rgba(239,83,80,.13);
+  color: var(--red);
+  border-color: rgba(239,83,80,.30);
+  font-weight: 600;
+}
+.badge.p-high{
+  background: rgba(255,179,0,.10);
+  color: var(--amber);
+  border-color: rgba(255,179,0,.22);
+}
+.badge.p-medium{
+  background: rgba(66,165,245,.10);
+  color: var(--blue);
+  border-color: rgba(66,165,245,.22);
+}
+.badge.p-low{
+  background: rgba(76,175,80,.08);
+  color: var(--g);
+  border-color: rgba(76,175,80,.18);
+}
+
+/* ── Buttons: subtler weight, more refined ── */
+.btn{
+  font-weight: 500;
+  letter-spacing: 0.005em;
+  transition: all var(--transition);
+}
+.btn-g{
+  /* Keep your brand green but refine the weight */
+  font-weight: 600;
+}
+.btn-o{
+  background: transparent;
+  border-color: var(--b1);
+}
+.btn-o:hover{
+  background: var(--s2);
+  border-color: var(--b2);
+}
+
+/* ── Sidebar nav section labels — refined ── */
+.nav-section-lbl,
+.sb-section{
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  opacity: 0.7;
+  font-size: 10.5px;
+}
+
+/* ── Sidebar brand wordmark — serif for editorial elegance ── */
+.brand-name,
+.brand-title{
+  font-family: var(--font-serif);
+  font-weight: 500;
+  letter-spacing: -0.012em;
+}
+
+/* ── Refined topbar ── */
+#topbar{
+  border-bottom-color: var(--b0);
+}
+
+/* ── Table headers — softer ── */
+.t-table th{
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  opacity: 0.85;
+}
+
+/* ── Audit log entries: editorial feel ── */
+.audit-log-item .al-action{
+  font-family: var(--font-serif);
+  font-weight: 500;
+  letter-spacing: -0.005em;
+}
+
+/* ── Form inputs: cleaner borders ── */
+.fi{
+  border-color: var(--b1);
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+.fi:focus{
+  border-color: var(--g);
+  box-shadow: 0 0 0 3px rgba(76,175,80,.15);
+}
+
+/* ── Reports summary banner: serif numbers, refined feel ── */
+.rpt-sum-val{
+  font-family: var(--font-serif);
+  font-weight: 500;
+}
+.rpt-sum-lbl{
+  text-transform: none;
+  letter-spacing: 0.005em;
+  font-weight: 500;
+  font-size: 11.5px;
+}
+
+/* ── Reports preset chips: cleaner look ── */
+.rpt-preset{
+  font-weight: 500;
+}
+
+/* ── Empty states: subtler ── */
+.empty-state,
+.no-data-msg{
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 400;
+  opacity: 0.7;
+}
+
+/* ── Light theme adjustments ── */
+[data-theme="light"] .badge.b-pend{
+  background: rgba(106,27,154,.08);
+  color: var(--purple);
+  border-color: rgba(106,27,154,.18);
+}
+[data-theme="light"] .badge.b-prog{
+  background: rgba(21,101,192,.08);
+  color: var(--blue);
+  border-color: rgba(21,101,192,.18);
+}
+[data-theme="light"] .badge.b-done{
+  background: rgba(56,142,60,.10);
+  color: var(--g);
+  border-color: rgba(56,142,60,.22);
+}
+[data-theme="light"] .badge.p-urgent{
+  background: rgba(198,40,40,.10);
+  color: var(--red);
+  border-color: rgba(198,40,40,.28);
+  font-weight: 600;
+}
+
+/* ── Mobile: tighten serif sizes for small screens ── */
+@media (max-width: 640px){
+  .d-hero-greet,
+  #d-hero-greeting,
+  .r-hero-greet,
+  #r-hero-greeting{
+    font-size: 22px;
+    letter-spacing: -0.01em;
+  }
+  .page-title,
+  .topbar-title{
+    font-size: 16px;
+  }
+  .card{
+    padding: 16px;
+  }
+  .d-hero, .r-hero{
+    padding: 22px 18px;
+  }
 }
