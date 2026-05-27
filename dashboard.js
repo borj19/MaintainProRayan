@@ -96,7 +96,7 @@ function renderDashHero() {
   } else if (role === 'contractor') {
     scope = 'assigned to you';
     const mine = DATA.filter(r => r.status === 'In Progress - Contractor');
-    const myUrgent = mine.filter(r => r.priority === 'Urgent').length;
+    const myUrgent = mine.filter(r => r.priority === 'Urgent' && r.status !== 'Completed').length;
     stats = [
       { v: mine.length, l: 'active jobs', c: 'var(--blue)' },
       { v: myUrgent,    l: 'urgent',      c: 'var(--red)' },
@@ -216,7 +216,7 @@ function rDash() {
   renderDashHero();
   const d = getDashData();
   const c = d.filter(r => r.status === 'Completed').length;
-  const u = d.filter(r => r.priority === 'Urgent').length;
+  const u = d.filter(r => r.priority === 'Urgent' && r.status !== 'Completed').length;
   const ip = d.filter(r => r.status === 'In Progress' || r.status === 'In Progress - Contractor').length;
   const pending = d.filter(r => r.status === 'Pending').length;
 
@@ -333,7 +333,7 @@ function rDash() {
           <strong style="color:var(--t1)">${r.subType || '—'}</strong>${r.details ? ' · ' + (r.details.length > 60 ? r.details.substring(0, 60) + '…' : r.details) : ''}
         </div>
         <div class="act-sub" style="margin-top:2px">${r.location}</div>
-        <div class="act-time">${fd(r.date)}</div>
+        <div class="act-time" title="${typeof formatTimestamp==='function' ? formatTimestamp(r.submittedAt||r.createdAt) : ''}">${typeof fdts==='function' ? fdts(r) : fd(r.date)}</div>
       </div>
       ${sbadge(r.status)}
     </div>
