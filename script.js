@@ -104,7 +104,7 @@ let ROLE_PERMS = {
   staff: {
     view_dashboard:true, view_all_tasks:true, add_task:true,
     edit_task:true, delete_task:false, view_inprogress:true,
-    update_task_status:true, view_own_tasks:true, submit_request:true,
+    update_task_status:true, view_own_tasks:true, submit_request:false,
     view_reports:false, export_data:true, send_email:false,
     manage_users:false, manage_permissions:false, manage_fields:false,
     view_online_users:false,
@@ -216,7 +216,7 @@ async function doLogin(){
           return;
         }
       }catch(_){}
-      try{ if(typeof logAudit==='function') logAudit('auth.login', `Signed in: ${currentUser?.email || 'unknown'} (${currentUser?.role || 'user'}) on ${typeof getDeviceInfo === 'function' ? getDeviceInfo() : 'device'}`, 'info', 'auth', currentUser?.uid); }catch(_){}
+      try{ if(typeof logAudit==='function') logAudit('auth.login', 'User signed in', 'info', 'auth', currentUser?.uid); }catch(_){}
       document.getElementById('auth-screen').style.display='none';
       showLoadingScreen();
     } catch(e){
@@ -398,7 +398,7 @@ function doLogout(){
   if(typeof stopPresence==="function") stopPresence();
   if(typeof stopNotifListener==="function") stopNotifListener();
   // Log logout BEFORE currentUser is cleared so actor info is captured
-  try{ if(typeof logAudit==='function') logAudit('auth.logout', `Signed out: ${currentUser?.email || currentUser?.name || 'unknown'} (${currentUser?.role || 'user'})`, 'info', 'auth', currentUser?.uid); }catch(_){}
+  try{ if(typeof logAudit==='function') logAudit('auth.logout', 'User signed out', 'info', 'auth', currentUser?.uid); }catch(_){}
   // Hide app while logged out — prevents content flash
   const bodyEl=document.getElementById('body');
   if(bodyEl)bodyEl.style.visibility='hidden';
@@ -534,10 +534,10 @@ let AREAS=['Basement_2','Basement_1','Ground Floor','Level_1','Level_2','Level_3
 // No static dummy data — driven entirely by Firebase Auth + Firestore
 let REQS = [];
 function refreshReqsFromUsers(){
-  // Include both requesters AND maintenance staff (both can submit requests)
-  REQS = USERS.filter(u => (u.role==='requester' || u.role==='staff') && !u.disabled)
-              .map(u => u.name)
-              .filter(Boolean);
+  // ALL registered (non-disabled) users can be selected as a requester
+  REQS = USERS.filter(u => !u.disabled).map(u => u.name).filter(Boolean);
+  // De-duplicate while preserving order
+  REQS = [...new Set(REQS)];
 }
 let HNDS=['Rayan Borabien','Josh Branson','Terry Allen','Contractor'];
 // Auto-assign map: work type → handler
@@ -898,7 +898,7 @@ function rTbl(){
     const checked=SELECTED_TASKS.has(String(r.id))?'checked':'';
     return `<tr class="${SELECTED_TASKS.has(String(r.id))?'row-selected':''}">
     ${isAdmin?`<td style="width:34px;padding-right:0"><input type="checkbox" class="t-chk" data-id="${r.id}" ${checked} onclick="toggleSelectTask('${r.id}',this.checked,event)" style="width:16px;height:16px;accent-color:var(--g);cursor:pointer"></td>`:''}
-    <td title="${typeof formatTimestamp==='function' ? formatTimestamp(r.submittedAt||r.createdAt) : ''}">${typeof fdts==='function' ? fdts(r) : fds(r.date)}</td><td class="td-h">${r.requestor}</td><td>${r.handler}</td>
+    <td>${fds(r.date)}</td><td class="td-h">${r.requestor}</td><td>${r.handler}</td>
     <td>${r.workType.replace(/_/g,' ')}</td><td>${r.subType}</td>
     <td>${r.area.replace(/_/g,' ')}</td><td>${r.location}</td>
     <td title="${r.details}" style="color:var(--t2)">${r.details}</td>
@@ -984,8 +984,7 @@ async function bulkMarkComplete(){
   for(const id of ids){
     try{
       await fbUpdateJob(id, updates);
-      const _bj = DATA.find(x=>String(x.id)===String(id));
-      if(typeof logAudit==='function') logAudit('job.completed', `Bulk complete: ${_bj?.workType?.replace(/_/g,' ')||'job'} at ${_bj?.location||''} (handler: ${_bj?.handler||'—'}, priority: ${_bj?.priority||'—'})`, 'info', 'job', id);
+      if(typeof logAudit==='function') logAudit('job.completed', `Bulk complete: job ${id}`, 'info', 'job', id);
     }catch(e){ console.warn('Bulk complete failed for', id, e.message); }
   }
   toast(`${ids.length} job${ids.length!==1?'s':''} marked complete`, 's');
@@ -1005,8 +1004,7 @@ async function bulkChangePriority(){
   for(const id of ids){
     try{
       await fbUpdateJob(id, {priority});
-      const _bj2 = DATA.find(x=>String(x.id)===String(id));
-      if(typeof logAudit==='function') logAudit('job.updated', `Bulk priority: ${_bj2?.workType?.replace(/_/g,' ')||'job'} at ${_bj2?.location||''} → priority: ${priority}`, 'info', 'job', id);
+      if(typeof logAudit==='function') logAudit('job.updated', `Bulk priority change: ${priority}`, 'info', 'job', id);
     }catch(e){ console.warn('Bulk priority failed for', id, e.message); }
   }
   toast(`Priority set to ${priority} on ${ids.length} job${ids.length!==1?'s':''}`, 's');
@@ -1026,7 +1024,7 @@ async function bulkDelete(){
     try{
       const r=DATA.find(x=>String(x.id)===String(id));
       await fbDeleteJob(id);
-      if(typeof logAudit==='function') logAudit('job.deleted', `Bulk delete: ${r?.workType?.replace(/_/g,' ')||'job'} at ${r?.location||''} (status: ${r?.status||'—'}, priority: ${r?.priority||'—'}, handler: ${r?.handler||'—'})`, 'warning', 'job', id);
+      if(typeof logAudit==='function') logAudit('job.deleted', `Bulk delete: ${r?.workType?.replace(/_/g,' ')||''} at ${r?.location||''}`, 'warning', 'job', id);
     }catch(e){ console.warn('Bulk delete failed for', id, e.message); }
   }
   if(!FB_READY){ DATA=DATA.filter(x=>!ids.includes(String(x.id))); fData=fData.filter(x=>!ids.includes(String(x.id))); }
@@ -1111,7 +1109,7 @@ function chPg(d){goToPage(cPg+d);}
 function bTKpis(){
   const d=DATA,c=d.filter(r=>r.status==='Completed').length;
   const i=d.filter(r=>r.status==='In Progress'||r.status==='In Progress - Contractor').length;
-  const u=d.filter(r=>(r.priority==='Urgent'||r.priority==='High')&&r.status!=='Completed').length;
+  const u=d.filter(r=>r.priority==='Urgent'||r.priority==='High').length;
   const pending=d.filter(r=>r.status==='Pending').length;
   document.getElementById('t-kpis').innerHTML=[
     {c:'#6ebe2a',l:'Total tasks',v:d.length,s:'All records'},
@@ -1132,7 +1130,7 @@ function vTask(id){
   const canEdit=currentUser&&(currentUser.role==='admin'||currentUser.role==='staff');
   document.getElementById('det-body').innerHTML=`
     <div class="dg">
-      <div class="di"><div class="dl">Submitted</div><div class="dv">${typeof fdt==='function' ? fdt(r) : fd(r.date)}</div></div>
+      <div class="di"><div class="dl">Date</div><div class="dv">${fd(r.date)}</div></div>
       <div class="di"><div class="dl">Status</div><div class="dv">${sbadge(r.status)}</div></div>
       <div class="di"><div class="dl">Requestor</div><div class="dv">${r.requestor}</div></div>
       <div class="di"><div class="dl">Handled by</div><div class="dv">${r.handler}</div></div>
@@ -1172,7 +1170,7 @@ function markJobComplete(id){
     completion:getTODAY(),
     completedAt: (typeof nowISO === 'function') ? nowISO() : new Date().toISOString()
   };
-  try{ if(typeof logAudit==='function') logAudit('job.completed', `Completed: ${r?.workType?.replace(/_/g,' ')||'Job'} at ${r?.location||''} (priority: ${r?.priority||'—'}, handled by ${r?.handler||'—'}, requestor: ${r?.requestor||'—'})${r?.submittedAt ? ', duration: ' + (typeof elapsedBetween==='function' ? elapsedBetween(r.submittedAt, (typeof nowISO==='function'?nowISO():new Date().toISOString())) : '—') : ''}`, 'info', 'job', id); }catch(_){}
+  try{ if(typeof logAudit==='function') logAudit('job.completed', `Job marked complete: ${r?.workType?.replace(/_/g,' ')||''} at ${r?.location||''}`, 'info', 'job', id); }catch(_){}
   fbUpdateJob(id,updates);
   if(!FB_READY && r) Object.assign(r, updates);
   cm('m-det');af();renderInProgress();
@@ -1192,28 +1190,13 @@ function eTask(id){
   const emSt=document.getElementById('em-st');
   const emSubs=SUBTYPES[r.workType]||['Other'];
   emSt.innerHTML=emSubs.map(s=>`<option value="${s}" ${s===r.subType?'selected':''}>${s}</option>`).join('');
-  // Requestor is LOCKED in Edit (read-only) — prevents silent data loss when requestor isn't in REQS
-  const emRqDisplay = document.getElementById('em-rq-display');
-  const emRqBadge   = document.getElementById('em-rq-role-badge');
-  const emRqHidden  = document.getElementById('em-rq');
-  if(emRqDisplay) emRqDisplay.textContent = r.requestor || '—';
-  if(emRqHidden)  emRqHidden.value = r.requestor || '';
-  // Show role badge if we can resolve the requestor's role from USERS
-  if(emRqBadge){
-    const resolvedUser = (typeof USERS !== 'undefined' ? USERS : []).find(u => u.name === r.requestor);
-    if(resolvedUser && resolvedUser.role){
-      const lbl = (typeof ROLE_LABELS !== 'undefined' && ROLE_LABELS[resolvedUser.role]) ? ROLE_LABELS[resolvedUser.role] : resolvedUser.role;
-      emRqBadge.textContent = lbl;
-      emRqBadge.style.display = '';
-    } else {
-      emRqBadge.style.display = 'none';
-    }
-  }
+  // Requestor dropdown — include ALL users PLUS the job's current requestor (even if not a current user)
+  // This prevents the silent-data-loss bug where an unmatched requestor defaulted to the first option
+  const emRqNames = [...new Set([r.requestor, ...REQS].filter(Boolean))];
+  document.getElementById('em-rq').innerHTML=emRqNames.map(v=>`<option value="${String(v).replace(/"/g,'&quot;')}" ${v===r.requestor?'selected':''}>${v}</option>`).join('');
   document.getElementById('em-hd').innerHTML=HNDS.map(v=>`<option ${v===r.handler?'selected':''}>${v}</option>`).join('');
   document.getElementById('em-ar').innerHTML=AREAS.map(v=>`<option ${v===r.area?'selected':''}>${v}</option>`).join('');
   om('m-edit');
-  // Refresh Lucide icon inside the modal
-  if(typeof refreshLucide==='function') setTimeout(refreshLucide, 30);
 }
 
 function saveEdit(){
@@ -1232,25 +1215,9 @@ function saveEdit(){
     details:document.getElementById('em-de').value,
   };
   if(updates.status==='Completed'&&!r.completion)updates.completion=getTODAY();
-  // Add precise timestamps when status transitions
-  if(updates.status==='Completed' && !r.completedAt){
-    updates.completedAt = (typeof nowISO === 'function') ? nowISO() : new Date().toISOString();
-  }
-  if((updates.status==='In Progress'||updates.status==='In Progress - Contractor') && !r.assignedAt){
-    updates.assignedAt = (typeof nowISO === 'function') ? nowISO() : new Date().toISOString();
-  }
   fbUpdateJob(String(eId),updates);
   if(!FB_READY)Object.assign(r,updates);
-  try{ if(typeof logAudit==='function') logAudit('job.updated', (()=>{
-    const changes = [];
-    if(updates.status   && updates.status   !== r.status)   changes.push(`status: ${r.status} → ${updates.status}`);
-    if(updates.priority && updates.priority !== r.priority) changes.push(`priority: ${r.priority} → ${updates.priority}`);
-    if(updates.handler  && updates.handler  !== r.handler)  changes.push(`handler: ${r.handler||'—'} → ${updates.handler}`);
-    if(updates.location && updates.location !== r.location) changes.push(`location: ${r.location} → ${updates.location}`);
-    if(updates.workType && updates.workType !== r.workType) changes.push(`type: ${(r.workType||'').replace(/_/g,' ')} → ${updates.workType.replace(/_/g,' ')}`);
-    const what = changes.length ? changes.join(', ') : 'minor edits';
-    return `Edited job at ${r.location||'—'} (${r.workType?.replace(/_/g,' ')||'—'}): ${what}`;
-  })(), 'info', 'job', eId); }catch(_){}
+  try{ if(typeof logAudit==='function') logAudit('job.updated', `Job updated: ${updates.workType?.replace(/_/g,' ')||r.workType?.replace(/_/g,' ')} at ${updates.location||r.location} (status: ${updates.status||r.status})`, 'info', 'job', eId); }catch(_){}
   cm('m-edit');af();rReady=false;fillDrops();toast('Task updated successfully');
   // Notify handler if changed or assigned; notify requestor of status change
   if (typeof notifyUser === 'function') {
@@ -1261,7 +1228,7 @@ function saveEdit(){
 
 function dTask(id){
   const _r=DATA.find(x=>String(x.id)===String(id));
-  try{ if(typeof logAudit==='function') logAudit('job.deleted', `Deleted: ${_r?.workType?.replace(/_/g,' ')||'job'} at ${_r?.location||''} (was ${_r?.status||'—'}, priority: ${_r?.priority||'—'}, handler: ${_r?.handler||'—'}, requestor: ${_r?.requestor||'—'})`, 'warning', 'job', id); }catch(_){}
+  try{ if(typeof logAudit==='function') logAudit('job.deleted', `Job deleted: ${_r?.workType?.replace(/_/g,' ')||''} at ${_r?.location||''}`, 'warning', 'job', id); }catch(_){}
   id=String(id);
   if(!confirm('Delete this task? This action cannot be undone.'))return;
   fbDeleteJob(id);
@@ -1316,7 +1283,7 @@ function renderInProgress(){
   const allActive=[...pend,...ip];
   const ipBody=document.getElementById('ip-body');
   if(ipBody)ipBody.innerHTML=allActive.length?allActive.map(r=>`<tr>
-    <td title="${typeof formatTimestamp==='function' ? formatTimestamp(r.submittedAt||r.createdAt) : ''}">${typeof fdts==='function' ? fdts(r) : fds(r.date)}</td><td class="td-h">${r.requestor}</td><td>${r.handler}</td>
+    <td>${fds(r.date)}</td><td class="td-h">${r.requestor}</td><td>${r.handler}</td>
     <td>${r.workType.replace(/_/g,' ')}</td><td>${r.subType}</td>
     <td>${r.area.replace(/_/g,' ')}</td><td>${r.location}</td>
     <td title="${r.details}" style="color:var(--t2)">${r.details}</td>
@@ -1337,16 +1304,14 @@ function setReqFilter(f){
 function renderRequestPage(){
   const u=currentUser;
   if(!u) return; // guard — Firebase not ready yet
-  // Populate locked requestor display (top of form)
-  const nameEl = document.getElementById('jq-rq-display');
-  const roleEl = document.getElementById('jq-rq-role');
-  const hiddenEl = document.getElementById('jq-rq');
-  if(nameEl) nameEl.textContent = u.name || u.email || 'Unknown';
-  if(roleEl){
-    const lbl = (typeof ROLE_LABELS !== 'undefined' && ROLE_LABELS[u.role]) ? ROLE_LABELS[u.role] : (u.role || 'User');
-    roleEl.textContent = lbl;
+  // Populate the requestor dropdown with ALL registered users; default to logged-in user
+  const jqRq = document.getElementById('jq-rq');
+  if(jqRq){
+    const names = (typeof REQS !== 'undefined' && REQS.length) ? REQS : USERS.map(x=>x.name).filter(Boolean);
+    // Ensure the logged-in user is in the list
+    const allNames = [...new Set([u.name, ...names])].filter(Boolean);
+    jqRq.innerHTML = allNames.map(n => `<option value="${n.replace(/"/g,'&quot;')}" ${n===u.name?'selected':''}>${n}</option>`).join('');
   }
-  if(hiddenEl) hiddenEl.value = u.name || u.email || '';
   const heroSub=document.getElementById('request-hero-sub');
   if(heroSub)heroSub.textContent=u.role==='requester'
     ?`Logged in as ${u.name}. Once submitted, your request will be automatically assigned and you can track its progress below.`
@@ -1416,151 +1381,72 @@ function renderRequestPage(){
   }
 
   if(!shown.length){list.innerHTML=filterHtml+`<div class="empty-state"><svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.2"/><path d="M5 8h6M8 5v6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg><p>${u.role==='requester'?(f==='all'?'No requests submitted yet.':'No requests with this status.'):'No pending requests.'}</p><small>${u.role==='requester'&&f==='all'?'Use the form above to submit your first request.':''}</small></div>`;return;}
-  // Handler options for assign dropdown
-  const handlerOpts = (HNDS||[]).map(h => `<option value="${h.replace(/"/g,'&quot;')}">${h}</option>`).join('');
-  const canAssign = u && (u.role==='admin' || u.role==='staff');
-
-  list.innerHTML=filterHtml+shown.map(r=>{
-    // Pending duration if status is Pending
-    let pendingFor = '';
-    if(r.status==='Pending' && r.submittedAt && typeof elapsedBetween === 'function'){
-      const dur = elapsedBetween(r.submittedAt, (typeof nowISO==='function' ? nowISO() : new Date().toISOString()));
-      if(dur) pendingFor = `<span class="mri-pending-for" title="Pending duration">⏱ ${dur}</span>`;
-    }
-    return `<div class="my-request-item" onclick="vTask('${r.id}')" style="cursor:pointer">
+  list.innerHTML=filterHtml+shown.map(r=>`<div class="my-request-item" onclick="vTask('${r.id}')" style="cursor:pointer">
     <div class="mri-top">
       <span class="mri-id">#${r.id}</span>
       <span class="mri-type">${r.workType.replace(/_/g,' ')} — ${r.subType}</span>
-      <span class="mri-date" title="${typeof formatTimestamp==='function' ? formatTimestamp(r.submittedAt) : ''}">${typeof fdts==='function' ? fdts(r) : fd(r.date)}</span>
+      <span class="mri-date">${fd(r.date)}</span>
     </div>
     <div class="mri-desc">${r.details}</div>
     <div class="mri-foot">
       ${sbadge(r.status)}
-      ${pbadge(r.priority)}
       <span class="mri-area">${r.area.replace(/_/g,' ')} · ${r.location}</span>
-      ${pendingFor}
-      ${r.status!=='Pending'?`<span style="font-size:11px;color:var(--t2);margin-left:auto">Handler: <strong>${r.handler}</strong></span>`:''}
-      ${canAssign && r.status==='Pending' ? `
-        <div class="mri-assign-actions" onclick="event.stopPropagation()" style="margin-left:auto;display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-          <button class="btn btn-o btn-xs" onclick="event.stopPropagation();assignToMe('${r.id}')" title="Assign this job to yourself">
-            <i data-lucide="user-check" style="width:11px;height:11px"></i>
-            Assign to me
-          </button>
-          <select class="mri-handler-pick" id="mri-pick-${r.id}" onclick="event.stopPropagation()" onchange="event.stopPropagation()" style="font-size:11px;padding:3px 6px;border-radius:6px;border:1px solid var(--b1);background:var(--s0);color:var(--t0)">
-            <option value="">Assign to…</option>
-            ${handlerOpts}
-          </select>
-          <button class="btn btn-g btn-xs" onclick="event.stopPropagation();assignJob('${r.id}', document.getElementById('mri-pick-${r.id}').value)" title="Assign to selected handler">
-            <i data-lucide="check" style="width:11px;height:11px"></i>
-            Assign
-          </button>
-        </div>
-      ` : ''}
+      ${r.status!=='Pending'?`<span style="font-size:11px;color:var(--t2);margin-left:auto">Handler: ${r.handler}</span>`:''}
+      ${u.role==='admin'&&r.status==='Pending'?`<button class="btn btn-b btn-xs" onclick="assignRequest('${r.id}')" style="margin-left:auto">Assign</button>`:''}
     </div>
-  </div>`}).join('');
-
-  // Refresh Lucide icons in the just-rendered list
-  if(typeof refreshLucide==='function') setTimeout(refreshLucide, 30);
+  </div>`).join('');
 }
 
 function submitJobRequest(){
-  // SECURITY: Requestor is ALWAYS the logged-in user — no spoofing
-  if(!currentUser){ toast('You must be signed in to submit a request.','e'); return; }
   const loc=document.getElementById('jq-lc').value.trim();
   const det=document.getElementById('jq-de').value.trim();
   if(!loc||!det){toast('Please fill in all required fields.','e');return;}
   const wt=document.getElementById('jq-wt').value;
-  // Requestor = logged-in user (locked)
-  const req = currentUser.name || currentUser.email || 'Unknown';
+  const handler=AUTO_ASSIGN[wt]||HNDS[0];
+  // Requester is fully editable via dropdown — use selected value (default is logged-in user)
+  const jqRqEl=document.getElementById('jq-rq');
+  const req = (jqRqEl && jqRqEl.value) ? jqRqEl.value : (currentUser ? currentUser.name : 'Guest');
+  if(!req){toast('Please select a requestor.','e');return;}
   // Allow custom date if entered, default to today
   const dtField=document.getElementById('jq-dt');
   const jobDate=(dtField&&dtField.value)?dtField.value:getTODAY();
   const t={
     id:nid++,date:jobDate,
-    requestor:    req,
-    handler:      'Unassigned',
-    workType:     wt,
-    subType:      document.getElementById('jq-st').value,
-    area:         document.getElementById('jq-ar').value,
-    location:     loc,
-    details:      det,
-    status:       'Pending',
-    priority:     document.getElementById('jq-pr').value,
-    completion:   '',
-    createdBy:    currentUser.email||currentUser.username||req,
-    createdByUid: currentUser.uid||currentUser.id||'',
-    createdAt:    getTODAY(),
-    submittedAt:  (typeof nowISO === 'function') ? nowISO() : new Date().toISOString()
-    // NOTE: assignedAt is NOT set here — set when admin/staff assigns
+    requestor:req,
+    handler:handler,
+    workType:wt,
+    subType:document.getElementById('jq-st').value,
+    area:document.getElementById('jq-ar').value,
+    location:loc,details:det,
+    status:'In Progress',
+    priority:document.getElementById('jq-pr').value,
+    completion:'',
+    createdBy:    currentUser?(currentUser.email||currentUser.username||'guest'):'guest',
+    createdByUid: currentUser?(currentUser.uid||currentUser.id||''):'',
+    createdAt:    getTODAY()
   };
   fbAddJob(t);
-  try{ if(typeof logAudit==='function') logAudit('job.created', `Request submitted: ${t.workType.replace(/_/g,' ')} at ${t.location} (priority: ${t.priority}, by ${req} [${currentUser.role||'user'}], status: Pending — awaiting assignment)`, 'info', 'job', t.id); }catch(_){}
+  try{ if(typeof logAudit==='function') logAudit('job.created', `Job created: ${t.workType.replace(/_/g,' ')} at ${t.location} (status: ${t.status})`, 'info', 'job', t.id); }catch(_){}
   if(!FB_READY){fillDrops();rReady=false;}
   clrJQ();renderRequestPage();
-  toast('Request submitted — awaiting assignment');
-  // Notify all admins + staff (anyone who can assign jobs) — except the submitter themselves
-  if (typeof USERS !== 'undefined' && typeof notifyUser === 'function') {
-    USERS.filter(u => (u.role==='admin' || u.role==='staff') && !u.disabled && u.name !== req)
-         .forEach(u => notifyUser(u.name, '📥 New pending request', `${t.workType.replace(/_/g,' ')} at ${t.location} — submitted by ${req}`, t.id));
-  }
+  toast(`Request submitted — assigned to ${handler}`);
+  // Notify handler of new job request
+  if (typeof notifyUser === 'function') notifyUser(handler, '📥 New job request', t.workType.replace(/_/g,' ') + ' — ' + t.location + ' (' + t.area.replace(/_/g,' ') + ')', t.id);
 }
 
-// ═══════════════════════════════════════════════
-// JOB ASSIGNMENT — admin/staff assigns Pending jobs
-// ═══════════════════════════════════════════════
-function assignJob(id, handlerName){
-  id = String(id);
-  const r = DATA.find(x => String(x.id) === id);
-  if(!r){ toast('Job not found','e'); return; }
-  if(!handlerName || handlerName === 'Unassigned' || handlerName === ''){ toast('Please select a handler','e'); return; }
-  // Permission: admin OR staff
-  if(!(currentUser && (currentUser.role==='admin' || currentUser.role==='staff'))){
-    toast('You do not have permission to assign jobs','e'); return;
-  }
-  const pendingDuration = (r.submittedAt && typeof elapsedBetween === 'function')
-    ? elapsedBetween(r.submittedAt, (typeof nowISO === 'function' ? nowISO() : new Date().toISOString()))
-    : '';
-  const updates = {
-    handler: handlerName,
-    status: 'In Progress',
-    assignedAt: (typeof nowISO === 'function') ? nowISO() : new Date().toISOString(),
-    assignedBy: currentUser.name || currentUser.email || 'Admin'
-  };
-  fbUpdateJob(id, updates);
-  if(!FB_READY) Object.assign(r, updates);
-  try{
-    if(typeof logAudit==='function') logAudit('job.assigned',
-      `Assigned: ${r.workType?.replace(/_/g,' ')||'Job'} at ${r.location||''} → handler: ${handlerName}${pendingDuration ? ' (was Pending for ' + pendingDuration + ')' : ''} by ${currentUser.name||'Admin'}`,
-      'info', 'job', id);
-  }catch(_){}
-  fillDrops();
-  renderRequestPage();
-  rReady=false;
-  toast(`Job assigned to ${handlerName}`);
-  // Notify handler
-  if (typeof notifyUser === 'function') {
-    notifyUser(handlerName, '🔧 Job assigned to you', `${r.workType?.replace(/_/g,' ')||'Job'} at ${r.location||''} — ${r.priority||''} priority`, id);
-  }
-  // Notify requestor (their job is being actioned) — unless they're the same person
-  if (typeof notifyUser === 'function' && r.requestor && r.requestor !== currentUser?.name && r.requestor !== handlerName) {
-    notifyUser(r.requestor, '✅ Your request is being actioned', `${r.workType?.replace(/_/g,' ')||'Your job'} at ${r.location||''} — assigned to ${handlerName}`, id);
-  }
-}
-
-// Quick self-assign
-function assignToMe(id){
-  if(!currentUser || !(currentUser.role==='admin' || currentUser.role==='staff')){
-    toast('You do not have permission to self-assign','e'); return;
-  }
-  assignJob(id, currentUser.name);
-}
-
-// Legacy compat — old code references assignRequest; route to new assignJob with auto-pick
 function assignRequest(id){
   id=String(id);
   const r=DATA.find(x=>String(x.id)===id);if(!r)return;
-  const handlerName = (AUTO_ASSIGN && AUTO_ASSIGN[r.workType]) || HNDS[0];
-  assignJob(id, handlerName);
+  const updates={
+    handler:AUTO_ASSIGN[r.workType]||HNDS[0],
+    status:'In Progress'
+  };
+  fbUpdateJob(id,updates);
+  if(!FB_READY) Object.assign(r,updates);
+  fillDrops();renderRequestPage();rReady=false;
+  toast(`Request assigned to ${updates.handler}`);
+  // Notify assigned handler
+  if (typeof notifyUser === 'function') notifyUser(updates.handler, '🔧 Job assigned to you', r.workType.replace(/_/g,' ') + ' — ' + r.location, id);
 }
 
 function clrJQ(){
@@ -1593,7 +1479,7 @@ function buildEmailParams(toEmail, ccEmail, periodType, customMsg){
   const completed = d.filter(r=>r.status==='Completed').length;
   const inProg    = d.filter(r=>r.status==='In Progress'||r.status==='In Progress - Contractor').length;
   const pending   = d.filter(r=>r.status==='Pending').length;
-  const urgent    = d.filter(r=>r.priority==='Urgent' && r.status!=='Completed').length;
+  const urgent    = d.filter(r=>r.priority==='Urgent').length;
   const rate      = total ? Math.round(completed/total*100) : 0;
   const periodLabel = periodType==='daily'?'Today':periodType==='weekly'?'Last 7 days':'All time';
   const genDate   = new Date().toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
@@ -1737,7 +1623,7 @@ function renderContractorPanel(){
 
   <div class="kpi-grid" style="margin-bottom:16px">
     <div class="kpi"><div class="kpi-bar" style="background:var(--amber)"></div><div class="kpi-lbl">Active jobs</div><div class="kpi-val">${myJobs.length}</div></div>
-    <div class="kpi"><div class="kpi-bar" style="background:var(--red)"></div><div class="kpi-lbl">Urgent</div><div class="kpi-val">${myJobs.filter(j=>j.priority==='Urgent'&&j.status!=='Completed').length}</div></div>
+    <div class="kpi"><div class="kpi-bar" style="background:var(--red)"></div><div class="kpi-lbl">Urgent</div><div class="kpi-val">${myJobs.filter(j=>j.priority==='Urgent').length}</div></div>
     <div class="kpi"><div class="kpi-bar" style="background:var(--g)"></div><div class="kpi-lbl">Completed</div><div class="kpi-val">${doneJobs.length}</div></div>
     <div class="kpi"><div class="kpi-bar" style="background:var(--blue)"></div><div class="kpi-lbl">Total assigned</div><div class="kpi-val">${myJobs.length+doneJobs.length}</div></div>
   </div>
