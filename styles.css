@@ -3671,3 +3671,50 @@ hr.soft {
   .list-pag-info{width:100%;text-align:center;order:-1}
   .mri-handler-pick{flex:1;min-width:110px}
 }
+
+
+/* ═══════════════════════════════════════════════
+   REPORTS TABLE — search + sortable headers
+═══════════════════════════════════════════════ */
+.rpt-search-wrap{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  padding:5px 10px;
+  background:var(--s1);
+  border:1px solid var(--b1);
+  border-radius:8px;
+  transition:border-color .15s ease;
+}
+.rpt-search-wrap:focus-within{
+  border-color:var(--g);
+}
+.rpt-search-input{
+  border:none;
+  background:transparent;
+  color:var(--t0);
+  font-size:12.5px;
+  font-family:var(--font);
+  outline:none;
+  width:150px;
+}
+.rpt-search-input::placeholder{ color:var(--t3); }
+
+.rpt-th-sort{
+  cursor:pointer;
+  user-select:none;
+  transition:color .15s ease;
+  white-space:nowrap;
+}
+.rpt-th-sort:hover{ color:var(--g); }
+.rpt-sort-ind{
+  display:inline-block;
+  width:10px;
+  color:var(--g);
+  font-weight:700;
+  font-size:11px;
+}
+
+@media(max-width:640px){
+  .rpt-search-input{ width:110px; }
+}

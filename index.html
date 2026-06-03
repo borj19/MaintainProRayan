@@ -627,27 +627,34 @@
 
     <!-- ── Full task table ───────────────────── -->
     <div class="card" style="margin-bottom:12px">
-      <div class="card-hd">
+      <div class="card-hd" style="flex-wrap:wrap;gap:10px">
         <span class="card-t">Task listing</span>
-        <span class="card-badge" id="r-tbl-count"></span>
+        <div style="display:flex;align-items:center;gap:10px;margin-left:auto;flex-wrap:wrap">
+          <div class="rpt-search-wrap">
+            <i data-lucide="search" style="width:14px;height:14px;color:var(--t2)"></i>
+            <input type="text" id="rpt-tbl-search" class="rpt-search-input" placeholder="Search tasks…" oninput="rptTblSearch(this.value)">
+          </div>
+          <span class="card-badge" id="r-tbl-count"></span>
+        </div>
       </div>
       <div class="tbl-wrap">
-        <table id="r-task-table">
+        <table id="r-task-table" class="rpt-table">
           <thead><tr>
-            <th style="width:76px">Date</th>
-            <th style="width:90px">Requestor</th>
-            <th style="width:100px">Handler</th>
-            <th style="width:110px">Work type</th>
+            <th style="width:76px" class="rpt-th-sort" onclick="rptSort('date')">Date <span class="rpt-sort-ind" data-col="date"></span></th>
+            <th style="width:90px" class="rpt-th-sort" onclick="rptSort('requestor')">Requestor <span class="rpt-sort-ind" data-col="requestor"></span></th>
+            <th style="width:100px" class="rpt-th-sort" onclick="rptSort('handler')">Handler <span class="rpt-sort-ind" data-col="handler"></span></th>
+            <th style="width:110px" class="rpt-th-sort" onclick="rptSort('workType')">Work type <span class="rpt-sort-ind" data-col="workType"></span></th>
             <th style="width:80px">Sub type</th>
             <th style="width:72px">Area</th>
             <th style="width:85px">Location</th>
             <th>Details</th>
-            <th style="width:116px">Status</th>
-            <th style="width:68px">Priority</th>
+            <th style="width:116px" class="rpt-th-sort" onclick="rptSort('status')">Status <span class="rpt-sort-ind" data-col="status"></span></th>
+            <th style="width:68px" class="rpt-th-sort" onclick="rptSort('priority')">Priority <span class="rpt-sort-ind" data-col="priority"></span></th>
           </tr></thead>
           <tbody id="r-tbody"></tbody>
         </table>
       </div>
+      <div class="list-pagination" id="rpt-pagination"></div>
     </div>
 
   </div>

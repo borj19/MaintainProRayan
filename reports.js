@@ -134,7 +134,7 @@ function renderR(){
   const d=getRD();
   const c=d.filter(r=>r.status==='Completed').length;
   const ip=d.filter(r=>r.status==='In Progress'||r.status==='In Progress - Contractor').length;
-  const urg=d.filter(r=>r.priority==='Urgent').length;
+  const urg=d.filter(r=>r.priority==='Urgent'&&r.status!=='Completed').length;
   const topR=(d.length?(Object.entries(cb(d,'requestor')).sort((a,b)=>b[1]-a[1])[0]?.[0]||'—'):'—').replace(/^[A-Z&]+ - /,'');
 
   // Record count label
@@ -146,7 +146,7 @@ function renderR(){
     {c:'#6ebe2a',l:'Total jobs',v:d.length,s:getPeriodLabel()},
     {c:'#6ebe2a',l:'Completed',v:c,tr:`${d.length?Math.round(c/d.length*100):0}% rate`,tc:'up'},
     {c:'#5599f5',l:'In progress',v:ip},
-    {c:'#e8534a',l:'Urgent',v:urg,tr:urg>0?urg+' critical':'All clear',tc:urg>0?'dn':'up'},
+    {c:'#e8534a',l:'Urgent open',v:urg,tr:urg>0?urg+' critical':'All clear',tc:urg>0?'dn':'up'},
     {c:'#a87cf0',l:'Top requestor',v:topR,sm:true},
     {c:'#f0a62e',l:'Work types',v:new Set(d.map(r=>r.workType)).size},
   ];
@@ -191,11 +191,59 @@ function renderR(){
   const hComp={};[...new Set(d.map(r=>r.handler))].forEach(h=>{const t=d.filter(r=>r.handler===h),done=t.filter(r=>r.status==='Completed').length;hComp[h]={total:t.length,done,rate:t.length?Math.round(done/t.length*100):0};});
   document.getElementById('r-crates').innerHTML=Object.entries(hComp).map(([h,v])=>`<div style="margin-bottom:13px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><span style="font-size:12px;color:var(--t0);font-weight:500">${h}</span><span style="font-size:12px;font-weight:700;color:${v.rate===100?'var(--g)':v.rate>70?'var(--cyan)':'var(--amber)'}">${v.rate}%</span></div><div class="pbg"><div class="pfg" style="width:${v.rate}%;background:${v.rate===100?'var(--g)':v.rate>70?'var(--cyan)':'var(--amber)'}"></div></div><div style="font-size:10px;color:var(--t2);margin-top:3px">${v.done}/${v.total} tasks completed</div></div>`).join('');
 
-  // Task table
+  // Task table — with search, sort, pagination
+  window._rptTableData = d;            // full filtered dataset for table operations
+  renderRptTable();
+}
+
+// ── Reports table state ──
+let RPT_TBL = { search:'', sortKey:'date', sortDir:-1, page:1, pageSize:20 };
+
+function renderRptTable(){
+  let d = (window._rptTableData||[]).slice();
+
+  // Search
+  const q = (RPT_TBL.search||'').trim().toLowerCase();
+  if(q){
+    d = d.filter(r => [r.date,r.requestor,r.handler,r.workType,r.subType,r.area,r.location,r.details,r.status,r.priority]
+      .filter(Boolean).join(' ').toLowerCase().includes(q));
+  }
+
+  // Sort
+  if(RPT_TBL.sortKey){
+    const k=RPT_TBL.sortKey, dir=RPT_TBL.sortDir;
+    const prioRank={Urgent:4,High:3,Medium:2,Low:1};
+    d.sort((a,b)=>{
+      let av=a[k], bv=b[k];
+      if(k==='priority'){ av=prioRank[av]||0; bv=prioRank[bv]||0; }
+      else { av=(av||'').toString().toLowerCase(); bv=(bv||'').toString().toLowerCase(); }
+      if(av<bv) return -1*dir;
+      if(av>bv) return 1*dir;
+      return 0;
+    });
+  }
+
+  const total=d.length;
+  const ps=RPT_TBL.pageSize;
+  const pages=Math.max(1,Math.ceil(total/ps));
+  if(RPT_TBL.page>pages) RPT_TBL.page=pages;
+  if(RPT_TBL.page<1) RPT_TBL.page=1;
+  const cur=RPT_TBL.page;
+  const start=(cur-1)*ps;
+  const rows=d.slice(start,start+ps);
+
+  // Count badge
   const tblCount=document.getElementById('r-tbl-count');
-  if(tblCount) tblCount.textContent=`${d.length} task${d.length!==1?'s':''}`;
+  if(tblCount) tblCount.textContent=`${total} task${total!==1?'s':''}`;
+
+  // Sort indicators
+  document.querySelectorAll('.rpt-sort-ind').forEach(el=>{
+    const col=el.getAttribute('data-col');
+    el.textContent = (col===RPT_TBL.sortKey) ? (RPT_TBL.sortDir===1?'↑':'↓') : '';
+  });
+
   const tbody=document.getElementById('r-tbody');
-  if(tbody) tbody.innerHTML=d.length ? d.map(r=>`<tr>
+  if(tbody) tbody.innerHTML=rows.length ? rows.map(r=>`<tr>
     <td style="font-family:var(--mono);font-size:11px">${fds(r.date)}</td>
     <td class="td-h">${r.requestor}</td>
     <td>${r.handler}</td>
@@ -206,7 +254,49 @@ function renderR(){
     <td style="color:var(--t2);max-width:160px;overflow:hidden;text-overflow:ellipsis" title="${r.details||''}">${r.details||'—'}</td>
     <td>${sbadge(r.status)}</td>
     <td>${pbadge(r.priority)}</td>
-  </tr>`).join('') : '<tr><td colspan="10" style="text-align:center;padding:28px;color:var(--t2)">No tasks match the current filters.</td></tr>';
+  </tr>`).join('') : `<tr><td colspan="10" style="text-align:center;padding:28px;color:var(--t2)">${q?'No tasks match your search.':'No tasks match the current filters.'}</td></tr>`;
+
+  // Pagination controls
+  const pag=document.getElementById('rpt-pagination');
+  if(pag){
+    if(total<=ps && ps===20 && !q){
+      pag.innerHTML='';
+    } else {
+      pag.innerHTML=`
+        <div class="list-pag-info">${total?`Showing ${start+1}–${Math.min(start+ps,total)} of ${total}`:'No records'}</div>
+        <div class="list-pag-controls">${typeof buildRptPagButtons==='function'?buildRptPagButtons(cur,pages):''}</div>
+        <div class="list-pag-size"><span>Rows:</span>
+          <select onchange="rptSetPageSize(this.value)">
+            ${[10,20,50,100].map(s=>`<option value="${s}" ${s===ps?'selected':''}>${s}</option>`).join('')}
+          </select>
+        </div>`;
+    }
+  }
+}
+
+function buildRptPagButtons(cur,pages){
+  if(pages<=1) return `<button class="list-pag-btn on" disabled>1</button>`;
+  let html=`<button class="list-pag-btn ${cur===1?'disabled':''}" ${cur===1?'disabled':''} onclick="rptGotoPage(${cur-1})">‹</button>`;
+  const nums=[]; const add=n=>{if(!nums.includes(n)&&n>=1&&n<=pages)nums.push(n);};
+  add(1);add(2);add(pages);add(pages-1);add(cur);add(cur-1);add(cur+1);
+  const sorted=[...new Set(nums)].sort((a,b)=>a-b);
+  let prev=0;
+  for(const n of sorted){
+    if(n-prev>1) html+=`<span class="list-pag-ellipsis">…</span>`;
+    html+=`<button class="list-pag-btn ${n===cur?'on':''}" onclick="rptGotoPage(${n})">${n}</button>`;
+    prev=n;
+  }
+  html+=`<button class="list-pag-btn ${cur===pages?'disabled':''}" ${cur===pages?'disabled':''} onclick="rptGotoPage(${cur+1})">›</button>`;
+  return html;
+}
+function rptGotoPage(p){ RPT_TBL.page=p; renderRptTable(); }
+function rptSetPageSize(s){ RPT_TBL.pageSize=parseInt(s,10); RPT_TBL.page=1; renderRptTable(); }
+function rptTblSearch(q){ RPT_TBL.search=q; RPT_TBL.page=1; renderRptTable(); }
+function rptSort(col){
+  if(RPT_TBL.sortKey===col) RPT_TBL.sortDir*=-1;
+  else { RPT_TBL.sortKey=col; RPT_TBL.sortDir=1; }
+  RPT_TBL.page=1;
+  renderRptTable();
 }
 
 // ═══════════════════════════════════════════════
@@ -245,7 +335,7 @@ function expCSV(){
     `"Total tasks:","${d.length}"`,
     `"Completed:","${comp} (${d.length?Math.round(comp/d.length*100):0}%)"`,
     `"In progress:","${d.filter(r=>r.status==='In Progress'||r.status==='In Progress - Contractor').length}"`,
-    `"Urgent:","${d.filter(r=>r.priority==='Urgent').length}"`,
+    `"Urgent (open):","${d.filter(r=>r.priority==='Urgent'&&r.status!=='Completed').length}"`,
     `""`,
     headers.map(h=>`"${h}"`).join(','),
   ];
@@ -269,7 +359,7 @@ function expPDF(){
   const comp=d.filter(r=>r.status==='Completed').length;
   const ip=d.filter(r=>r.status==='In Progress'||r.status==='In Progress - Contractor').length;
   const pend=d.filter(r=>r.status==='Pending').length;
-  const urg=d.filter(r=>r.priority==='Urgent').length;
+  const urg=d.filter(r=>r.priority==='Urgent'&&r.status!=='Completed').length;
   const compRate=d.length?Math.round(comp/d.length*100):0;
   const period=getPeriodLabel();
   const genDate=new Date().toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'});
