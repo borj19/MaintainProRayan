@@ -59,7 +59,7 @@ function bChips(){
   const reqs=[...new Set(DATA.map(r=>r.requestor))];
   const wts=[...new Set(DATA.map(r=>r.workType))];
   document.getElementById('r-rchips').innerHTML=reqs.map(r=>`<button class="chip ${aR.has(r)?'on':''}" onclick="tChip('r','${r.replace(/'/g,"\\'")}',this)">${r.replace(/^[A-Z&]+ - /,'')}</button>`).join('');
-  document.getElementById('r-wchips').innerHTML=wts.map(w=>`<button class="chip ${aW.has(w)?'on':''}" onclick="tChip('w','${w}',this)">${w.replace(/_/g,' ').substring(0,12)}</button>`).join('');
+  document.getElementById('r-wchips').innerHTML=wts.map(w=>`<button class="chip ${aW.has(w)?'on':''}" onclick="tChip('w','${w}',this)">${w.replace(/_/g,' ')}</button>`).join('');
 }
 function tChip(t,v,el){
   const s=t==='r'?aR:aW;
