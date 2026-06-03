@@ -3446,3 +3446,109 @@ select.fbar-sel,.fbar select{
   .mt{font-size:21px!important}
   .auth-brand-text .name{font-size:21px!important}
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   ╔═══════════════════════════════════════════════════════════════╗
+   ║  PHASE 3 — DATA SURFACES  (tables · badges · pagination ·     ║
+   ║  rooms board · reports · final mobile + blur fallback)        ║
+   ║  CSS-only. Appended after Phase 2 so it wins the cascade.    ║
+   ╚═══════════════════════════════════════════════════════════════╝
+═══════════════════════════════════════════════════════════════════ */
+
+/* ── TABLES — clean hairline rows, mono headers, generous rhythm ── */
+.tbl-wrap{
+  border:1px solid var(--hairline)!important;
+  border-radius:16px!important;
+  background:var(--s0)!important;
+  backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
+  box-shadow:var(--shadow);overflow:hidden;
+}
+thead th{
+  background:transparent!important;
+  border-bottom:1px solid var(--hairline)!important;
+  font-family:var(--mono)!important;font-weight:500!important;
+  font-size:10px!important;letter-spacing:.08em!important;
+  color:var(--t2)!important;padding:13px 14px!important;
+}
+thead th:hover{background:var(--s2)!important;color:var(--t0)!important}
+tbody tr{border-bottom:1px solid var(--hairline)!important}
+tbody tr:hover{background:var(--s2)!important}
+tbody td{padding:12px 14px!important;color:var(--t1)!important}
+.td-h{color:var(--t0)!important;font-weight:500!important}
+
+/* ── PAGINATION — pill controls ── */
+.list-pagination{border-top:1px solid var(--hairline)}
+.list-pag-info,.list-pag-size{font-family:var(--mono)!important;font-size:11px!important;color:var(--t2)!important}
+.list-pag-btn{
+  background:var(--s1)!important;border:1px solid var(--hairline)!important;
+  border-radius:100px!important;color:var(--t1)!important;
+  font-family:var(--mono)!important;min-width:32px;
+}
+.list-pag-btn:hover:not(.disabled):not(.on){background:var(--s2)!important;color:var(--g)!important;border-color:var(--g4)!important}
+.list-pag-btn.on{background:linear-gradient(135deg,var(--g),var(--g2))!important;color:#08130a!important;border-color:transparent!important;font-weight:500}
+.list-pag-size select{
+  background:var(--s1)!important;border:1px solid var(--hairline)!important;
+  border-radius:100px!important;color:var(--t1)!important;padding:5px 10px!important;
+}
+.pbtn{background:var(--s1)!important;border:1px solid var(--hairline)!important;border-radius:100px!important;color:var(--t1)!important}
+.pbtn:hover{background:var(--s2)!important}
+
+/* ── PROGRESS BARS (handler completion, room age) ── */
+.pbg{background:var(--s3)!important;border-radius:100px!important;height:7px!important}
+.pfg{border-radius:100px!important}
+
+/* ── LEGEND (rooms board, reports charts) ── */
+.leg-i{font-family:var(--mono)!important;font-size:10.5px!important;letter-spacing:.02em;color:var(--t1)!important}
+.leg-sq{border-radius:3px!important;width:10px!important;height:10px!important}
+
+/* ── ROOMS BOARD — KPI strip, grid card, legend frame ── */
+#rooms-grid{padding:4px 0}
+/* legend chips frame */
+.rooms-legend,.room-legend{
+  display:flex;flex-wrap:wrap;gap:14px;
+  padding:12px 16px;margin-bottom:14px;
+  background:var(--s0);border:1px solid var(--hairline);border-radius:14px;
+  backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
+}
+
+/* ── REPORTS — analytics cards, chart containers ── */
+.analytics-card{
+  background:var(--glass-card)!important;
+  border:1px solid var(--glass-border)!important;
+  border-radius:16px!important;
+  backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
+  box-shadow:var(--shadow)!important;position:relative;overflow:hidden;
+}
+.analytics-card::before{content:'';position:absolute;top:0;left:16px;right:16px;height:1px;background:var(--sheen);z-index:2}
+.analytics-card h3{font-family:var(--mono)!important;font-weight:500!important;letter-spacing:.07em!important;color:var(--t2)!important}
+/* chart containers keep transparent bg so card glass shows through; canvas pixels unaffected */
+.chart-box,.chart-wrap,[id^="ch-r"]{background:transparent!important}
+
+/* ── EMPTY STATES — editorial calm ── */
+.empty-state{color:var(--t2)}
+.empty-state p{font-family:var(--font)!important;color:var(--t1)!important;font-weight:500}
+.empty-state small{font-family:var(--mono)!important;font-size:10px!important;letter-spacing:.04em;color:var(--t3)!important}
+
+/* ── KPI ROW on rooms (reuses .kpi glass from Phase 1, just spacing) ── */
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+
+/* ═══ FINAL MOBILE PASS — data surfaces ═══ */
+@media(max-width:768px){
+  .tbl-wrap{border-radius:12px!important}
+  thead th,tbody td{padding:10px 11px!important}
+  .list-pagination{flex-direction:column;align-items:stretch;gap:10px}
+  .list-pag-controls{justify-content:center;display:flex;flex-wrap:wrap;gap:6px}
+  .analytics-card{border-radius:14px!important}
+  .rooms-legend,.room-legend{gap:10px;padding:10px 12px}
+}
+@media(max-width:480px){
+  thead th,tbody td{padding:8px 9px!important;font-size:11.5px!important}
+}
+
+/* ═══ BLUR FALLBACK (extend to Phase 2/3 surfaces) ═══ */
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .tbl-wrap,.analytics-card,.rooms-legend,.room-legend,.auth-card{
+    backdrop-filter:none;-webkit-backdrop-filter:none;
+  }
+  .modal,.auth-card{background:var(--glass-elev)}
+}
