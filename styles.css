@@ -3285,3 +3285,164 @@ img,canvas,svg,video{max-width:100%}
   }
   #sb,#topbar,.card,.kpi,.bento-kpi,.fbar,.tbl-wrap,.hero-chip,.btn-o{backdrop-filter:none;-webkit-backdrop-filter:none}
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   ╔═══════════════════════════════════════════════════════════════╗
+   ║  PHASE 2 — MODALS · FORMS · LOGIN  (reduced-glass editorial)   ║
+   ║  Near-solid panels, serif modal titles, refined form fields.  ║
+   ║  CSS-only. Appended after Phase 1 so it wins the cascade.     ║
+   ╚═══════════════════════════════════════════════════════════════╝
+═══════════════════════════════════════════════════════════════════ */
+
+/* ── MODAL OVERLAY — soft dim, light blur (not heavy frost) ── */
+.mov{backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+
+/* ── MODAL PANEL — near-solid, subtle sheen, generous radius ── */
+.modal{
+  background:var(--glass-elev)!important;
+  border:1px solid var(--glass-border)!important;
+  border-radius:20px!important;
+  box-shadow:0 32px 80px -24px rgba(0,0,0,.7),var(--shadow-lg)!important;
+  position:relative;overflow:hidden;
+}
+.modal::before{
+  content:'';position:absolute;top:0;left:20px;right:20px;height:1px;
+  background:var(--sheen);z-index:3;
+}
+.mhd{
+  padding:24px 24px 16px!important;
+  border-bottom:1px solid var(--hairline)!important;
+  align-items:flex-start!important;
+}
+/* Modal title → editorial serif */
+.mt{
+  font-family:var(--font-serif)!important;
+  font-size:26px!important;font-weight:400!important;
+  line-height:1.02!important;letter-spacing:-.02em!important;
+  color:var(--t0)!important;
+}
+.mcls{
+  background:var(--s2)!important;border:1px solid var(--hairline)!important;
+  border-radius:10px!important;color:var(--t2)!important;
+  width:32px!important;height:32px!important;flex-shrink:0;
+}
+.mcls:hover{background:rgba(255,90,80,.10)!important;border-color:rgba(255,90,80,.28)!important;color:var(--red)!important}
+.mbd{padding:22px 24px!important}
+.mft{
+  padding:18px 24px!important;
+  border-top:1px solid var(--hairline)!important;
+  background:transparent!important;
+  border-radius:0 0 20px 20px!important;
+  gap:10px!important;
+}
+
+/* Smoother modal entry */
+.modal{animation:p2ModalIn .26s cubic-bezier(.34,1.2,.5,1)!important}
+@keyframes p2ModalIn{from{opacity:0;transform:scale(.97) translateY(10px)}to{opacity:1;transform:scale(1) translateY(0)}}
+
+/* ── FORM FIELDS — taller, softer radius, mono labels, green focus ── */
+.fl{
+  font-family:var(--mono)!important;
+  font-size:10px!important;font-weight:500!important;
+  letter-spacing:.07em!important;text-transform:uppercase;
+  color:var(--t2)!important;
+}
+.fc{gap:7px!important}
+.fg{gap:14px!important}
+.fi{
+  background:var(--s1)!important;
+  border:1px solid var(--b1)!important;
+  border-radius:11px!important;
+  color:var(--t0)!important;
+  padding:11px 13px!important;
+  font-size:13.5px!important;font-family:var(--font)!important;
+  min-height:40px;
+  transition:border-color var(--transition),box-shadow var(--transition),background var(--transition)!important;
+}
+.fi:focus{
+  outline:none;border-color:var(--g)!important;
+  background:var(--g3)!important;
+  box-shadow:0 0 0 3px var(--g4)!important;
+}
+.fi::placeholder{color:var(--t3)!important}
+textarea.fi{min-height:76px;resize:vertical}
+
+/* Native select chevron in brand style */
+select.fi{
+  appearance:none;-webkit-appearance:none;-moz-appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 16 16'%3E%3Cpath d='M4 6l4 4 4-4' stroke='%239aa39b' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 13px center;
+  padding-right:36px!important;
+}
+[data-theme="light"] select.fi{
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 16 16'%3E%3Cpath d='M4 6l4 4 4-4' stroke='%235a6b5e' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+select.fi option{background:var(--bg);color:var(--t0)}
+
+/* Filter-bar inputs/selects match (keep them pill, but apply chevron to selects) */
+select.fbar-sel,.fbar select{
+  appearance:none;-webkit-appearance:none;-moz-appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 16 16'%3E%3Cpath d='M4 6l4 4 4-4' stroke='%239aa39b' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 13px center;padding-right:34px!important;
+}
+
+/* ── LOGIN CARD — glass card, editorial wordmark + headline ── */
+.auth-card{
+  background:var(--glass-elev)!important;
+  border:1px solid var(--glass-border)!important;
+  border-radius:22px!important;
+  backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
+  box-shadow:0 32px 80px -24px rgba(0,0,0,.7),var(--shadow-lg)!important;
+  position:relative;overflow:hidden;
+  padding:34px 32px!important;
+}
+.auth-card::before{
+  content:'';position:absolute;top:0;left:24px;right:24px;height:1px;
+  background:var(--sheen);z-index:2;
+}
+.auth-brand-text .name{
+  font-family:var(--font-serif)!important;
+  font-size:24px!important;font-weight:400!important;letter-spacing:-.01em!important;
+}
+.auth-brand-text .sub{font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--t2)}
+.auth-lbl{
+  font-family:var(--mono)!important;font-size:10px!important;font-weight:500!important;
+  letter-spacing:.07em!important;text-transform:uppercase;color:var(--t2)!important;
+}
+.auth-inp{
+  background:var(--s1)!important;border:1px solid var(--b1)!important;
+  border-radius:11px!important;color:var(--t0)!important;
+  padding:12px 14px!important;font-size:14px!important;
+}
+.auth-inp:focus{border-color:var(--g)!important;background:var(--g3)!important;box-shadow:0 0 0 3px var(--g4)!important}
+.auth-inp::placeholder{color:var(--t3)!important}
+.auth-btn{
+  border-radius:100px!important;
+  background:linear-gradient(135deg,var(--g),var(--g2))!important;
+  color:#08130a!important;font-weight:500!important;
+  box-shadow:0 4px 16px -4px var(--g4)!important;
+}
+.auth-btn:hover{filter:brightness(1.05);transform:translateY(-1px)}
+.auth-err{border-radius:11px!important;font-family:var(--font)}
+
+/* ── MOBILE — bottom-sheet modals, full-width fields ── */
+@media(max-width:768px){
+  .mov{align-items:flex-end!important;padding:0!important}
+  .modal{
+    border-radius:20px 20px 0 0!important;
+    max-width:100%!important;width:100%!important;max-height:93vh;
+    animation:p2SheetIn .28s cubic-bezier(.34,1.1,.5,1)!important;
+  }
+  @keyframes p2SheetIn{from{transform:translateY(100%)}to{transform:translateY(0)}}
+  .mft{border-radius:0!important}
+  .mhd{padding:20px 18px 14px!important}
+  .mt{font-size:23px!important}
+  .mbd{padding:18px!important}
+  .fg{grid-template-columns:1fr!important}
+  .fi{font-size:14px!important}        /* ≥16px avoids iOS zoom; 14 is ok with viewport lock */
+  .auth-card{padding:26px 22px!important;border-radius:20px!important}
+}
+@media(max-width:480px){
+  .mt{font-size:21px!important}
+  .auth-brand-text .name{font-size:21px!important}
+}
