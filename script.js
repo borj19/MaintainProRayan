@@ -104,7 +104,7 @@ let ROLE_PERMS = {
   staff: {
     view_dashboard:true, view_all_tasks:true, add_task:true,
     edit_task:true, delete_task:false, view_inprogress:true,
-    update_task_status:true, view_own_tasks:true, submit_request:false,
+    update_task_status:true, view_own_tasks:true, submit_request:true,
     view_reports:false, export_data:true, send_email:false,
     manage_users:false, manage_permissions:false, manage_fields:false,
     view_online_users:false,
@@ -149,6 +149,41 @@ function can(perm){
   if(!currentUser) return false;
   if(currentUser.role==='admin') return true;  // admin always has everything
   return !!(ROLE_PERMS[currentUser.role]||{})[perm];
+}
+
+// ── Ownership-based job permissions ───────────
+// Admin: full control over all jobs.
+// Staff: can edit/delete/complete ONLY jobs assigned to them (handler === their name).
+//        Pending (unassigned) jobs can be claimed via "Assign to me".
+// Others: no edit/delete.
+function isJobMine(r){
+  if(!currentUser||!r) return false;
+  return r.handler && currentUser.name && r.handler===currentUser.name;
+}
+function canEditJob(r){
+  if(!currentUser||!r) return false;
+  if(currentUser.role==='admin') return true;
+  if(currentUser.role==='staff') return isJobMine(r);   // staff: only own jobs
+  return false;
+}
+function canDeleteJob(r){
+  if(!currentUser||!r) return false;
+  if(currentUser.role==='admin') return true;
+  if(currentUser.role==='staff') return isJobMine(r);   // staff: only own jobs
+  return false;
+}
+function canCompleteJob(r){
+  if(!currentUser||!r) return false;
+  if(currentUser.role==='admin') return true;
+  if(currentUser.role==='staff') return isJobMine(r);
+  if(currentUser.role==='contractor') return isJobMine(r);
+  return false;
+}
+// Can the current user claim this pending job?
+function canClaimJob(r){
+  if(!currentUser||!r) return false;
+  if(r.status!=='Pending') return false;
+  return currentUser.role==='admin'||currentUser.role==='staff';
 }
 
 // ── Page → required permission map ───────────
@@ -447,6 +482,15 @@ function applyUserSession(){
   if(nb) nb.style.display = (typeof can==='function' && can('submit_request')) ? '' : 'none';
   const fab = document.getElementById('mbn-add');
   if(fab) fab.style.display = (typeof can==='function' && can('submit_request')) ? '' : 'none';
+  // Render any data-lucide icons now that the topbar/sidebar are visible
+  if(typeof refreshLucide==='function') setTimeout(refreshLucide, 50);
+}
+
+// Render/refresh all data-lucide icons in the DOM
+function refreshLucide(){
+  try{
+    if(typeof lucide!=='undefined' && lucide.createIcons) lucide.createIcons();
+  }catch(e){ console.warn('lucide refresh failed:', e.message); }
 }
 
 // ═══════════════════════════════════════════════
@@ -791,6 +835,7 @@ function go(p,el){
 
   if(window.innerWidth<=768) closeMobileSB();
   syncMobileNav(p);
+  if(typeof refreshLucide==='function') setTimeout(refreshLucide, 50);
 }
 
 function toggleSB(){
@@ -896,6 +941,7 @@ function rTbl(){
 
   tb.innerHTML=rows.length?rows.map(r=>{
     const checked=SELECTED_TASKS.has(String(r.id))?'checked':'';
+    const _canEdit=canEditJob(r), _canDel=canDeleteJob(r), _canClaim=canClaimJob(r);
     return `<tr class="${SELECTED_TASKS.has(String(r.id))?'row-selected':''}">
     ${isAdmin?`<td style="width:34px;padding-right:0"><input type="checkbox" class="t-chk" data-id="${r.id}" ${checked} onclick="toggleSelectTask('${r.id}',this.checked,event)" style="width:16px;height:16px;accent-color:var(--g);cursor:pointer"></td>`:''}
     <td>${fds(r.date)}</td><td class="td-h">${r.requestor}</td><td>${r.handler}</td>
@@ -905,8 +951,9 @@ function rTbl(){
     <td>${sbadge(r.status)}</td><td>${pbadge(r.priority)}</td>
     <td><div style="display:flex;gap:3px">
       <button class="btn btn-o btn-xs" onclick="vTask('${r.id}')" title="View" style="padding:3px 5px"><svg viewBox="0 0 16 16" fill="none" style="width:11px;height:11px"><circle cx="8" cy="8" r="5" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg></button>
-      ${isAdmin?`<button class="btn btn-o btn-xs" onclick="eTask('${r.id}')" title="Edit" style="padding:3px 5px"><svg viewBox="0 0 16 16" fill="none" style="width:11px;height:11px"><path d="M11 2l3 3-9 9H2v-3L11 2z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`:''}
-      ${isFullAdmin?`<button class="btn btn-r btn-xs" onclick="dTask('${r.id}')" title="Delete" style="padding:3px 5px"><svg viewBox="0 0 16 16" fill="none" style="width:11px;height:11px"><path d="M3 4h10M6 4V2h4v2M5 4v8h6V4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`:''}
+      ${_canClaim?`<button class="btn btn-g btn-xs" onclick="assignToMe('${r.id}')" title="Assign to me" style="padding:3px 6px;white-space:nowrap">Claim</button>`:''}
+      ${_canEdit?`<button class="btn btn-o btn-xs" onclick="eTask('${r.id}')" title="Edit" style="padding:3px 5px"><svg viewBox="0 0 16 16" fill="none" style="width:11px;height:11px"><path d="M11 2l3 3-9 9H2v-3L11 2z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`:''}
+      ${_canDel?`<button class="btn btn-r btn-xs" onclick="dTask('${r.id}')" title="Delete" style="padding:3px 5px"><svg viewBox="0 0 16 16" fill="none" style="width:11px;height:11px"><path d="M3 4h10M6 4V2h4v2M5 4v8h6V4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`:''}
     </div></td>
   </tr>`}).join(''):`<tr><td colspan="${isAdmin?12:11}" style="text-align:center;padding:36px;color:var(--t2)">No tasks match the current filters.</td></tr>`;
 
@@ -921,6 +968,7 @@ function rTbl(){
   renderPagination(cPg, pages, tot, showingStart, showingEnd);
   // Update bulk action bar
   updateBulkBar();
+  if(typeof refreshLucide==='function') setTimeout(refreshLucide, 30);
 }
 
 // ─── Selection state management ───
@@ -974,26 +1022,50 @@ function updateBulkBar(){
   bar.classList.add('on');
   const cnt=document.getElementById('bulk-count');
   if(cnt) cnt.textContent=n;
+  // Staff/contractor: hide admin-only bulk actions (priority change, delete)
+  const isFullAdmin=currentUser&&currentUser.role==='admin';
+  const prioBtn=document.getElementById('bulk-priority-btn');
+  const delBtn=document.getElementById('bulk-delete-btn');
+  if(prioBtn) prioBtn.style.display=isFullAdmin?'':'none';
+  if(delBtn)  delBtn.style.display=isFullAdmin?'':'none';
 }
 
 async function bulkMarkComplete(){
   const ids=Array.from(SELECTED_TASKS);
   if(!ids.length) return;
-  if(!confirm(`Mark ${ids.length} job${ids.length!==1?'s':''} as Completed?`)) return;
-  const updates={status:'Completed',completion:getTODAY(),completedAt:typeof nowISO==='function'?nowISO():new Date().toISOString()};
+  // Filter to jobs the user is allowed to complete (admin: all; staff/contractor: own only)
+  const allowed=[], skipped=[];
   for(const id of ids){
+    const r=DATA.find(x=>String(x.id)===String(id));
+    if(r && canCompleteJob(r)) allowed.push(id);
+    else skipped.push(id);
+  }
+  if(!allowed.length){
+    toast('None of the selected jobs are assigned to you.','e');
+    return;
+  }
+  const msg = skipped.length
+    ? `Mark ${allowed.length} of ${ids.length} job${ids.length!==1?'s':''} complete? (${skipped.length} skipped — not assigned to you)`
+    : `Mark ${allowed.length} job${allowed.length!==1?'s':''} as Completed?`;
+  if(!confirm(msg)) return;
+  const updates={status:'Completed',completion:getTODAY(),completedAt:typeof nowISO==='function'?nowISO():new Date().toISOString()};
+  for(const id of allowed){
     try{
       await fbUpdateJob(id, updates);
-      if(typeof logAudit==='function') logAudit('job.completed', `Bulk complete: job ${id}`, 'info', 'job', id);
+      const _bj=DATA.find(x=>String(x.id)===String(id));
+      if(typeof logAudit==='function') logAudit('job.completed', `Bulk complete: ${_bj?.workType?.replace(/_/g,' ')||'job'} at ${_bj?.location||''} (handler: ${_bj?.handler||'—'}, priority: ${_bj?.priority||'—'})`, 'info', 'job', id);
     }catch(e){ console.warn('Bulk complete failed for', id, e.message); }
   }
-  toast(`${ids.length} job${ids.length!==1?'s':''} marked complete`, 's');
+  toast(skipped.length
+    ? `Completed ${allowed.length} of ${ids.length} — ${skipped.length} skipped (not yours)`
+    : `${allowed.length} job${allowed.length!==1?'s':''} marked complete`, 's');
   clearSelection();
 }
 
 async function bulkChangePriority(){
   const ids=Array.from(SELECTED_TASKS);
   if(!ids.length) return;
+  if(currentUser?.role!=='admin'){ toast('Only admin can change priority in bulk','e'); return; }
   const p=prompt('Set priority for ' + ids.length + ' jobs to: Urgent, High, Medium, or Low');
   if(!p) return;
   const priority=p.trim();
@@ -1109,7 +1181,7 @@ function chPg(d){goToPage(cPg+d);}
 function bTKpis(){
   const d=DATA,c=d.filter(r=>r.status==='Completed').length;
   const i=d.filter(r=>r.status==='In Progress'||r.status==='In Progress - Contractor').length;
-  const u=d.filter(r=>r.priority==='Urgent'||r.priority==='High').length;
+  const u=d.filter(r=>(r.priority==='Urgent'||r.priority==='High')&&r.status!=='Completed').length;
   const pending=d.filter(r=>r.status==='Pending').length;
   document.getElementById('t-kpis').innerHTML=[
     {c:'#6ebe2a',l:'Total tasks',v:d.length,s:'All records'},
@@ -1180,6 +1252,7 @@ function markJobComplete(id){
 function eTask(id){
   id=String(id);
   const r=DATA.find(x=>String(x.id)===id);if(!r)return;
+  if(!canEditJob(r)){toast('You can only edit jobs assigned to you.','e');return;}
   eId=id;
   document.getElementById('em-dt').value=r.date;
   document.getElementById('em-lc').value=r.location;
@@ -1228,7 +1301,8 @@ function saveEdit(){
 
 function dTask(id){
   const _r=DATA.find(x=>String(x.id)===String(id));
-  try{ if(typeof logAudit==='function') logAudit('job.deleted', `Job deleted: ${_r?.workType?.replace(/_/g,' ')||''} at ${_r?.location||''}`, 'warning', 'job', id); }catch(_){}
+  if(!canDeleteJob(_r)){toast('You can only delete jobs assigned to you.','e');return;}
+  try{ if(typeof logAudit==='function') logAudit('job.deleted', `Deleted: ${_r?.workType?.replace(/_/g,' ')||'job'} at ${_r?.location||''} (was ${_r?.status||'—'}, priority: ${_r?.priority||'—'}, handler: ${_r?.handler||'—'}, requestor: ${_r?.requestor||'—'})`, 'warning', 'job', id); }catch(_){}
   id=String(id);
   if(!confirm('Delete this task? This action cannot be undone.'))return;
   fbDeleteJob(id);
@@ -1402,7 +1476,6 @@ function submitJobRequest(){
   const det=document.getElementById('jq-de').value.trim();
   if(!loc||!det){toast('Please fill in all required fields.','e');return;}
   const wt=document.getElementById('jq-wt').value;
-  const handler=AUTO_ASSIGN[wt]||HNDS[0];
   // Requester is fully editable via dropdown — use selected value (default is logged-in user)
   const jqRqEl=document.getElementById('jq-rq');
   const req = (jqRqEl && jqRqEl.value) ? jqRqEl.value : (currentUser ? currentUser.name : 'Guest');
@@ -1413,40 +1486,71 @@ function submitJobRequest(){
   const t={
     id:nid++,date:jobDate,
     requestor:req,
-    handler:handler,
+    handler:'Unassigned',
     workType:wt,
     subType:document.getElementById('jq-st').value,
     area:document.getElementById('jq-ar').value,
     location:loc,details:det,
-    status:'In Progress',
+    status:'Pending',
     priority:document.getElementById('jq-pr').value,
     completion:'',
     createdBy:    currentUser?(currentUser.email||currentUser.username||'guest'):'guest',
     createdByUid: currentUser?(currentUser.uid||currentUser.id||''):'',
-    createdAt:    getTODAY()
+    createdAt:    getTODAY(),
+    submittedAt:  (typeof nowISO==='function')?nowISO():new Date().toISOString()
   };
   fbAddJob(t);
-  try{ if(typeof logAudit==='function') logAudit('job.created', `Job created: ${t.workType.replace(/_/g,' ')} at ${t.location} (status: ${t.status})`, 'info', 'job', t.id); }catch(_){}
+  try{ if(typeof logAudit==='function') logAudit('job.created', `Request submitted: ${t.workType.replace(/_/g,' ')} at ${t.location} (priority: ${t.priority}, by ${req}, status: Pending — awaiting assignment)`, 'info', 'job', t.id); }catch(_){}
   if(!FB_READY){fillDrops();rReady=false;}
   clrJQ();renderRequestPage();
-  toast(`Request submitted — assigned to ${handler}`);
-  // Notify handler of new job request
-  if (typeof notifyUser === 'function') notifyUser(handler, '📥 New job request', t.workType.replace(/_/g,' ') + ' — ' + t.location + ' (' + t.area.replace(/_/g,' ') + ')', t.id);
+  toast('Request submitted — awaiting assignment');
+  // Notify all admins + staff that a new request needs assigning
+  if (typeof USERS !== 'undefined' && typeof notifyUser === 'function') {
+    USERS.filter(u => (u.role==='admin'||u.role==='staff') && !u.disabled && u.name !== req)
+         .forEach(u => notifyUser(u.name, '📥 New pending request', `${t.workType.replace(/_/g,' ')} at ${t.location} — by ${req}`, t.id));
+  }
 }
 
-function assignRequest(id){
+// ═══════════════════════════════════════════════
+// JOB ASSIGNMENT — admin/staff assign Pending jobs
+// ═══════════════════════════════════════════════
+function assignJob(id, handlerName){
   id=String(id);
-  const r=DATA.find(x=>String(x.id)===id);if(!r)return;
+  const r=DATA.find(x=>String(x.id)===id);
+  if(!r){toast('Job not found','e');return;}
+  if(!handlerName||handlerName==='Unassigned'||handlerName===''){toast('Please select a handler','e');return;}
+  if(!(currentUser&&(currentUser.role==='admin'||currentUser.role==='staff'))){toast('You do not have permission to assign jobs','e');return;}
+  const pendingDur = (r.submittedAt&&typeof elapsedBetween==='function')
+    ? elapsedBetween(r.submittedAt,(typeof nowISO==='function'?nowISO():new Date().toISOString())) : '';
   const updates={
-    handler:AUTO_ASSIGN[r.workType]||HNDS[0],
-    status:'In Progress'
+    handler:handlerName,
+    status:'In Progress',
+    assignedAt:(typeof nowISO==='function')?nowISO():new Date().toISOString(),
+    assignedBy:currentUser.name||currentUser.email||'Admin'
   };
   fbUpdateJob(id,updates);
   if(!FB_READY) Object.assign(r,updates);
-  fillDrops();renderRequestPage();rReady=false;
-  toast(`Request assigned to ${updates.handler}`);
-  // Notify assigned handler
-  if (typeof notifyUser === 'function') notifyUser(updates.handler, '🔧 Job assigned to you', r.workType.replace(/_/g,' ') + ' — ' + r.location, id);
+  try{ if(typeof logAudit==='function') logAudit('job.assigned', `Assigned: ${r.workType?.replace(/_/g,' ')||'Job'} at ${r.location||''} → handler: ${handlerName}${pendingDur?' (was Pending for '+pendingDur+')':''} by ${currentUser.name||'Admin'}`, 'info', 'job', id); }catch(_){}
+  fillDrops();renderActivePage&&renderActivePage();rReady=false;
+  toast(`Job assigned to ${handlerName}`);
+  if (typeof notifyUser==='function') notifyUser(handlerName, '🔧 Job assigned to you', `${r.workType?.replace(/_/g,' ')||'Job'} at ${r.location||''} — ${r.priority||''} priority`, id);
+  if (typeof notifyUser==='function' && r.requestor && r.requestor!==currentUser?.name && r.requestor!==handlerName) {
+    notifyUser(r.requestor, '✅ Your request is being actioned', `${r.workType?.replace(/_/g,' ')||'Your job'} at ${r.location||''} — assigned to ${handlerName}`, id);
+  }
+}
+
+// Quick self-assign (staff/admin claims a pending job)
+function assignToMe(id){
+  if(!currentUser||!(currentUser.role==='admin'||currentUser.role==='staff')){toast('You cannot self-assign','e');return;}
+  assignJob(id, currentUser.name);
+}
+
+// Legacy compat — old code may call assignRequest; route to auto-pick
+function assignRequest(id){
+  id=String(id);
+  const r=DATA.find(x=>String(x.id)===id);if(!r)return;
+  const handlerName=(AUTO_ASSIGN&&AUTO_ASSIGN[r.workType])||HNDS[0];
+  assignJob(id, handlerName);
 }
 
 function clrJQ(){
@@ -1479,7 +1583,7 @@ function buildEmailParams(toEmail, ccEmail, periodType, customMsg){
   const completed = d.filter(r=>r.status==='Completed').length;
   const inProg    = d.filter(r=>r.status==='In Progress'||r.status==='In Progress - Contractor').length;
   const pending   = d.filter(r=>r.status==='Pending').length;
-  const urgent    = d.filter(r=>r.priority==='Urgent').length;
+  const urgent    = d.filter(r=>r.priority==='Urgent' && r.status!=='Completed').length;
   const rate      = total ? Math.round(completed/total*100) : 0;
   const periodLabel = periodType==='daily'?'Today':periodType==='weekly'?'Last 7 days':'All time';
   const genDate   = new Date().toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
@@ -1623,7 +1727,7 @@ function renderContractorPanel(){
 
   <div class="kpi-grid" style="margin-bottom:16px">
     <div class="kpi"><div class="kpi-bar" style="background:var(--amber)"></div><div class="kpi-lbl">Active jobs</div><div class="kpi-val">${myJobs.length}</div></div>
-    <div class="kpi"><div class="kpi-bar" style="background:var(--red)"></div><div class="kpi-lbl">Urgent</div><div class="kpi-val">${myJobs.filter(j=>j.priority==='Urgent').length}</div></div>
+    <div class="kpi"><div class="kpi-bar" style="background:var(--red)"></div><div class="kpi-lbl">Urgent</div><div class="kpi-val">${myJobs.filter(j=>j.priority==='Urgent'&&j.status!=='Completed').length}</div></div>
     <div class="kpi"><div class="kpi-bar" style="background:var(--g)"></div><div class="kpi-lbl">Completed</div><div class="kpi-val">${doneJobs.length}</div></div>
     <div class="kpi"><div class="kpi-bar" style="background:var(--blue)"></div><div class="kpi-lbl">Total assigned</div><div class="kpi-val">${myJobs.length+doneJobs.length}</div></div>
   </div>
