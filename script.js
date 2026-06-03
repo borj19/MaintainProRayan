@@ -1455,21 +1455,90 @@ function renderRequestPage(){
   }
 
   if(!shown.length){list.innerHTML=filterHtml+`<div class="empty-state"><svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.2"/><path d="M5 8h6M8 5v6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg><p>${u.role==='requester'?(f==='all'?'No requests submitted yet.':'No requests with this status.'):'No pending requests.'}</p><small>${u.role==='requester'&&f==='all'?'Use the form above to submit your first request.':''}</small></div>`;return;}
-  list.innerHTML=filterHtml+shown.map(r=>`<div class="my-request-item" onclick="vTask('${r.id}')" style="cursor:pointer">
+
+  // ── Pagination ──
+  if(!window._reqPage) window._reqPage=1;
+  if(!window._reqPageSize) window._reqPageSize=10;
+  const total=shown.length;
+  const pageSize=window._reqPageSize;
+  const pages=Math.max(1,Math.ceil(total/pageSize));
+  if(window._reqPage>pages) window._reqPage=pages;
+  const cur=window._reqPage;
+  const start=(cur-1)*pageSize;
+  const pageRows=shown.slice(start,start+pageSize);
+
+  const canAssign = u && (u.role==='admin'||u.role==='staff');
+  const handlerOpts=(HNDS||[]).map(h=>`<option value="${h.replace(/"/g,'&quot;')}">${h}</option>`).join('');
+
+  const itemsHtml = pageRows.map(r=>{
+    let pendingFor='';
+    if(r.status==='Pending' && r.submittedAt && typeof elapsedBetween==='function'){
+      const dur=elapsedBetween(r.submittedAt,(typeof nowISO==='function'?nowISO():new Date().toISOString()));
+      if(dur) pendingFor=`<span class="mri-pending-for">⏱ ${dur}</span>`;
+    }
+    return `<div class="my-request-item" onclick="vTask('${r.id}')" style="cursor:pointer">
     <div class="mri-top">
       <span class="mri-id">#${r.id}</span>
       <span class="mri-type">${r.workType.replace(/_/g,' ')} — ${r.subType}</span>
-      <span class="mri-date">${fd(r.date)}</span>
+      <span class="mri-date">${typeof fdts==='function'?fdts(r):fd(r.date)}</span>
     </div>
     <div class="mri-desc">${r.details}</div>
     <div class="mri-foot">
       ${sbadge(r.status)}
+      ${pbadge(r.priority)}
       <span class="mri-area">${r.area.replace(/_/g,' ')} · ${r.location}</span>
-      ${r.status!=='Pending'?`<span style="font-size:11px;color:var(--t2);margin-left:auto">Handler: ${r.handler}</span>`:''}
-      ${u.role==='admin'&&r.status==='Pending'?`<button class="btn btn-b btn-xs" onclick="assignRequest('${r.id}')" style="margin-left:auto">Assign</button>`:''}
+      ${pendingFor}
+      ${r.status!=='Pending'?`<span style="font-size:11px;color:var(--t2);margin-left:auto">Handler: <strong>${r.handler}</strong></span>`:''}
+      ${canAssign && r.status==='Pending'?`
+        <div class="mri-assign-actions" onclick="event.stopPropagation()" style="margin-left:auto">
+          <button class="btn btn-o btn-xs" onclick="event.stopPropagation();assignToMe('${r.id}')" title="Assign to me">Assign to me</button>
+          <select class="mri-handler-pick" id="mri-pick-${r.id}" onclick="event.stopPropagation()" onchange="event.stopPropagation()">
+            <option value="">Assign to…</option>${handlerOpts}
+          </select>
+          <button class="btn btn-g btn-xs" onclick="event.stopPropagation();assignJob('${r.id}',document.getElementById('mri-pick-${r.id}').value)">Assign</button>
+        </div>`:''}
     </div>
-  </div>`).join('');
+  </div>`;
+  }).join('');
+
+  // Pagination controls
+  const pagHtml = total>pageSize || window._reqPageSize!==10 ? `
+    <div class="list-pagination" id="req-pagination">
+      <div class="list-pag-info">Showing ${start+1}–${Math.min(start+pageSize,total)} of ${total}</div>
+      <div class="list-pag-controls">${buildPagButtons(cur,pages,'req')}</div>
+      <div class="list-pag-size">
+        <span>Rows:</span>
+        <select onchange="setReqPageSize(this.value)">
+          ${[10,20,50,100].map(s=>`<option value="${s}" ${s===pageSize?'selected':''}>${s}</option>`).join('')}
+        </select>
+      </div>
+    </div>` : '';
+
+  list.innerHTML=filterHtml+itemsHtml+pagHtml;
+  if(typeof refreshLucide==='function') setTimeout(refreshLucide,30);
 }
+
+// Pagination helpers (shared by Job Requests + Rooms)
+function buildPagButtons(cur,pages,scope){
+  if(pages<=1) return `<button class="list-pag-btn on" disabled>1</button>`;
+  const fn = scope==='req'?'gotoReqPage':'gotoRoomPage';
+  let html='';
+  html+=`<button class="list-pag-btn ${cur===1?'disabled':''}" ${cur===1?'disabled':''} onclick="${fn}(${cur-1})">‹</button>`;
+  const nums=[];
+  const add=n=>{if(!nums.includes(n)&&n>=1&&n<=pages)nums.push(n);};
+  add(1);add(2);add(pages);add(pages-1);add(cur);add(cur-1);add(cur+1);
+  const sorted=[...new Set(nums)].sort((a,b)=>a-b);
+  let prev=0;
+  for(const n of sorted){
+    if(n-prev>1) html+=`<span class="list-pag-ellipsis">…</span>`;
+    html+=`<button class="list-pag-btn ${n===cur?'on':''}" onclick="${fn}(${n})">${n}</button>`;
+    prev=n;
+  }
+  html+=`<button class="list-pag-btn ${cur===pages?'disabled':''}" ${cur===pages?'disabled':''} onclick="${fn}(${cur+1})">›</button>`;
+  return html;
+}
+function gotoReqPage(p){window._reqPage=p;renderRequestPage();}
+function setReqPageSize(s){window._reqPageSize=parseInt(s,10);window._reqPage=1;renderRequestPage();}
 
 function submitJobRequest(){
   const loc=document.getElementById('jq-lc').value.trim();

@@ -273,7 +273,14 @@ function renderRoomsBoard() {
           <th style="width:80px">Completed</th>
         </tr></thead>
         <tbody>
-          ${filtered.map(j=>`<tr style="cursor:pointer" onclick="vTask('${j.id}')">
+          ${(()=>{
+            if(!window._roomPage) window._roomPage=1;
+            if(!window._roomPageSize) window._roomPageSize=20;
+            const ps=window._roomPageSize;
+            const pg=Math.max(1,Math.ceil(filtered.length/ps));
+            if(window._roomPage>pg) window._roomPage=pg;
+            const st=(window._roomPage-1)*ps;
+            return filtered.slice(st,st+ps).map(j=>`<tr style="cursor:pointer" onclick="vTask('${j.id}')">
             <td style="font-family:var(--mono);font-size:11px">${fds(j.date)}</td>
             <td class="td-h">${extractRoom(j.location)||j.location}</td>
             <td>
@@ -290,10 +297,28 @@ function renderRoomsBoard() {
             <td>${sbadge(j.status)}</td>
             <td>${pbadge(j.priority)}</td>
             <td style="font-family:var(--mono);font-size:11px;color:var(--t2)">${j.completion?fds(j.completion):'—'}</td>
-          </tr>`).join('')}
+          </tr>`).join('');
+          })()}
         </tbody>
       </table>
-    </div>` : `
+    </div>
+    ${(()=>{
+      const ps=window._roomPageSize||20;
+      const total=filtered.length;
+      const pg=Math.max(1,Math.ceil(total/ps));
+      const cur=window._roomPage||1;
+      const st=(cur-1)*ps;
+      if(total<=ps && ps===20) return '';
+      return `<div class="list-pagination">
+        <div class="list-pag-info">Showing ${st+1}–${Math.min(st+ps,total)} of ${total}</div>
+        <div class="list-pag-controls">${typeof buildPagButtons==='function'?buildPagButtons(cur,pg,'room'):''}</div>
+        <div class="list-pag-size"><span>Rows:</span>
+          <select onchange="setRoomPageSize(this.value)">
+            ${[20,50,100,200].map(s=>`<option value="${s}" ${s===ps?'selected':''}>${s}</option>`).join('')}
+          </select>
+        </div>
+      </div>`;
+    })()}` : `
     <div class="empty-state">
       <svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.2"/></svg>
       <p>${ROOMS_FILTER.room?`No jobs found for Room ${ROOMS_FILTER.room}`:'No jobs match the current filters'}</p>
@@ -819,3 +844,7 @@ function refreshRoomsIfVisible() {
   const el = document.getElementById('page-rooms');
   if (el && el.classList.contains('on')) renderRoomsBoard();
 }
+
+// ── Rooms board pagination controls ──
+function gotoRoomPage(p){ window._roomPage=p; if(typeof renderRoomsBoard==='function') renderRoomsBoard(); }
+function setRoomPageSize(s){ window._roomPageSize=parseInt(s,10); window._roomPage=1; if(typeof renderRoomsBoard==='function') renderRoomsBoard(); }
