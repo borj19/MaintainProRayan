@@ -1087,58 +1087,79 @@ async function bulkChangePriority(){
   clearSelection();
 }
 
-async function bulkSetHandler(){
+let _bpMode=null;
+
+function bulkSetHandler(){
   const ids=Array.from(SELECTED_TASKS);
   if(!ids.length) return;
   if(currentUser?.role!=='admin'){ toast('Only admin can change handlers in bulk','e'); return; }
-  const h=prompt('Assign handler for ' + ids.length + ' job' + (ids.length!==1?'s':'') + '.\nAvailable: ' + HNDS.join(', '));
-  if(!h) return;
-  const handler=h.trim();
-  const match=HNDS.find(x=>x.toLowerCase()===handler.toLowerCase());
-  if(!match){ toast('Unknown handler. Available: '+HNDS.join(', '),'e'); return; }
-  const ts=(typeof nowISO==='function')?nowISO():new Date().toISOString();
-  let assignedCount=0;
-  for(const id of ids){
-    try{
-      const r=DATA.find(x=>String(x.id)===String(id));
-      const updates={handler:match};
-      // Pending jobs gaining a handler follow the normal assign workflow
-      if(r && r.status==='Pending'){
-        updates.status='In Progress';
-        updates.assignedAt=ts;
-        updates.assignedBy=currentUser.name||currentUser.email||'Admin';
-      }
-      await fbUpdateJob(id, updates);
-      if(!FB_READY && r) Object.assign(r,updates);
-      assignedCount++;
-      if(typeof logAudit==='function') logAudit('job.assigned', `Bulk handler change → ${match}${updates.status?' (Pending → In Progress)':''}`, 'info', 'job', id);
-    }catch(e){ console.warn('Bulk handler failed for', id, e.message); }
-  }
-  if(typeof notifyUser==='function' && assignedCount) notifyUser(match, '🔧 Jobs assigned to you', assignedCount+' job'+(assignedCount!==1?'s':'')+' assigned in bulk by '+(currentUser.name||'Admin'), ids[0]);
-  fillDrops();rReady=false;
-  toast(`Handler set to ${match} on ${assignedCount} job${assignedCount!==1?'s':''}`, 's');
-  clearSelection();
+  _bpMode='handler';
+  document.getElementById('bp-title').textContent='Set handler';
+  document.getElementById('bp-label').textContent='Assign handler';
+  document.getElementById('bp-sel').innerHTML=HNDS.map(hh=>`<option value="${hh}">${hh}</option>`).join('');
+  document.getElementById('bp-note').textContent=ids.length+' job'+(ids.length!==1?'s':'')+' selected — Pending jobs will move to In Progress';
+  om('m-bulkpick');
 }
 
-async function bulkSetRequestor(){
+function bulkSetRequestor(){
   const ids=Array.from(SELECTED_TASKS);
   if(!ids.length) return;
   if(currentUser?.role!=='admin'){ toast('Only admin can change requestors in bulk','e'); return; }
-  const q=prompt('Set requestor for ' + ids.length + ' job' + (ids.length!==1?'s':'') + ':');
-  if(!q) return;
-  const requestor=q.trim();
-  if(!requestor){ toast('Requestor cannot be empty','e'); return; }
-  for(const id of ids){
-    try{
-      const r=DATA.find(x=>String(x.id)===String(id));
-      await fbUpdateJob(id, {requestor});
-      if(!FB_READY && r) r.requestor=requestor;
-      if(typeof logAudit==='function') logAudit('job.updated', `Bulk requestor change → ${requestor}`, 'info', 'job', id);
-    }catch(e){ console.warn('Bulk requestor failed for', id, e.message); }
+  _bpMode='requestor';
+  const names=[...new Set([...(typeof REQS!=='undefined'?REQS:[]), ...((typeof USERS!=='undefined')?USERS.filter(u=>!u.disabled).map(u=>u.name):[])].filter(Boolean))].sort();
+  if(!names.length){ toast('No users available to select','e'); return; }
+  document.getElementById('bp-title').textContent='Set requestor';
+  document.getElementById('bp-label').textContent='Requestor';
+  document.getElementById('bp-sel').innerHTML=names.map(n=>`<option value="${n}">${n}</option>`).join('');
+  document.getElementById('bp-note').textContent=ids.length+' job'+(ids.length!==1?'s':'')+' selected';
+  om('m-bulkpick');
+}
+
+async function applyBulkPick(){
+  const ids=Array.from(SELECTED_TASKS);
+  const val=document.getElementById('bp-sel').value;
+  if(!ids.length||!val){ cm('m-bulkpick'); return; }
+  const applyBtn=document.getElementById('bp-apply');
+  if(applyBtn){applyBtn.disabled=true;applyBtn.textContent='Applying…';}
+  try{
+    if(_bpMode==='handler'){
+      const ts=(typeof nowISO==='function')?nowISO():new Date().toISOString();
+      let assignedCount=0;
+      for(const id of ids){
+        try{
+          const r=DATA.find(x=>String(x.id)===String(id));
+          const updates={handler:val};
+          // Pending jobs gaining a handler follow the normal assign workflow
+          if(r && r.status==='Pending'){
+            updates.status='In Progress';
+            updates.assignedAt=ts;
+            updates.assignedBy=currentUser.name||currentUser.email||'Admin';
+          }
+          await fbUpdateJob(id, updates);
+          if(!FB_READY && r) Object.assign(r,updates);
+          assignedCount++;
+          if(typeof logAudit==='function') logAudit('job.assigned', `Bulk handler change → ${val}${updates.status?' (Pending → In Progress)':''}`, 'info', 'job', id);
+        }catch(e){ console.warn('Bulk handler failed for', id, e.message); }
+      }
+      if(typeof notifyUser==='function' && assignedCount) notifyUser(val, '🔧 Jobs assigned to you', assignedCount+' job'+(assignedCount!==1?'s':'')+' assigned in bulk by '+(currentUser.name||'Admin'), ids[0]);
+      toast(`Handler set to ${val} on ${assignedCount} job${assignedCount!==1?'s':''}`, 's');
+    }else if(_bpMode==='requestor'){
+      for(const id of ids){
+        try{
+          const r=DATA.find(x=>String(x.id)===String(id));
+          await fbUpdateJob(id, {requestor:val});
+          if(!FB_READY && r) r.requestor=val;
+          if(typeof logAudit==='function') logAudit('job.updated', `Bulk requestor change → ${val}`, 'info', 'job', id);
+        }catch(e){ console.warn('Bulk requestor failed for', id, e.message); }
+      }
+      toast(`Requestor set to ${val} on ${ids.length} job${ids.length!==1?'s':''}`, 's');
+    }
+  }finally{
+    if(applyBtn){applyBtn.disabled=false;applyBtn.textContent='Apply';}
+    cm('m-bulkpick');
+    fillDrops();rReady=false;
+    clearSelection();
   }
-  fillDrops();rReady=false;
-  toast(`Requestor set to ${requestor} on ${ids.length} job${ids.length!==1?'s':''}`, 's');
-  clearSelection();
 }
 
 async function bulkDelete(){
