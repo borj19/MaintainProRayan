@@ -45,21 +45,28 @@ function daysSince(dateStr) {
 function getRoomCellStyle(roomNum, jobsMap) {
   const allJobs = jobsMap[roomNum] || [];
 
-  // If work type / subtype filter active, only show matching jobs
-  const relevantJobs = (ROOMS_FILTER.workType || ROOMS_FILTER.subType)
+  // If ANY filter is active, only matching jobs drive the cell colour
+  const anyFilter = !!(ROOMS_FILTER.workType || ROOMS_FILTER.subType ||
+                       ROOMS_FILTER.status || ROOMS_FILTER.handler ||
+                       ROOMS_FILTER.dateFrom || ROOMS_FILTER.dateTo);
+  const relevantJobs = anyFilter
     ? allJobs.filter(j => {
         if (ROOMS_FILTER.workType && j.workType !== ROOMS_FILTER.workType) return false;
-        if (ROOMS_FILTER.subType && j.subType !== ROOMS_FILTER.subType) return false;
+        if (ROOMS_FILTER.subType  && j.subType  !== ROOMS_FILTER.subType)  return false;
+        if (ROOMS_FILTER.status   && j.status   !== ROOMS_FILTER.status)   return false;
+        if (ROOMS_FILTER.handler  && j.handler  !== ROOMS_FILTER.handler)  return false;
+        if (ROOMS_FILTER.dateFrom && j.date < ROOMS_FILTER.dateFrom)       return false;
+        if (ROOMS_FILTER.dateTo   && j.date > ROOMS_FILTER.dateTo)         return false;
         return true;
       })
     : allJobs;
 
-  // If filter active but no matching jobs for this room → dim
-  if ((ROOMS_FILTER.workType || ROOMS_FILTER.subType) && !relevantJobs.length) {
+  // Filter active but no matching jobs for this room → dim to faint
+  if (anyFilter && !relevantJobs.length) {
     return { bg:'var(--s0)', border:'var(--b0)', text:'var(--t3)', dim:true };
   }
 
-  const jobs = relevantJobs.length ? relevantJobs : allJobs;
+  const jobs = relevantJobs;
 
   // Active (in progress) job → blue, highest priority
   const hasActive = jobs.some(j => j.status==='In Progress' || j.status==='In Progress - Contractor');
@@ -459,7 +466,7 @@ function openRoomModal(roomNum) {
             <th style="padding:8px 10px;background:var(--s2);color:var(--t2);font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;text-align:left;border-bottom:1px solid var(--b0);white-space:nowrap">Completed</th>
           </tr></thead>
           <tbody>
-            ${jobs.map((j,i)=>`<tr style="border-bottom:1px solid var(--b0);background:${i%2===0?'transparent':'var(--s2)'}">
+            ${jobs.map((j,i)=>`<tr onclick="closeRoomModal();if(typeof vTask==='function')vTask('${j.id}')" title="Open job" style="cursor:pointer;border-bottom:1px solid var(--b0);background:${i%2===0?'transparent':'var(--s2)'}" onmouseover="this.style.background='var(--g3)'" onmouseout="this.style.background='${i%2===0?'transparent':'var(--s2)'}'">
               <td style="padding:8px 10px;color:var(--t2);font-family:var(--mono);font-size:11px;white-space:nowrap">${fds(j.date)}</td>
               <td style="padding:8px 10px;color:var(--t0);font-weight:500;white-space:nowrap">
                 <span style="display:flex;align-items:center;gap:5px">
