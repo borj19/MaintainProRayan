@@ -3643,3 +3643,22 @@ tbody td{padding:12px 14px!important;color:var(--t1)!important}
   .rpt-filter-lbl{min-width:100%;padding-top:0}
   .rpt-filter-bar{padding:12px}
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   PHASE 3.3 — NATIVE CONTROL THEMING (dark/light consistency)
+   Fixes: native <select> dropdown lists, date-picker calendars, and
+   scrollbars rendering light while the app is in dark mode. The
+   browser draws these from the `color-scheme` property — which was
+   never bound to the app's data-theme toggle (the meta tag follows
+   the OS setting instead). CSS property overrides the meta.
+═══════════════════════════════════════════════════════════════════ */
+:root,[data-theme="dark"]{color-scheme:dark}
+[data-theme="light"]{color-scheme:light}
+
+/* All native select popups follow the theme, not just .fi selects */
+select option{background:var(--bg)!important;color:var(--t0)!important}
+
+/* Unify green-button text: dark-on-green like chips/pills/login.
+   White-on-green failed WCAG (≈2.1:1); dark ink passes in both themes. */
+.btn-g,.auth-btn,#topbar-new-btn{color:#08130a!important}
+.btn-g svg,.auth-btn svg{color:#08130a}
