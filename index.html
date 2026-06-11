@@ -497,9 +497,12 @@
   <!-- ══ REPORTS ══ -->
   <div id="page-reports" class="page">
 
-    <!-- ── Filter bar ───────────────────────── -->
-    <div class="rpt-filter-bar">
+    <!-- ── KPI SUMMARY (management-first) ───── -->
+    <div class="rpt-sec-label">Overview</div>
+    <div class="kpi-grid" id="r-kpis"></div>
 
+    <!-- ── FILTERS (compact, collapsible) ───── -->
+    <div class="rpt-filter-bar" id="rpt-filter-bar">
       <!-- Quick period pills -->
       <div class="rpt-filter-row">
         <span class="rpt-filter-lbl">Period</span>
@@ -511,8 +514,16 @@
           <button class="chip"    data-period="custom" onclick="setRptPeriod('custom',this)">Custom…</button>
         </div>
       </div>
-
-      <!-- Custom date range (hidden until Custom selected) -->
+      <div class="rpt-filter-row" style="border:none;padding:0;margin:0">
+        <button class="btn btn-o btn-sm" id="rpt-adv-toggle"
+          onclick="document.getElementById('rpt-adv').classList.toggle('open');this.querySelector('.lbl').textContent=document.getElementById('rpt-adv').classList.contains('open')?'Hide filters':'More filters';">
+          <svg viewBox="0 0 16 16" fill="none" style="width:13px;height:13px"><path d="M2 4h12M4 8h8M6 12h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <span class="lbl">More filters</span>
+        </button>
+        
+      </div>
+      <div class="rpt-adv" id="rpt-adv">
+        <!-- Custom date range (hidden until Custom selected) -->
       <div class="rpt-filter-row" id="rpt-custom-dates" style="display:none">
         <span class="rpt-filter-lbl">From / To</span>
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
@@ -581,12 +592,11 @@
           <span id="rpt-record-count" style="font-size:11px;color:var(--t3);align-self:center"></span>
         </div>
       </div>
+      </div>
     </div>
 
-    <!-- ── KPIs ─────────────────────────────── -->
-    <div class="kpi-grid" id="r-kpis"></div>
-
-    <!-- ── Charts row 1 ─────────────────────── -->
+    <!-- ── TRENDS ───────────────────────────── -->
+    <div class="rpt-sec-label">Trends</div>
     <div class="g3">
       <div class="card">
         <div class="card-hd"><span class="card-t">Daily job counts</span><span class="card-badge" id="r-chart-range"></span></div>
@@ -600,7 +610,8 @@
       </div>
     </div>
 
-    <!-- ── Charts row 2 ─────────────────────── -->
+    <!-- ── DISTRIBUTIONS ────────────────────── -->
+    <div class="rpt-sec-label">Distributions</div>
     <div class="g2">
       <div class="card">
         <div class="card-hd"><span class="card-t">Status breakdown</span></div>
@@ -614,19 +625,20 @@
       </div>
     </div>
 
-    <!-- ── Rank lists ────────────────────────── -->
+    <!-- ── PEOPLE ───────────────────────────── -->
+    <div class="rpt-sec-label">People</div>
     <div class="g2">
       <div class="card"><div class="card-hd"><span class="card-t">Handler workload</span></div><ul class="rl" id="r-hn"></ul></div>
       <div class="card"><div class="card-hd"><span class="card-t">Top requestors</span></div><ul class="rl" id="r-rq"></ul></div>
     </div>
 
-    <!-- ── Completion rates ──────────────────── -->
     <div class="card" style="margin-bottom:12px">
       <div class="card-hd"><span class="card-t">Completion rate by handler</span></div>
       <div id="r-crates"></div>
     </div>
 
-    <!-- ── Full task table ───────────────────── -->
+    <!-- ── TASK LISTING ─────────────────────── -->
+    <div class="rpt-sec-label">Task listing</div>
     <div class="card" style="margin-bottom:12px">
       <div class="card-hd" style="flex-wrap:wrap;gap:10px">
         <span class="card-t">Task listing</span>
@@ -657,8 +669,7 @@
       </div>
       <div class="list-pagination" id="rpt-pagination"></div>
     </div>
-
-  </div>
+</div>
 
   <!-- ══ EMAIL PAGE ══ -->
   <div id="page-email" class="page">
