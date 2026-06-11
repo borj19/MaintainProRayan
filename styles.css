@@ -3552,3 +3552,25 @@ tbody td{padding:12px 14px!important;color:var(--t1)!important}
   }
   .modal,.auth-card{background:var(--glass-elev)}
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   PHASE 3.1 — AUDIT FIXES (accessibility + consistency)
+   1. WCAG AA contrast: tertiary text was failing in light theme
+      (2.87:1) and borderline on dark cards (3.67:1). Both now ≥4.5.
+   2. Tables guaranteed horizontally scrollable on small screens.
+   3. Consistent focus ring on all interactive pills/buttons.
+═══════════════════════════════════════════════════════════════════ */
+
+/* 1 — contrast-compliant tertiary text */
+:root,[data-theme="dark"]{ --t3:#7d867f; }   /* 4.71:1 on glass card */
+[data-theme="light"]{ --t3:#5f6e63; }        /* 5.39:1 on white card */
+
+/* 2 — tables can always scroll sideways rather than clip */
+.tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tbl-wrap table{min-width:560px}
+
+/* 3 — visible keyboard focus on pill controls (matches input focus ring) */
+.btn:focus-visible,.list-pag-btn:focus-visible,.nav-btn:focus-visible,
+.icon-btn:focus-visible,.mcls:focus-visible,.hero-chip:focus-visible{
+  outline:none;box-shadow:0 0 0 3px var(--g4);border-color:var(--g);
+}
