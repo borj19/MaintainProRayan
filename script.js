@@ -1026,8 +1026,12 @@ function updateBulkBar(){
   const isFullAdmin=currentUser&&currentUser.role==='admin';
   const prioBtn=document.getElementById('bulk-priority-btn');
   const delBtn=document.getElementById('bulk-delete-btn');
+  const hndBtn=document.getElementById('bulk-handler-btn');
+  const reqBtn=document.getElementById('bulk-requestor-btn');
   if(prioBtn) prioBtn.style.display=isFullAdmin?'':'none';
   if(delBtn)  delBtn.style.display=isFullAdmin?'':'none';
+  if(hndBtn)  hndBtn.style.display=isFullAdmin?'':'none';
+  if(reqBtn)  reqBtn.style.display=isFullAdmin?'':'none';
 }
 
 async function bulkMarkComplete(){
@@ -1080,6 +1084,60 @@ async function bulkChangePriority(){
     }catch(e){ console.warn('Bulk priority failed for', id, e.message); }
   }
   toast(`Priority set to ${priority} on ${ids.length} job${ids.length!==1?'s':''}`, 's');
+  clearSelection();
+}
+
+async function bulkSetHandler(){
+  const ids=Array.from(SELECTED_TASKS);
+  if(!ids.length) return;
+  if(currentUser?.role!=='admin'){ toast('Only admin can change handlers in bulk','e'); return; }
+  const h=prompt('Assign handler for ' + ids.length + ' job' + (ids.length!==1?'s':'') + '.\nAvailable: ' + HNDS.join(', '));
+  if(!h) return;
+  const handler=h.trim();
+  const match=HNDS.find(x=>x.toLowerCase()===handler.toLowerCase());
+  if(!match){ toast('Unknown handler. Available: '+HNDS.join(', '),'e'); return; }
+  const ts=(typeof nowISO==='function')?nowISO():new Date().toISOString();
+  let assignedCount=0;
+  for(const id of ids){
+    try{
+      const r=DATA.find(x=>String(x.id)===String(id));
+      const updates={handler:match};
+      // Pending jobs gaining a handler follow the normal assign workflow
+      if(r && r.status==='Pending'){
+        updates.status='In Progress';
+        updates.assignedAt=ts;
+        updates.assignedBy=currentUser.name||currentUser.email||'Admin';
+      }
+      await fbUpdateJob(id, updates);
+      if(!FB_READY && r) Object.assign(r,updates);
+      assignedCount++;
+      if(typeof logAudit==='function') logAudit('job.assigned', `Bulk handler change → ${match}${updates.status?' (Pending → In Progress)':''}`, 'info', 'job', id);
+    }catch(e){ console.warn('Bulk handler failed for', id, e.message); }
+  }
+  if(typeof notifyUser==='function' && assignedCount) notifyUser(match, '🔧 Jobs assigned to you', assignedCount+' job'+(assignedCount!==1?'s':'')+' assigned in bulk by '+(currentUser.name||'Admin'), ids[0]);
+  fillDrops();rReady=false;
+  toast(`Handler set to ${match} on ${assignedCount} job${assignedCount!==1?'s':''}`, 's');
+  clearSelection();
+}
+
+async function bulkSetRequestor(){
+  const ids=Array.from(SELECTED_TASKS);
+  if(!ids.length) return;
+  if(currentUser?.role!=='admin'){ toast('Only admin can change requestors in bulk','e'); return; }
+  const q=prompt('Set requestor for ' + ids.length + ' job' + (ids.length!==1?'s':'') + ':');
+  if(!q) return;
+  const requestor=q.trim();
+  if(!requestor){ toast('Requestor cannot be empty','e'); return; }
+  for(const id of ids){
+    try{
+      const r=DATA.find(x=>String(x.id)===String(id));
+      await fbUpdateJob(id, {requestor});
+      if(!FB_READY && r) r.requestor=requestor;
+      if(typeof logAudit==='function') logAudit('job.updated', `Bulk requestor change → ${requestor}`, 'info', 'job', id);
+    }catch(e){ console.warn('Bulk requestor failed for', id, e.message); }
+  }
+  fillDrops();rReady=false;
+  toast(`Requestor set to ${requestor} on ${ids.length} job${ids.length!==1?'s':''}`, 's');
   clearSelection();
 }
 
@@ -1363,7 +1421,7 @@ function renderInProgress(){
     <td title="${r.details}" style="color:var(--t2)">${r.details}</td>
     <td>${sbadge(r.status)}</td><td>${pbadge(r.priority)}</td>
     <td><button class="btn btn-o btn-xs" onclick="vTask('${r.id}')" style="padding:3px 5px"><svg viewBox="0 0 16 16" fill="none" style="width:11px;height:11px"><circle cx="8" cy="8" r="5" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg></button>
-    ${currentUser&&currentUser.role!=='requester'?`<button class="btn btn-o btn-xs" onclick="eTask('${r.id}')" style="padding:3px 5px;margin-left:3px"><svg viewBox="0 0 16 16" fill="none" style="width:11px;height:11px"><path d="M11 2l3 3-9 9H2v-3L11 2z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`:''}</td>
+    ${canEditJob(r)?`<button class="btn btn-o btn-xs" onclick="eTask('${r.id}')" style="padding:3px 5px;margin-left:3px"><svg viewBox="0 0 16 16" fill="none" style="width:11px;height:11px"><path d="M11 2l3 3-9 9H2v-3L11 2z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`:''}</td>
   </tr>`).join(''):`<tr><td colspan="11" style="text-align:center;padding:36px;color:var(--t2)">No active tasks at the moment.</td></tr>`;
 }
 
@@ -1541,9 +1599,9 @@ function gotoReqPage(p){window._reqPage=p;renderRequestPage();}
 function setReqPageSize(s){window._reqPageSize=parseInt(s,10);window._reqPage=1;renderRequestPage();}
 
 function submitJobRequest(){
-  const loc=document.getElementById('jq-lc').value.trim();
+  const locRaw=document.getElementById('jq-lc').value.trim();
   const det=document.getElementById('jq-de').value.trim();
-  if(!loc||!det){toast('Please fill in all required fields.','e');return;}
+  if(!locRaw||!det){toast('Please fill in all required fields.','e');return;}
   const wt=document.getElementById('jq-wt').value;
   // Requester is fully editable via dropdown — use selected value (default is logged-in user)
   const jqRqEl=document.getElementById('jq-rq');
@@ -1552,14 +1610,17 @@ function submitJobRequest(){
   // Allow custom date if entered, default to today
   const dtField=document.getElementById('jq-dt');
   const jobDate=(dtField&&dtField.value)?dtField.value:getTODAY();
-  const t={
-    id:nid++,date:jobDate,
+
+  // ── MULTI-ROOM: comma/semicolon-separated locations create one linked job each ──
+  const locs=locRaw.split(/[,;]+/).map(x=>x.trim()).filter(Boolean);
+  const batchId=(locs.length>1)?('b'+Date.now()):'';
+  const shared={
     requestor:req,
     handler:'Unassigned',
     workType:wt,
     subType:document.getElementById('jq-st').value,
     area:document.getElementById('jq-ar').value,
-    location:loc,details:det,
+    details:det,
     status:'Pending',
     priority:document.getElementById('jq-pr').value,
     completion:'',
@@ -1568,15 +1629,22 @@ function submitJobRequest(){
     createdAt:    getTODAY(),
     submittedAt:  (typeof nowISO==='function')?nowISO():new Date().toISOString()
   };
-  fbAddJob(t);
-  try{ if(typeof logAudit==='function') logAudit('job.created', `Request submitted: ${t.workType.replace(/_/g,' ')} at ${t.location} (priority: ${t.priority}, by ${req}, status: Pending — awaiting assignment)`, 'info', 'job', t.id); }catch(_){}
+  let firstId=null;
+  locs.forEach(loc=>{
+    const t=Object.assign({id:nid++,date:jobDate,location:loc},shared);
+    if(batchId) t.batchId=batchId;
+    if(firstId===null) firstId=t.id;
+    fbAddJob(t);
+    try{ if(typeof logAudit==='function') logAudit('job.created', `Request submitted: ${t.workType.replace(/_/g,' ')} at ${t.location} (priority: ${t.priority}, by ${req}, status: Pending — awaiting assignment${batchId?', multi-room batch of '+locs.length:''})`, 'info', 'job', t.id); }catch(_){}
+  });
   if(!FB_READY){fillDrops();rReady=false;}
   clrJQ();renderRequestPage();
-  toast('Request submitted — awaiting assignment');
-  // Notify all admins + staff that a new request needs assigning
+  toast(locs.length>1?`${locs.length} requests submitted (${locs.join(', ')}) — awaiting assignment`:'Request submitted — awaiting assignment');
+  // Notify all admins + staff that a new request needs assigning (one summary notification per batch)
   if (typeof USERS !== 'undefined' && typeof notifyUser === 'function') {
+    const locLabel=locs.length>1?`${locs.length} rooms: ${locs.join(', ')}`:locs[0];
     USERS.filter(u => (u.role==='admin'||u.role==='staff') && !u.disabled && u.name !== req)
-         .forEach(u => notifyUser(u.name, '📥 New pending request', `${t.workType.replace(/_/g,' ')} at ${t.location} — by ${req}`, t.id));
+         .forEach(u => notifyUser(u.name, '📥 New pending request', `${wt.replace(/_/g,' ')} at ${locLabel} — by ${req}`, firstId));
   }
 }
 

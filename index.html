@@ -416,6 +416,14 @@
           <svg viewBox="0 0 16 16" fill="none" style="width:13px;height:13px"><path d="M8 1v14M3 6l5-5 5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           Set priority
         </button>
+        <button class="btn btn-o btn-sm" id="bulk-handler-btn" onclick="bulkSetHandler()">
+          <svg viewBox="0 0 16 16" fill="none" style="width:13px;height:13px"><circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.4"/><path d="M2 14c0-3.3 2.7-5 6-5s6 1.7 6 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+          Set handler
+        </button>
+        <button class="btn btn-o btn-sm" id="bulk-requestor-btn" onclick="bulkSetRequestor()">
+          <svg viewBox="0 0 16 16" fill="none" style="width:13px;height:13px"><path d="M8 2v8M5 7l3 3 3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="8" cy="13" r="1.4" fill="currentColor"/></svg>
+          Set requestor
+        </button>
         <button class="btn btn-r btn-sm" id="bulk-delete-btn" onclick="bulkDelete()">
           <svg viewBox="0 0 16 16" fill="none" style="width:13px;height:13px"><path d="M3 4h10M6 4V2h4v2M5 4v8h6V4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           Delete
@@ -473,7 +481,7 @@
             <div class="fc"><label class="fl">Work type <span class="r">*</span></label><select id="jq-wt" class="fi" onchange="jqus()"></select></div>
             <div class="fc"><label class="fl">Sub type</label><select id="jq-st" class="fi"></select></div>
             <div class="fc"><label class="fl">Area / Level <span class="r">*</span></label><select id="jq-ar" class="fi"></select></div>
-            <div class="fc"><label class="fl">Location / Room <span class="r">*</span></label><input type="text" id="jq-lc" class="fi" placeholder="e.g. Room 415 or Restaurant"></div>
+            <div class="fc"><label class="fl">Location / Room <span class="r">*</span></label><input type="text" id="jq-lc" class="fi" placeholder="e.g. Room 415 — or several: 415, 416, 417"><small style="font-size:10px;color:var(--t3);margin-top:3px;font-family:var(--mono)">Separate multiple rooms with commas — one linked job is created per room</small></div>
             <div class="fc"><label class="fl">Date</label><input type="date" id="jq-dt" class="fi" title="Default is today — change to backdate an old job"></div>
             <div class="fc"><label class="fl">Priority</label><select id="jq-pr" class="fi"><option>Low</option><option selected>Medium</option><option>High</option><option>Urgent</option></select></div>
             <div class="fc ff"><label class="fl">Description <span class="r">*</span></label><textarea id="jq-de" class="fi" rows="4" placeholder="Please describe the issue in detail — include what you observed, when it started, and any relevant context..."></textarea></div>
