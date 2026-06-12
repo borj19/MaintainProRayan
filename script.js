@@ -1633,7 +1633,14 @@ function submitJobRequest(){
   const jobDate=(dtField&&dtField.value)?dtField.value:getTODAY();
 
   // ── MULTI-ROOM: comma/semicolon-separated locations create one linked job each ──
-  const locs=locRaw.split(/[,;]+/).map(x=>x.trim()).filter(Boolean);
+  let locs=locRaw.split(/[,;]+/).map(x=>x.trim()).filter(Boolean);
+  // Normalize: bare room numbers inherit the prefix of the first entry,
+  // so "Room 414, 415, 416" → "Room 414", "Room 415", "Room 416".
+  // If no prefix was typed at all ("414, 415"), default to "Room".
+  // Non-numeric locations (e.g. "Lobby", "Pool deck") are left untouched.
+  const _pm = locs.length ? locs[0].match(/^(.*?)\s*\d{3,4}$/) : null;
+  const _roomPrefix = (_pm && _pm[1].trim()) ? _pm[1].trim() : 'Room';
+  locs = locs.map(l => /^\d{3,4}$/.test(l) ? (_roomPrefix + ' ' + l) : l);
   const batchId=(locs.length>1)?('b'+Date.now()):'';
   const shared={
     requestor:req,
