@@ -868,6 +868,7 @@ function fillDrops(){
   function f(id,arr){const s=document.getElementById(id);if(!s)return;const cur=s.value;while(s.children.length>1)s.removeChild(s.lastChild);arr.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v.replace(/_/g,' ');s.appendChild(o)});s.value=cur;}
   f('far',AREAS.slice().sort());
   f('fwt',Object.keys(SUBTYPES).sort());
+  f('frq',(typeof REQS!=='undefined'?REQS.slice():[...new Set(DATA.map(r=>r.requestor).filter(Boolean))]).sort());
   f('fhd',HNDS.slice().sort());
   const nbCount=document.getElementById('nb-count');
   if(nbCount)nbCount.textContent=DATA.length;
@@ -904,12 +905,14 @@ function af(){
   const st=document.getElementById('fst').value;
   const ar=document.getElementById('far').value;
   const wt=document.getElementById('fwt').value;
+  const rq=(document.getElementById('frq')||{}).value||'';
   const hd=document.getElementById('fhd').value;
   const pr=document.getElementById('fpr').value;
   fData=DATA.filter(r=>{
     if(st&&r.status!==st&&!(st==='Urgent'&&r.priority==='Urgent'))return false;
     if(ar&&r.area!==ar)return false;
     if(wt&&r.workType!==wt)return false;
+    if(rq&&r.requestor!==rq)return false;
     if(hd&&r.handler!==hd)return false;
     if(pr&&r.priority!==pr)return false;
     if(q&&!Object.values(r).join(' ').toLowerCase().includes(q))return false;
@@ -920,7 +923,7 @@ function af(){
   SELECTED_TASKS.clear();
   rTbl();
 }
-function clrF(){['fsrch','fst','far','fwt','fhd','fpr'].forEach(id=>{const el=document.getElementById(id);if(el){if(el.tagName==='INPUT')el.value='';else el.value='';}});af();}
+function clrF(){['fsrch','fst','far','fwt','frq','fhd','fpr'].forEach(id=>{const el=document.getElementById(id);if(el){el.value='';}});af();}
 function srt(k){if(sKey===k)sDir*=-1;else{sKey=k;sDir=1;}af();}
 
 // ─── avatar initials + color from a name (deterministic) ───

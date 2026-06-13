@@ -70,15 +70,15 @@
    DESIGN TOKENS — LIGHT
 ═══════════════════════════════════════════════ */
 [data-theme="light"]{
-  --bg:       #f5f6f3;
-  --s0:       #ffffff;
-  --s1:       #fbfcfa;
-  --s2:       #f1f3ee;
-  --s3:       #e8ece5;
-  --b0:       #e1e6de;
-  --b1:       #d2d9cf;
-  --b2:       #bcc6b9;
-  --b3:       #9fac9c;
+  --bg:       #f4f1ea;
+  --s0:       #fffefb;
+  --s1:       #faf8f2;
+  --s2:       #f0ece2;
+  --s3:       #e8e2d5;
+  --b0:       #e3ddd0;
+  --b1:       #d6cfbf;
+  --b2:       #c2bba9;
+  --b3:       #a39c8a;
 
   --g:        #1e7a4f;
   --g2:       #2e9663;
@@ -95,14 +95,14 @@
   --purple:   #7647a8;
   --indigo:   #4353a8;
 
-  --t0:       #1b241e;
-  --t1:       #3c4a40;
-  --t2:       #5f7065;
-  --t3:       #8a9a8e;
+  --t0:       #221f17;
+  --t1:       #443f33;
+  --t2:       #6a6453;
+  --t3:       #978f7a;
 
-  --shadow:   0 1px 6px rgba(27,36,30,.07), 0 1px 2px rgba(27,36,30,.05);
-  --shadow-lg:0 16px 44px rgba(27,36,30,.14), 0 3px 10px rgba(27,36,30,.08);
-  --modal-bg: rgba(20,28,23,.5);
+  --shadow:   0 1px 6px rgba(40,34,20,.07), 0 1px 2px rgba(40,34,20,.05);
+  --shadow-lg:0 16px 44px rgba(40,34,20,.14), 0 3px 10px rgba(40,34,20,.08);
+  --modal-bg: rgba(34,30,18,.5);
   --glow:     0 0 0 3px rgba(30,122,79,.14);
 
   /* rail stays dark even in light mode — the back-of-house */
@@ -2990,110 +2990,122 @@ input.t-chk{cursor:pointer}
 ═══════════════════════════════════════════════════════════════════ */
 @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap');
 
-/* ── TOKEN OVERRIDES — DARK (cinematic base, green = atmosphere) ── */
+/* ── TOKEN OVERRIDES — DARK · V5 palette wins, glass utilities kept ── */
 :root,[data-theme="dark"]{
-  --bg:       #0b0d0c;
-  --s0:       rgba(255,255,255,.022);
-  --s1:       rgba(255,255,255,.030);
-  --s2:       rgba(255,255,255,.045);
-  --s3:       rgba(255,255,255,.060);
-  --b0:       rgba(255,255,255,.065);
-  --b1:       rgba(255,255,255,.090);
-  --b2:       rgba(255,255,255,.130);
-  --b3:       rgba(255,255,255,.180);
+  --bg:       #0a0c0b;
+  --s0:       #0f1211;
+  --s1:       #131715;
+  --s2:       #181d1a;
+  --s3:       #1e2420;
+  --b0:       #222925;
+  --b1:       #2b342f;
+  --b2:       #364139;
+  --b3:       #455148;
 
-  --g:        #5ec26a;
-  --g2:       #76d182;
-  --g3:       rgba(94,194,106,.10);
-  --g4:       rgba(94,194,106,.20);
+  --g:        #2fae6e;
+  --g2:       #4cc287;
+  --g3:       rgba(47,174,110,.10);
+  --g4:       rgba(47,174,110,.22);
 
-  --cyan:     #4fd6e8;
-  --amber:    #ff9f0a;
-  --red:      #ff5a50;
-  --blue:     #56a0ff;
-  --purple:   #c79bff;
-  --indigo:   #8e9bff;
+  --brass:    #c8a35f;
+  --brass2:   rgba(200,163,95,.16);
 
-  --t0:       #f4f7f4;
-  --t1:       #c7cdc8;
-  --t2:       #9aa39b;
-  --t3:       #6c746d;
+  --cyan:     #3ec1cf;
+  --amber:    #e5a33b;
+  --red:      #e2605b;
+  --blue:     #5b9de8;
+  --purple:   #a87bd0;
+  --indigo:   #7b89d4;
+
+  --t0:       #edf3ee;
+  --t1:       #acbdb1;
+  --t2:       #75897c;
+  --t3:       #4c5c51;
 
   --font:       'Geist', system-ui, -apple-system, sans-serif;
   --mono:       'Geist Mono', 'JetBrains Mono', ui-monospace, monospace;
   --font-serif: 'Instrument Serif', Georgia, 'Times New Roman', serif;
 
-  --shadow:    0 4px 24px -8px rgba(0,0,0,.6), 0 1px 2px rgba(0,0,0,.4);
-  --shadow-lg: 0 24px 64px -24px rgba(0,0,0,.75), 0 2px 8px rgba(0,0,0,.45);
-  --modal-bg:  rgba(6,8,7,.72);
+  --shadow:   0 2px 12px rgba(0,0,0,.45), 0 1px 3px rgba(0,0,0,.35);
+  --shadow-lg:0 16px 48px rgba(0,0,0,.55), 0 4px 12px rgba(0,0,0,.35);
+  --modal-bg: rgba(5,8,6,.78);
 
-  --glow:      0 0 0 3px rgba(94,194,106,.22);
+  --glow:      0 0 0 3px rgba(47,174,110,.18);
   --transition:.18s cubic-bezier(.4,0,.2,1);
 
-  --glass-blur:    blur(22px) saturate(150%);
-  --glass-card:    rgba(255,255,255,.045);
-  --glass-border:  rgba(255,255,255,.085);
-  --glass-elev:    rgba(20,24,21,.78);
-  --hairline:      rgba(255,255,255,.07);
-  --sheen:         linear-gradient(90deg, transparent, rgba(255,255,255,.16), transparent);
+  /* glass utilities retained for components that reference them */
+  --glass-blur:    blur(20px) saturate(135%);
+  --glass-card:    rgba(255,255,255,.030);
+  --glass-border:  rgba(255,255,255,.07);
+  --glass-elev:    rgba(20,24,21,.82);
+  --hairline:      var(--b0);
+  --sheen:         linear-gradient(90deg, transparent, rgba(255,255,255,.10), transparent);
+
+  /* dark service rail */
+  --rail:#101613; --rail-s:#18201b; --rail-b:#1e2722; --rail-b2:#2a352e;
+  --rail-t0:#e9efe9; --rail-t1:#9dafa2; --rail-t2:#5e6f63;
 }
 
-/* ── TOKEN OVERRIDES — LIGHT (soft daylight) ── */
+/* ── TOKEN OVERRIDES — LIGHT · V5 warm linen wins, glass utilities kept ── */
 [data-theme="light"]{
-  --bg:       #f3f4f1;
-  --s0:       rgba(255,255,255,.55);
-  --s1:       rgba(255,255,255,.62);
-  --s2:       rgba(255,255,255,.72);
-  --s3:       rgba(255,255,255,.85);
-  --b0:       rgba(20,32,26,.07);
-  --b1:       rgba(20,32,26,.12);
-  --b2:       rgba(20,32,26,.18);
-  --b3:       rgba(20,32,26,.26);
+  --bg:       #f4f1ea;
+  --s0:       #fffefb;
+  --s1:       #faf8f2;
+  --s2:       #f0ece2;
+  --s3:       #e8e2d5;
+  --b0:       #e3ddd0;
+  --b1:       #d6cfbf;
+  --b2:       #c2bba9;
+  --b3:       #a39c8a;
 
-  --g:        #2f9c3c;
-  --g2:       #38b347;
-  --g3:       rgba(47,156,60,.09);
-  --g4:       rgba(47,156,60,.18);
+  --g:        #1e7a4f;
+  --g2:       #2e9663;
+  --g3:       rgba(30,122,79,.08);
+  --g4:       rgba(30,122,79,.18);
 
-  --cyan:     #0a8aa0;
-  --amber:    #c5670a;
-  --red:      #d7001a;
-  --blue:     #0a6ed1;
-  --purple:   #7028c0;
-  --indigo:   #283593;
+  --brass:    #9a7b3f;
+  --brass2:   rgba(154,123,63,.14);
 
-  --t0:       #14201a;
-  --t1:       #2e3f33;
-  --t2:       #5a6b5e;
-  --t3:       #879489;
+  --cyan:     #0e7c8a;
+  --amber:    #b26a12;
+  --red:      #bc3f39;
+  --blue:     #2563b0;
+  --purple:   #7647a8;
+  --indigo:   #4353a8;
 
-  --shadow:    0 4px 20px -10px rgba(47,156,60,.18), 0 1px 3px rgba(0,0,0,.05);
-  --shadow-lg: 0 24px 56px -24px rgba(47,156,60,.28), 0 2px 8px rgba(0,0,0,.06);
-  --modal-bg:  rgba(40,50,42,.40);
+  --t0:       #221f17;
+  --t1:       #443f33;
+  --t2:       #6a6453;
+  --t3:       #978f7a;
 
-  --glow:      0 0 0 3px rgba(47,156,60,.16);
+  --shadow:   0 1px 6px rgba(40,34,20,.07), 0 1px 2px rgba(40,34,20,.05);
+  --shadow-lg:0 16px 44px rgba(40,34,20,.14), 0 3px 10px rgba(40,34,20,.08);
+  --modal-bg: rgba(34,30,18,.5);
+  --glow:     0 0 0 3px rgba(30,122,79,.14);
 
-  --glass-blur:    blur(22px) saturate(160%);
-  --glass-card:    rgba(255,255,255,.62);
-  --glass-border:  rgba(255,255,255,.9);
-  --glass-elev:    rgba(255,255,255,.72);
-  --hairline:      rgba(20,32,26,.07);
-  --sheen:         linear-gradient(90deg, transparent, rgba(255,255,255,1), transparent);
+  /* glass utilities retained */
+  --glass-blur:    blur(20px) saturate(140%);
+  --glass-card:    rgba(255,254,251,.72);
+  --glass-border:  rgba(40,34,20,.08);
+  --glass-elev:    rgba(255,254,251,.85);
+  --hairline:      var(--b0);
+  --sheen:         linear-gradient(90deg, transparent, rgba(255,255,255,.7), transparent);
+
+  --rail:#101613; --rail-s:#18201b; --rail-b:#1e2722; --rail-b2:#2a352e;
+  --rail-t0:#e9efe9; --rail-t1:#9dafa2; --rail-t2:#5e6f63;
 }
-[data-theme="light"]{ --t3:#879489; }
 
 /* ── AMBIENT GLOW BACKDROP (injected layers behind everything) ── */
 #app::before{
   content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
   background:
-    radial-gradient(620px 620px at 8% -4%,  rgba(94,194,106,.16), transparent 60%),
-    radial-gradient(560px 560px at 104% 108%, rgba(79,214,232,.10), transparent 60%);
+    radial-gradient(620px 620px at 8% -4%,  rgba(47,174,110,.10), transparent 60%),
+    radial-gradient(560px 560px at 104% 108%, rgba(200,163,95,.07), transparent 60%);
 }
 [data-theme="light"] #app::before{
   background:
-    radial-gradient(620px 620px at 8% -4%,  rgba(47,156,60,.14),  transparent 60%),
-    radial-gradient(520px 520px at 104% 108%, rgba(90,170,230,.12), transparent 62%),
-    radial-gradient(420px 420px at 100% 46%, rgba(150,100,220,.07), transparent 65%);
+    radial-gradient(620px 620px at 8% -4%,  rgba(30,122,79,.06),  transparent 60%),
+    radial-gradient(520px 520px at 104% 108%, rgba(154,123,63,.06), transparent 62%);
 }
 /* film grain — analog depth flat designs lack */
 #app::after{
@@ -3697,6 +3709,8 @@ select option{background:var(--bg)!important;color:var(--t0)!important}
 /* ── 1 · Global rhythm & type ───────────────────────────────────── */
 html,body{font-size:14px;line-height:1.6;font-family:var(--font)}
 #body{padding:26px 30px 40px}
+/* keep content readable & dense on ultra-wide monitors instead of sprawling */
+#body>.page{max-width:1640px;margin-inline:auto}
 
 /* Display serif voice */
 #pg-ttl{font-family:var(--font-serif);font-size:20px;font-weight:400;letter-spacing:.005em;color:var(--t0)}
@@ -3769,12 +3783,12 @@ td,.kpi-val{font-variant-numeric:tabular-nums}
 .bento-pulse .card{padding:15px 17px}
 
 /* property pulse heatmap */
-.pulse-grid{display:flex;flex-direction:column;gap:3px}
-.pulse-row{display:flex;align-items:center;gap:7px}
-.pulse-floor{font-family:var(--mono);font-size:9px;color:var(--t3);width:26px;flex-shrink:0;text-align:right}
-.pulse-cells{display:flex;gap:2.5px;flex-wrap:nowrap}
-.pulse-cell{width:11px;height:11px;border-radius:2.5px;cursor:pointer;transition:transform .12s ease}
-.pulse-cell:hover{transform:scale(1.45);box-shadow:0 0 0 1.5px var(--s0),0 0 0 3px var(--brass)}
+.pulse-grid{display:flex;flex-direction:column;gap:4px}
+.pulse-row{display:flex;align-items:center;gap:9px}
+.pulse-floor{font-family:var(--mono);font-size:9.5px;color:var(--t3);width:26px;flex-shrink:0;text-align:right}
+.pulse-cells{display:flex;gap:4px;flex:1;min-width:0}
+.pulse-cell{flex:1;aspect-ratio:1/1;border-radius:3px;cursor:pointer;transition:transform .12s ease}
+.pulse-cell:hover{transform:scale(1.35);box-shadow:0 0 0 1.5px var(--s0),0 0 0 3px var(--brass)}
 .pulse-legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;padding-top:11px;border-top:1px solid var(--b0)}
 .pulse-leg-i{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--t2)}
 .pulse-leg-sw{width:9px;height:9px;border-radius:2.5px}
@@ -3817,7 +3831,7 @@ tr.t-daygroup td{background:var(--s2);padding:6px 12px !important;border-bottom:
 .td-work-t{display:block;font-size:11.5px;font-weight:500;color:var(--t0);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .td-work-s{display:block;font-size:9.5px;color:var(--t3)}
 /* details cell */
-.td-det{color:var(--t1);max-width:280px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.td-det{color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .td-req{display:block;font-size:9.5px;color:var(--t3);margin-top:1px}
 /* handler chip */
 .hd-chip{display:inline-flex;align-items:center;gap:6px;min-width:0}
@@ -3899,10 +3913,17 @@ tr.t-daygroup td{background:var(--s2);padding:6px 12px !important;border-bottom:
 .mcls{border-radius:9px}
 .mov{backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
 
-/* ── 13 · Bulk action tray — dark service bar ───────────────────── */
-.bulk-bar,#bulk-bar{background:var(--rail) !important;border:1px solid var(--rail-b2) !important;border-radius:11px !important;box-shadow:var(--shadow-lg)}
-.bulk-bar *,#bulk-bar *{color:var(--rail-t0)}
-.bulk-bar .bulk-count,#bulk-bar .bulk-count{font-family:var(--mono);color:var(--brass) !important}
+/* ── 13 · Bulk action tray — dark service bar (both themes) ──────── */
+.bulk-bar-inner{background:var(--rail) !important;border:1px solid var(--rail-b2) !important;border-radius:13px !important;box-shadow:var(--shadow-lg)}
+.bulk-bar-inner .bulk-count-badge{color:var(--rail-t1)}
+.bulk-bar-inner .bulk-count-badge strong{font-family:var(--mono);color:var(--brass)}
+/* outline buttons sit on the dark rail → give them rail-appropriate colours */
+.bulk-bar-inner .btn-o{background:var(--rail-s) !important;border-color:var(--rail-b2) !important;color:var(--rail-t0) !important}
+.bulk-bar-inner .btn-o:hover{background:var(--rail-b) !important;border-color:#3a463e !important;color:#fff !important}
+.bulk-bar-inner .btn-o svg{color:var(--rail-t1)}
+.bulk-bar-inner .btn-r{background:transparent !important;border-color:color-mix(in srgb,var(--red) 45%,transparent) !important;color:var(--red) !important}
+.bulk-bar-inner .btn-r:hover{background:color-mix(in srgb,var(--red) 18%,transparent) !important}
+.bulk-bar-inner .btn-g{color:#fff !important}
 
 /* ── 14 · Toasts, pagination, scrollbars ────────────────────────── */
 .toast{border-radius:13px;font-weight:500;box-shadow:var(--shadow-lg)}
@@ -3929,8 +3950,8 @@ tr.t-daygroup td{background:var(--s2);padding:6px 12px !important;border-bottom:
 }
 
 /* ── 17 · Light-mode tuning ─────────────────────────────────────── */
-[data-theme="light"] .kpi,[data-theme="light"] .card{box-shadow:0 1px 2px rgba(27,36,30,.04)}
-[data-theme="light"] #topbar{background:color-mix(in srgb, #ffffff 84%, transparent)}
+[data-theme="light"] .kpi,[data-theme="light"] .card{box-shadow:0 1px 2px rgba(40,34,20,.05)}
+[data-theme="light"] #topbar{background:color-mix(in srgb, var(--s0) 82%, transparent)}
 [data-theme="light"] .pulse-cell[style*="--s3"]{border:1px solid var(--b0)}
 
 /* ═══════════════════════════════════════════════════════════════════
