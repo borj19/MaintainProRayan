@@ -971,7 +971,7 @@ function rTbl(){
 
   const visibleIds=rows.map(r=>String(r.id));
   const allVisibleSelected=visibleIds.length>0 && visibleIds.every(id=>SELECTED_TASKS.has(id));
-  const COLS=isAdmin?9:8;
+  const COLS=isAdmin?10:9;
 
   if(!rows.length){
     tb.innerHTML=`<tr><td colspan="${COLS}" class="tbl-empty"><div class="tbl-empty-ico">◷</div>No tasks match the current filters.</td></tr>`;
@@ -994,6 +994,7 @@ function rTbl(){
       <td class="td-room"><span class="td-room-loc">${r.location}</span><span class="td-room-area">${r.area.replace(/_/g,' ')}</span></td>
       <td class="td-work"><span class="td-work-t">${r.workType.replace(/_/g,' ')}</span><span class="td-work-s">${r.subType}</span></td>
       <td class="td-det" title="${(r.details||'').replace(/"/g,'&quot;')}">${r.details||'—'}<span class="td-req">${r.requestor}</span></td>
+      <td class="t-spacer" aria-hidden="true"></td>
       <td class="td-hand">${_avatarChip(r.handler)}</td>
       <td class="td-stat">${sbadge(r.status)}</td>
       <td class="td-pri"><span class="pri-tick" style="color:${pHex}">${r.priority}</span></td>

@@ -396,10 +396,11 @@
           <th class="t-chk-col"><input type="checkbox" id="t-chk-all" onclick="toggleSelectAllVisible(this.checked)" title="Select all on this page"></th>
           <th style="width:118px" onclick="srt('location')">Room ↕</th>
           <th style="width:132px" onclick="srt('workType')">Work ↕</th>
-          <th onclick="srt('details')">Details</th>
-          <th style="width:140px" onclick="srt('handler')">Handler ↕</th>
-          <th style="width:118px" onclick="srt('status')">Status ↕</th>
-          <th style="width:78px" onclick="srt('priority')">Priority ↕</th>
+          <th style="min-width:240px;max-width:520px" onclick="srt('details')">Details</th>
+          <th class="t-spacer" aria-hidden="true"></th>
+          <th style="width:150px" onclick="srt('handler')">Handler ↕</th>
+          <th style="width:120px" onclick="srt('status')">Status ↕</th>
+          <th style="width:84px" onclick="srt('priority')">Priority ↕</th>
           <th style="width:54px"></th>
         </tr></thead>
         <tbody id="t-body"></tbody>

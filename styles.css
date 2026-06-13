@@ -3830,6 +3830,10 @@ tr.t-daygroup td{background:var(--s2);padding:6px 12px !important;border-bottom:
 .td-work-s{display:block;font-size:9.5px;color:var(--t3)}
 /* details cell */
 .td-det{color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* auto layout + flexible spacer keeps Details readable and groups data columns right */
+.tbl-ledger{table-layout:auto}
+.tbl-ledger .t-spacer{width:auto;padding:0;background:transparent;cursor:default}
+.tbl-ledger thead th.t-spacer:hover{color:inherit}
 .td-req{display:block;font-size:9.5px;color:var(--t3);margin-top:1px}
 /* handler chip */
 .hd-chip{display:inline-flex;align-items:center;gap:6px;min-width:0}
@@ -3974,6 +3978,7 @@ tr.t-daygroup td{background:var(--s2);padding:6px 12px !important;border-bottom:
   .tbl-ledger{min-width:0;width:100%}
   .tbl-ledger thead{display:none}
   .tbl-ledger tbody,.tbl-ledger tr,.tbl-ledger td{display:block;width:100%;box-sizing:border-box}
+  .tbl-ledger .t-spacer{display:none !important}
   .tbl-ledger tbody tr:not(.t-daygroup){
     position:relative;background:var(--s0);border:1px solid var(--b0);
     border-left:3px solid var(--pedge,var(--g));
@@ -3991,11 +3996,12 @@ tr.t-daygroup td{background:var(--s2);padding:6px 12px !important;border-bottom:
   .td-work{margin-bottom:6px}
   .td-work-t{display:inline;font-size:12.5px}
   .td-work-s{display:inline;margin-left:6px}
-  .td-det{white-space:normal;max-width:none;margin-bottom:10px;font-size:12px}
-  .td-req{display:inline;margin-left:6px}
+  .td-det{white-space:normal;max-width:none;margin-bottom:10px;font-size:12px;overflow-wrap:anywhere}
+  .td-req{display:block;margin-left:0;margin-top:3px;font-size:10.5px;color:var(--t3)}
   /* handler + status + priority on one flex row */
   .td-hand,.td-stat,.td-pri{display:inline-flex !important;align-items:center;margin-right:10px;margin-bottom:2px}
   .td-pri{margin-right:0}
+  .td-hand .hd-nm{white-space:normal}
   /* actions row pinned bottom-right cluster */
   .td-act{position:absolute;bottom:10px;right:12px;text-align:right}
 
