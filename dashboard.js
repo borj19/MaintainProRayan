@@ -228,12 +228,12 @@ function rDash() {
   const sparkPending   = last7Days(DATA, r => r.status === 'Pending');
 
   const kpis = [
-    { c: '#6ebe2a', l: 'Total tasks', v: d.length,                                       s: 'Filtered view',  spark: sparkTotal,     featured: true },
-    { c: '#6ebe2a', l: 'Completed',   v: c,                                              tr: d.length ? `${Math.round(c / d.length * 100)}% rate` : '—', tc: 'up', spark: sparkCompleted },
-    { c: '#5599f5', l: 'In progress', v: ip,                                             spark: sparkInProg },
-    { c: '#e8534a', l: 'Urgent',      v: u,                                              tr: u > 0 ? u + ' critical' : 'All clear', tc: u > 0 ? 'dn' : 'up', spark: sparkUrgent },
-    { c: '#a87cf0', l: 'Pending',     v: pending,                                        s: 'Awaiting action', spark: sparkPending },
-    { c: '#2dcfb3', l: 'Handlers',    v: new Set(d.map(r => r.handler)).size,             s: 'Active staff' },
+    { c: 'var(--g)', l: 'Total tasks', v: d.length,                                       s: 'Filtered view',  spark: sparkTotal,     featured: true },
+    { c: 'var(--g)', l: 'Completed',   v: c,                                              tr: d.length ? `${Math.round(c / d.length * 100)}% rate` : '—', tc: 'up', spark: sparkCompleted },
+    { c: 'var(--blue)', l: 'In progress', v: ip,                                             spark: sparkInProg },
+    { c: 'var(--red)', l: 'Urgent',      v: u,                                              tr: u > 0 ? u + ' critical' : 'All clear', tc: u > 0 ? 'dn' : 'up', spark: sparkUrgent },
+    { c: 'var(--purple)', l: 'Pending',     v: pending,                                        s: 'Awaiting action', spark: sparkPending },
+    { c: 'var(--cyan)', l: 'Handlers',    v: new Set(d.map(r => r.handler)).size,             s: 'Active staff' },
   ];
 
   document.getElementById('d-kpis').innerHTML = kpis.map(k =>
@@ -338,4 +338,86 @@ function rDash() {
       ${sbadge(r.status)}
     </div>
   `).join('');
+
+  renderQueue();
+  renderPulse();
+}
+
+// ─── Needs-assignment queue (pending jobs awaiting a handler) ───
+function renderQueue(){
+  const el=document.getElementById('d-queue'); if(!el) return;
+  const pending=DATA.filter(r=>r.status==='Pending')
+    .sort((a,b)=>{
+      const pr={Urgent:0,High:1,Medium:2,Low:3};
+      const d=(pr[a.priority]??9)-(pr[b.priority]??9);
+      if(d) return d;
+      return (b.submittedAt||b.date||'').localeCompare(a.submittedAt||a.date||'');
+    });
+  const cntEl=document.getElementById('d-queue-cnt');
+  if(cntEl) cntEl.textContent=pending.length?`${pending.length} pending`:'all clear';
+  const canAssign=currentUser&&(currentUser.role==='admin'||currentUser.role==='staff');
+
+  if(!pending.length){
+    el.innerHTML=`<div class="queue-empty"><span class="queue-empty-ico">✓</span>Nothing waiting — every request is assigned.</div>`;
+    return;
+  }
+  el.innerHTML=pending.slice(0,6).map(r=>{
+    const pHex=(typeof _PRI_HEX!=='undefined'?_PRI_HEX:{})[r.priority]||'var(--t3)';
+    const ago=(typeof fdts==='function')?fdts(r):(typeof fd==='function'?fd(r.date):'');
+    return `<div class="queue-i" onclick="vTask('${r.id}')">
+      <span class="queue-room">${r.location}</span>
+      <div class="queue-body">
+        <div class="queue-txt">${r.workType.replace(/_/g,' ')} — ${r.subType||'general'}</div>
+        <div class="queue-sub">${r.requestor} · ${ago}</div>
+      </div>
+      <span class="queue-dot" style="background:${pHex}" title="${r.priority}"></span>
+      ${canAssign?`<button class="queue-assign" onclick="event.stopPropagation();assignToMe('${r.id}')">Assign</button>`:''}
+    </div>`;
+  }).join('');
+}
+
+// ─── Property pulse (compact floor heatmap on the dashboard) ───
+function renderPulse(){
+  const el=document.getElementById('d-pulse'); if(!el) return;
+  if(typeof ROOM_FLOORS==='undefined'||typeof extractRoom!=='function'){el.innerHTML='';return;}
+
+  // map: room -> {lastCompleted, hasOpen, hasUrgent}
+  const map={};
+  DATA.forEach(j=>{
+    const rm=extractRoom(j.location); if(!rm) return;
+    (map[rm]=map[rm]||{last:null,open:false,urgent:false});
+    if(j.status==='Completed'&&j.completion){
+      if(!map[rm].last||j.completion>map[rm].last) map[rm].last=j.completion;
+    } else {
+      map[rm].open=true;
+      if(j.priority==='Urgent') map[rm].urgent=true;
+    }
+  });
+  const cellColor=(rm)=>{
+    const m=map[rm];
+    if(!m) return 'var(--s3)';
+    if(m.urgent) return 'var(--red)';
+    if(m.open) return 'var(--amber)';
+    if(!m.last) return 'var(--s3)';
+    const d=daysSince(m.last);
+    if(d<=7)  return 'var(--g)';
+    if(d<=31) return 'color-mix(in srgb, var(--g) 55%, var(--s3))';
+    if(d<=92) return 'color-mix(in srgb, var(--g) 25%, var(--s3))';
+    return 'var(--s3)';
+  };
+  // show every floor, compactly
+  el.innerHTML=`<div class="pulse-grid">`+ROOM_FLOORS.map(({floor,rooms})=>
+    `<div class="pulse-row"><span class="pulse-floor">${floor}</span><div class="pulse-cells">`+
+    rooms.map(rm=>`<span class="pulse-cell" style="background:${cellColor(rm)}" title="Room ${rm}" onclick="go('rooms')"></span>`).join('')+
+    `</div></div>`
+  ).join('')+`</div>`;
+
+  const leg=document.getElementById('d-pulse-leg');
+  if(leg) leg.innerHTML=[
+    ['var(--g)','this week'],
+    ['color-mix(in srgb, var(--g) 55%, var(--s3))','this month'],
+    ['color-mix(in srgb, var(--g) 25%, var(--s3))','this quarter'],
+    ['var(--amber)','open job'],
+    ['var(--red)','urgent'],
+  ].map(([c,l])=>`<span class="pulse-leg-i"><span class="pulse-leg-sw" style="background:${c}"></span>${l}</span>`).join('');
 }

@@ -136,7 +136,7 @@ let currentUser = null;
 let regSelectedRole = 'staff';
 
 const ROLE_LABELS  = {admin:'Administrator',staff:'Maintenance Staff',contractor:'Contractor',requester:'Requestor'};
-const ROLE_COLORS  = {admin:'#e8534a',staff:'#5599f5',contractor:'#f0a62e',requester:'#2dcfb3'};
+const ROLE_COLORS  = {admin:'#e2605b',staff:'#5b9de8',contractor:'#e5a33b',requester:'#3ec1cf'};
 const ROLE_ICONS   = {
   admin:      '<svg viewBox="0 0 14 14" fill="none"><path d="M7 1l1.2 2.4L11 4l-2 1.9.5 2.8L7 7.5 4.5 8.7l.5-2.8L3 4l2.8-.6L7 1z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   staff:      '<svg viewBox="0 0 14 14" fill="none"><circle cx="7" cy="4.5" r="2.5" stroke="currentColor" stroke-width="1.2"/><path d="M2 12c0-2.76 2.24-4 5-4s5 1.24 5 4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>',
@@ -593,8 +593,8 @@ const AUTO_ASSIGN={
   Appliances:'Terry Allen',Cleaning:'Terry Allen',Other:'Terry Allen'
 };
 
-const WTC={Flooring:'#6ebe2a',Plumbing_Hydraulics_Services:'#2dcfb3',Door_Hardware:'#f0a62e',Beds:'#e8534a',Electrical_Works:'#a87cf0',Fixtures_Furnishings_Fittings:'#fb923c',Painting:'#f472b6',Pest_Control:'#34d399',AC:'#5599f5',Other:'#667550'};
-const PAL=['#6ebe2a','#2dcfb3','#f0a62e','#e8534a','#a87cf0','#fb923c','#f472b6','#34d399','#5599f5'];
+const WTC={Flooring:'#2fae6e',Plumbing_Hydraulics_Services:'#3ec1cf',Door_Hardware:'#e5a33b',Beds:'#e2605b',Electrical_Works:'#a87bd0',Fixtures_Furnishings_Fittings:'#fb923c',Painting:'#f472b6',Pest_Control:'#34d399',AC:'#5b9de8',Other:'#667550'};
+const PAL=['#2fae6e','#3ec1cf','#e5a33b','#e2605b','#a87bd0','#fb923c','#f472b6','#34d399','#5b9de8'];
 function wc(k){return WTC[k]||PAL[Object.keys(SUBTYPES).indexOf(k)%PAL.length]||'#667550'}
 
 // ═══════════════════════════════════════════════
@@ -724,7 +724,7 @@ function renderOnlineBadge() {
   const n = ONLINE_USERS.length;
   el.innerHTML = `
     <span style="display:inline-flex;align-items:center;gap:5px;cursor:pointer" onclick="toggleOnlineList()">
-      <span style="width:8px;height:8px;border-radius:50%;background:#6ebe2a;box-shadow:0 0 0 3px rgba(110,190,42,.2);display:inline-block"></span>
+      <span style="width:8px;height:8px;border-radius:50%;background:#2fae6e;box-shadow:0 0 0 3px rgba(47,174,110,.2);display:inline-block"></span>
       <span style="font-size:11.5px;font-weight:600;color:var(--t1)">${n} online</span>
     </span>
   `;
@@ -740,7 +740,7 @@ function toggleOnlineList() {
     <div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--b0)">Currently online (${ONLINE_USERS.length})</div>
     ${ONLINE_USERS.length
       ? ONLINE_USERS.map(u=>`<div style="padding:5px 0;display:flex;align-items:center;gap:7px">
-          <span style="width:7px;height:7px;border-radius:50%;background:#6ebe2a;flex-shrink:0"></span>
+          <span style="width:7px;height:7px;border-radius:50%;background:#2fae6e;flex-shrink:0"></span>
           <span style="font-size:12px;color:var(--t0)">${u.name}</span>
           <span style="font-size:10px;color:var(--t3);margin-left:auto">${u.role||''}</span>
         </div>`).join('')
@@ -923,6 +923,37 @@ function af(){
 function clrF(){['fsrch','fst','far','fwt','fhd','fpr'].forEach(id=>{const el=document.getElementById(id);if(el){if(el.tagName==='INPUT')el.value='';else el.value='';}});af();}
 function srt(k){if(sKey===k)sDir*=-1;else{sKey=k;sDir=1;}af();}
 
+// ─── avatar initials + color from a name (deterministic) ───
+function _initials(name){
+  if(!name) return '—';
+  const p=String(name).trim().split(/\s+/);
+  return ((p[0]||'')[0]||'' ).toUpperCase()+((p[1]||'')[0]||'').toUpperCase() || (p[0]||'').slice(0,2).toUpperCase();
+}
+function _avatarHue(name){
+  const palette=['var(--g)','var(--blue)','var(--purple)','var(--cyan)','var(--amber)','var(--indigo)'];
+  let h=0; const s=String(name||'');
+  for(let i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))>>>0;
+  return palette[h%palette.length];
+}
+function _avatarChip(name){
+  if(!name||name==='—'||name==='Unassigned')
+    return `<span class="hd-unassigned">Unassigned</span>`;
+  const c=_avatarHue(name);
+  return `<span class="hd-chip"><span class="hd-av" style="--av:${c}">${_initials(name)}</span><span class="hd-nm">${name}</span></span>`;
+}
+// ─── day-group label from a YYYY-MM-DD date ───
+function _dayGroupLabel(d){
+  if(!d) return 'Undated';
+  const today=getTODAY();
+  const yd=new Date(); yd.setDate(yd.getDate()-1);
+  const ydStr=yd.toISOString().slice(0,10);
+  if(d===today) return 'Today';
+  if(d===ydStr) return 'Yesterday';
+  const [y,m,dy]=d.split('-');
+  return ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][new Date(d+'T00:00:00').getDay()]+' '+(+dy)+' '+MONTHS[+m-1];
+}
+const _PRI_HEX={Low:'var(--t3)',Medium:'var(--blue)',High:'var(--amber)',Urgent:'var(--red)'};
+
 function rTbl(){
   const tot=fData.length,pages=Math.max(1,Math.ceil(tot/PGS));
   if(cPg>pages)cPg=pages;
@@ -935,41 +966,77 @@ function rTbl(){
   const isFullAdmin=currentUser&&currentUser.role==='admin';
   const tb=document.getElementById('t-body');
 
-  // Check if all currently visible rows are selected (for header checkbox state)
   const visibleIds=rows.map(r=>String(r.id));
   const allVisibleSelected=visibleIds.length>0 && visibleIds.every(id=>SELECTED_TASKS.has(id));
+  const COLS=isAdmin?9:8;
 
-  tb.innerHTML=rows.length?rows.map(r=>{
-    const checked=SELECTED_TASKS.has(String(r.id))?'checked':'';
-    const _canEdit=canEditJob(r), _canDel=canDeleteJob(r), _canClaim=canClaimJob(r);
-    return `<tr class="${SELECTED_TASKS.has(String(r.id))?'row-selected':''}">
-    ${isAdmin?`<td style="width:34px;padding-right:0"><input type="checkbox" class="t-chk" data-id="${r.id}" ${checked} onclick="toggleSelectTask('${r.id}',this.checked,event)" style="width:16px;height:16px;accent-color:var(--g);cursor:pointer"></td>`:''}
-    <td>${fds(r.date)}</td><td class="td-h">${r.requestor}</td><td>${r.handler}</td>
-    <td>${r.workType.replace(/_/g,' ')}</td><td>${r.subType}</td>
-    <td>${r.area.replace(/_/g,' ')}</td><td>${r.location}</td>
-    <td title="${r.details}" style="color:var(--t2)">${r.details}</td>
-    <td>${sbadge(r.status)}</td><td>${pbadge(r.priority)}</td>
-    <td><div style="display:flex;gap:3px">
-      <button class="btn btn-o btn-xs" onclick="vTask('${r.id}')" title="View" style="padding:3px 5px"><svg viewBox="0 0 16 16" fill="none" style="width:11px;height:11px"><circle cx="8" cy="8" r="5" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg></button>
-      ${_canClaim?`<button class="btn btn-g btn-xs" onclick="assignToMe('${r.id}')" title="Assign to me" style="padding:3px 6px;white-space:nowrap">Claim</button>`:''}
-      ${_canEdit?`<button class="btn btn-o btn-xs" onclick="eTask('${r.id}')" title="Edit" style="padding:3px 5px"><svg viewBox="0 0 16 16" fill="none" style="width:11px;height:11px"><path d="M11 2l3 3-9 9H2v-3L11 2z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`:''}
-      ${_canDel?`<button class="btn btn-r btn-xs" onclick="dTask('${r.id}')" title="Delete" style="padding:3px 5px"><svg viewBox="0 0 16 16" fill="none" style="width:11px;height:11px"><path d="M3 4h10M6 4V2h4v2M5 4v8h6V4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`:''}
-    </div></td>
-  </tr>`}).join(''):`<tr><td colspan="${isAdmin?12:11}" style="text-align:center;padding:36px;color:var(--t2)">No tasks match the current filters.</td></tr>`;
+  if(!rows.length){
+    tb.innerHTML=`<tr><td colspan="${COLS}" class="tbl-empty"><div class="tbl-empty-ico">◷</div>No tasks match the current filters.</td></tr>`;
+  } else {
+    // group rows by day, but only when not actively sorting by a column
+    const grouped=!sKey;
+    let html='',lastGroup=null;
+    rows.forEach(r=>{
+      if(grouped){
+        const g=_dayGroupLabel(r.date);
+        if(g!==lastGroup){
+          lastGroup=g;
+          html+=`<tr class="t-daygroup"><td colspan="${COLS}"><span class="t-dg-lbl">${g}</span><span class="t-dg-cnt">${fd(r.date)}</span></td></tr>`;
+        }
+      }
+      const _canEdit=canEditJob(r), _canDel=canDeleteJob(r), _canClaim=canClaimJob(r);
+      const pHex=_PRI_HEX[r.priority]||'var(--t3)';
+      html+=`<tr class="${SELECTED_TASKS.has(String(r.id))?'row-selected':''}" style="--pedge:${pHex}">
+      ${isAdmin?`<td class="td-chk"><input type="checkbox" class="t-chk" data-id="${r.id}" ${SELECTED_TASKS.has(String(r.id))?'checked':''} onclick="toggleSelectTask('${r.id}',this.checked,event)"></td>`:''}
+      <td class="td-room"><span class="td-room-loc">${r.location}</span><span class="td-room-area">${r.area.replace(/_/g,' ')}</span></td>
+      <td class="td-work"><span class="td-work-t">${r.workType.replace(/_/g,' ')}</span><span class="td-work-s">${r.subType}</span></td>
+      <td class="td-det" title="${(r.details||'').replace(/"/g,'&quot;')}">${r.details||'—'}<span class="td-req">${r.requestor}</span></td>
+      <td class="td-hand">${_avatarChip(r.handler)}</td>
+      <td class="td-stat">${sbadge(r.status)}</td>
+      <td class="td-pri"><span class="pri-tick" style="color:${pHex}">${r.priority}</span></td>
+      <td class="td-act">
+        <button class="row-kebab" onclick="openRowMenu(event,'${r.id}')" aria-label="Row actions"><svg viewBox="0 0 16 16" width="15" height="15"><circle cx="8" cy="3" r="1.4" fill="currentColor"/><circle cx="8" cy="8" r="1.4" fill="currentColor"/><circle cx="8" cy="13" r="1.4" fill="currentColor"/></svg></button>
+        ${_canClaim?`<button class="btn btn-g btn-xs row-claim" onclick="assignToMe('${r.id}')" title="Assign to me">Claim</button>`:''}
+      </td>
+    </tr>`;
+    });
+    tb.innerHTML=html;
+  }
 
-  // Update header checkbox state
   const headerChk=document.getElementById('t-chk-all');
   if(headerChk){
     headerChk.checked=allVisibleSelected;
     headerChk.indeterminate=!allVisibleSelected && visibleIds.some(id=>SELECTED_TASKS.has(id));
   }
 
-  // Render pagination controls
   renderPagination(cPg, pages, tot, showingStart, showingEnd);
-  // Update bulk action bar
   updateBulkBar();
   if(typeof refreshLucide==='function') setTimeout(refreshLucide, 30);
 }
+
+// ─── per-row action menu (view / edit / delete) ───
+function openRowMenu(ev,id){
+  ev.stopPropagation();
+  closeRowMenu();
+  id=String(id);
+  const r=DATA.find(x=>String(x.id)===id); if(!r) return;
+  const _canEdit=canEditJob(r), _canDel=canDeleteJob(r);
+  const m=document.createElement('div');
+  m.className='row-menu'; m.id='row-menu';
+  m.innerHTML=`
+    <button onclick="vTask('${id}');closeRowMenu()"><span class="rm-ico">◉</span>View details</button>
+    ${_canEdit?`<button onclick="eTask('${id}');closeRowMenu()"><span class="rm-ico">✎</span>Edit</button>`:''}
+    ${_canDel?`<button class="rm-danger" onclick="dTask('${id}');closeRowMenu()"><span class="rm-ico">🗑</span>Delete</button>`:''}`;
+  document.body.appendChild(m);
+  const rect=ev.currentTarget.getBoundingClientRect();
+  const mw=180, mh=m.offsetHeight||120;
+  let top=rect.bottom+6, left=rect.right-mw;
+  if(top+mh>window.innerHeight) top=rect.top-mh-6;
+  if(left<8) left=8;
+  m.style.top=top+'px'; m.style.left=left+'px';
+  setTimeout(()=>document.addEventListener('click',closeRowMenu,{once:true}),0);
+}
+function closeRowMenu(){const m=document.getElementById('row-menu');if(m)m.remove();}
 
 // ─── Selection state management ───
 function toggleSelectTask(id, checked, event){
@@ -1263,12 +1330,12 @@ function bTKpis(){
   const u=d.filter(r=>(r.priority==='Urgent'||r.priority==='High')&&r.status!=='Completed').length;
   const pending=d.filter(r=>r.status==='Pending').length;
   document.getElementById('t-kpis').innerHTML=[
-    {c:'#6ebe2a',l:'Total tasks',v:d.length,s:'All records'},
-    {c:'#6ebe2a',l:'Completed',v:c,tr:d.length?`${Math.round(c/d.length*100)}% rate`:'—',tc:'up'},
-    {c:'#5599f5',l:'In progress',v:i},
-    {c:'#f0a62e',l:'High priority',v:u,tr:u>3?'Needs attention':'All clear',tc:u>3?'dn':'up'},
-    {c:'#a87cf0',l:'Pending',v:pending,s:'Awaiting action'},
-    {c:'#2dcfb3',l:'Active handlers',v:new Set(d.map(r=>r.handler)).size,s:'Staff assigned'},
+    {c:'#2fae6e',l:'Total tasks',v:d.length,s:'All records'},
+    {c:'#2fae6e',l:'Completed',v:c,tr:d.length?`${Math.round(c/d.length*100)}% rate`:'—',tc:'up'},
+    {c:'#5b9de8',l:'In progress',v:i},
+    {c:'#e5a33b',l:'High priority',v:u,tr:u>3?'Needs attention':'All clear',tc:u>3?'dn':'up'},
+    {c:'#a87bd0',l:'Pending',v:pending,s:'Awaiting action'},
+    {c:'#3ec1cf',l:'Active handlers',v:new Set(d.map(r=>r.handler)).size,s:'Staff assigned'},
   ].map(k=>`<div class="kpi"><div class="kpi-bar" style="background:${k.c}"></div><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div>${k.s?`<div class="kpi-sub">${k.s}</div>`:''} ${k.tr?`<div class="kpi-trend ${k.tc}">${k.tr}</div>`:''}</div>`).join('');
 }
 
@@ -1279,23 +1346,49 @@ function vTask(id){
   id=String(id);
   const r=DATA.find(x=>String(x.id)===id);if(!r)return;
   const canEdit=currentUser&&(currentUser.role==='admin'||currentUser.role==='staff');
+
+  // ── docket header (room + work type + status) ──
+  const hd=document.getElementById('m-det').querySelector('.mhd');
+  if(hd){
+    hd.innerHTML=`
+      <div class="docket-head">
+        <div class="docket-no">Service docket · MP-${String(r.id).padStart(4,'0').slice(-4)}</div>
+        <div class="docket-title">${r.location} <span class="docket-sub">— ${r.workType.replace(/_/g,' ')}</span></div>
+      </div>
+      ${sbadge(r.status)}
+      <button class="mcls" onclick="cm('m-det')" aria-label="Close">✕</button>`;
+  }
+
+  // ── meta grid + timeline ──
+  const _ts=r.submittedAt||r.createdAt;
+  const _onJob=(r.assignedAt&&r.completedAt&&typeof elapsedBetween==='function')?elapsedBetween(r.assignedAt,r.completedAt):'';
+  const _pending=(_ts&&r.assignedAt&&typeof elapsedBetween==='function')?elapsedBetween(_ts,r.assignedAt):'';
+
+  const timeline=[];
+  timeline.push({c:'var(--purple)',t:`Submitted by ${r.requestor}`,d:_ts?formatTimestamp(_ts):fd(r.date),sub:''});
+  if(r.assignedAt) timeline.push({c:'var(--blue)',t:`Assigned to ${r.handler}`,d:formatTimestamp(r.assignedAt),sub:_pending?`pending ${_pending}`:''});
+  if(r.status==='Completed') timeline.push({c:'var(--g)',t:`Completed by ${r.handler}`,d:r.completedAt?formatTimestamp(r.completedAt):fd(r.completion),sub:_onJob?`on the job ${_onJob}`:''});
+  else timeline.push({c:'var(--t3)',t:'Awaiting completion',d:'—',sub:'',pending:true});
+
   document.getElementById('det-body').innerHTML=`
-    <div class="dg">
-      <div class="di"><div class="dl">Date</div><div class="dv">${fd(r.date)}</div></div>
-      <div class="di"><div class="dl">Status</div><div class="dv">${sbadge(r.status)}</div></div>
-      <div class="di"><div class="dl">Requestor</div><div class="dv">${r.requestor}</div></div>
-      <div class="di"><div class="dl">Handled by</div><div class="dv">${r.handler}</div></div>
-      <div class="di"><div class="dl">Work type</div><div class="dv">${r.workType.replace(/_/g,' ')}</div></div>
-      <div class="di"><div class="dl">Sub type</div><div class="dv">${r.subType}</div></div>
-      <div class="di"><div class="dl">Area</div><div class="dv">${r.area.replace(/_/g,' ')}</div></div>
-      <div class="di"><div class="dl">Location</div><div class="dv">${r.location}</div></div>
-      <div class="di"><div class="dl">Priority</div><div class="dv">${pbadge(r.priority)}</div></div>
-      <div class="di"><div class="dl">Completion date</div><div class="dv">${fd(r.completion)}</div></div>
+    <div class="docket-grid">
+      <div class="dki"><div class="dkl">Requestor</div><div class="dkv">${r.requestor}</div></div>
+      <div class="dki"><div class="dkl">Handler</div><div class="dkv">${_avatarChip(r.handler)}</div></div>
+      <div class="dki"><div class="dkl">Work type</div><div class="dkv">${r.workType.replace(/_/g,' ')} <span class="dkv-mut">· ${r.subType}</span></div></div>
+      <div class="dki"><div class="dkl">Priority</div><div class="dkv" style="color:${_PRI_HEX[r.priority]||'var(--t1)'};font-weight:600">${r.priority}</div></div>
+      <div class="dki"><div class="dkl">Area</div><div class="dkv">${r.area.replace(/_/g,' ')}</div></div>
+      <div class="dki"><div class="dkl">Logged</div><div class="dkv">${fd(r.date)}</div></div>
+      <div class="dki dki-full"><div class="dkl">Details</div><div class="dkv">${r.details||'—'}</div></div>
     </div>
-    <div style="padding:12px;background:var(--s2);border-radius:var(--r);border:1px solid var(--b0)">
-      <div class="dl" style="margin-bottom:5px">Details</div>
-      <div style="font-size:13px;color:var(--t0);line-height:1.6">${r.details}</div>
+    <div class="docket-tl">
+      <div class="dkl" style="margin-bottom:10px">Job timeline</div>
+      ${timeline.map((s,i)=>`
+        <div class="tl-row${s.pending?' tl-pending':''}">
+          <div class="tl-rail"><span class="tl-dot" style="background:${s.c}"></span>${i<timeline.length-1?'<span class="tl-line"></span>':''}</div>
+          <div class="tl-body"><div class="tl-t">${s.t}</div><div class="tl-d">${s.d}${s.sub?` · <span class="tl-sub">${s.sub}</span>`:''}</div></div>
+        </div>`).join('')}
     </div>`;
+
   const editBtn=document.getElementById('det-edit');
   editBtn.style.display=canEdit?'':'none';
   editBtn.onclick=()=>{cm('m-det');eTask(id);};
@@ -1636,8 +1729,6 @@ function submitJobRequest(){
   let locs=locRaw.split(/[,;]+/).map(x=>x.trim()).filter(Boolean);
   // Normalize: bare room numbers inherit the prefix of the first entry,
   // so "Room 414, 415, 416" → "Room 414", "Room 415", "Room 416".
-  // If no prefix was typed at all ("414, 415"), default to "Room".
-  // Non-numeric locations (e.g. "Lobby", "Pool deck") are left untouched.
   const _pm = locs.length ? locs[0].match(/^(.*?)\s*\d{3,4}$/) : null;
   const _roomPrefix = (_pm && _pm[1].trim()) ? _pm[1].trim() : 'Room';
   locs = locs.map(l => /^\d{3,4}$/.test(l) ? (_roomPrefix + ' ' + l) : l);
@@ -2312,7 +2403,7 @@ function renderNotifList() {
   list.innerHTML = _notifItems.map(n => {
     const time = n.sentAt ? new Date(n.sentAt.seconds ? n.sentAt.seconds * 1000 : n.sentAt).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' }) : '';
     const date = n.sentAt ? new Date(n.sentAt.seconds ? n.sentAt.seconds * 1000 : n.sentAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }) : '';
-    return `<div onclick="openNotif('${n.id}')" style="padding:12px 16px;border-bottom:1px solid var(--b0);cursor:pointer;background:${n.read ? 'transparent' : 'rgba(110,190,42,.06)'};transition:background .2s" onmouseover="this.style.background='var(--s1)'" onmouseout="this.style.background='${n.read ? 'transparent' : 'rgba(110,190,42,.06)'}'">
+    return `<div onclick="openNotif('${n.id}')" style="padding:12px 16px;border-bottom:1px solid var(--b0);cursor:pointer;background:${n.read ? 'transparent' : 'rgba(47,174,110,.06)'};transition:background .2s" onmouseover="this.style.background='var(--s1)'" onmouseout="this.style.background='${n.read ? 'transparent' : 'rgba(47,174,110,.06)'}'">
       <div style="display:flex;align-items:flex-start;gap:10px">
         <div style="width:8px;height:8px;border-radius:50%;background:${n.read ? 'var(--b2)' : 'var(--g)'};margin-top:5px;flex-shrink:0"></div>
         <div style="flex:1;min-width:0">

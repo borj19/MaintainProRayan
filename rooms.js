@@ -70,25 +70,25 @@ function getRoomCellStyle(roomNum, jobsMap) {
 
   // Active (in progress) job → blue, highest priority
   const hasActive = jobs.some(j => j.status==='In Progress' || j.status==='In Progress - Contractor');
-  if (hasActive) return { bg:'rgba(85,153,245,.2)', border:'#5599f5', text:'#5599f5', dim:false };
+  if (hasActive) return { bg:'rgba(85,153,245,.2)', border:'#5b9de8', text:'#5b9de8', dim:false };
 
   // Urgent pending → red
   const hasUrgent = jobs.some(j => j.priority==='Urgent' && j.status!=='Completed');
-  if (hasUrgent) return { bg:'rgba(232,83,74,.2)', border:'#e8534a', text:'#e8534a', dim:false };
+  if (hasUrgent) return { bg:'rgba(232,83,74,.2)', border:'#e2605b', text:'#e2605b', dim:false };
 
   // Completed jobs → colour by recency
   const completed = jobs.filter(j => j.status==='Completed' && j.completion);
   if (completed.length) {
     const latest = completed.sort((a,b) => b.completion.localeCompare(a.completion))[0];
     const days = daysSince(latest.completion);
-    if (days <= 30)  return { bg:'rgba(110,190,42,.22)',  border:'#6ebe2a', text:'#6ebe2a',  dim:false }; // green  — recent
-    if (days <= 90)  return { bg:'rgba(240,166,46,.2)',   border:'#f0a62e', text:'#f0a62e',  dim:false }; // amber  — aging
-    return              { bg:'rgba(232,83,74,.18)',   border:'#e8534a', text:'#e8534a',  dim:false }; // red    — overdue
+    if (days <= 30)  return { bg:'rgba(47,174,110,.22)',  border:'#2fae6e', text:'#2fae6e',  dim:false }; // green  — recent
+    if (days <= 90)  return { bg:'rgba(240,166,46,.2)',   border:'#e5a33b', text:'#e5a33b',  dim:false }; // amber  — aging
+    return              { bg:'rgba(232,83,74,.18)',   border:'#e2605b', text:'#e2605b',  dim:false }; // red    — overdue
   }
 
   // Pending only
   const hasPending = jobs.some(j => j.status==='Pending');
-  if (hasPending) return { bg:'rgba(168,124,240,.18)', border:'#a87cf0', text:'#a87cf0', dim:false };
+  if (hasPending) return { bg:'rgba(168,124,240,.18)', border:'#a87bd0', text:'#a87bd0', dim:false };
 
   // No jobs at all
   return { bg:'var(--s1)', border:'var(--b0)', text:'var(--t3)', dim:false };
@@ -167,11 +167,11 @@ function renderRoomsBoard() {
     <span style="font-size:9.5px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.07em">Legend:</span>
     ${[
       ['var(--s0)','var(--b0)','var(--t3)','No history'],
-      ['rgba(110,190,42,.22)','#6ebe2a','#6ebe2a','Serviced ≤ 30 days'],
-      ['rgba(240,166,46,.2)','#f0a62e','#f0a62e','30–90 days ago'],
-      ['rgba(232,83,74,.18)','#e8534a','#e8534a','Over 90 days / Urgent'],
-      ['rgba(85,153,245,.2)','#5599f5','#5599f5','Active / In Progress'],
-      ['rgba(168,124,240,.18)','#a87cf0','#a87cf0','Pending'],
+      ['rgba(47,174,110,.22)','#2fae6e','#2fae6e','Serviced ≤ 30 days'],
+      ['rgba(240,166,46,.2)','#e5a33b','#e5a33b','30–90 days ago'],
+      ['rgba(232,83,74,.18)','#e2605b','#e2605b','Over 90 days / Urgent'],
+      ['rgba(85,153,245,.2)','#5b9de8','#5b9de8','Active / In Progress'],
+      ['rgba(168,124,240,.18)','#a87bd0','#a87bd0','Pending'],
     ].map(([bg,border,text,label])=>`
       <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--t1)">
         <span style="width:20px;height:14px;border-radius:3px;background:${bg};border:1.5px solid ${border};display:inline-block;flex-shrink:0"></span>
@@ -764,7 +764,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;fo
 @media print{.no-print{display:none!important}body{font-size:11px}}
 .header{background:linear-gradient(135deg,#0f172a,#1e3a5f);color:#fff;padding:22px 28px;border-radius:10px;margin-bottom:20px;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px}
 .brand{display:flex;align-items:center;gap:12px}
-.brand-icon{width:42px;height:42px;border-radius:10px;background:linear-gradient(135deg,#6ebe2a,#2dcfb3);display:flex;align-items:center;justify-content:center}
+.brand-icon{width:42px;height:42px;border-radius:10px;background:linear-gradient(135deg,#2fae6e,#3ec1cf);display:flex;align-items:center;justify-content:center}
 .brand-name{font-size:20px;font-weight:800;letter-spacing:-.02em}
 .brand-sub{font-size:11px;opacity:.7;margin-top:2px}
 .meta{text-align:right;font-size:11px;opacity:.8;line-height:1.8}
@@ -783,7 +783,7 @@ td{border-bottom:1px solid #e2e8f0}
   <span style="font-weight:700">MaintainPro — ${title} Report</span>
   <div style="display:flex;gap:8px">
     <button class="pbtn" style="background:rgba(255,255,255,.1);color:#fff" onclick="window.close()">✕ Close</button>
-    <button class="pbtn" style="background:#6ebe2a;color:#fff" onclick="window.print()">🖨️ Print / Save PDF</button>
+    <button class="pbtn" style="background:#2fae6e;color:#fff" onclick="window.print()">🖨️ Print / Save PDF</button>
   </div>
 </div>
 <div class="content" style="margin-top:50px;padding:20px">
@@ -796,7 +796,7 @@ td{border-bottom:1px solid #e2e8f0}
     <div>Filter: <strong>${filterLabel}</strong></div>
     <div>Generated: ${genDate}</div>
     <div>${data.length} records · ${comp} completed · ${rate}% rate</div>
-    <div style="margin-top:5px;padding:4px 12px;border-radius:99px;background:rgba(110,190,42,.2);border:1px solid rgba(110,190,42,.3);color:#a3e635;display:inline-block;font-weight:700">${title}</div>
+    <div style="margin-top:5px;padding:4px 12px;border-radius:99px;background:rgba(47,174,110,.2);border:1px solid rgba(47,174,110,.3);color:#a3e635;display:inline-block;font-weight:700">${title}</div>
   </div>
 </div>
 
@@ -804,7 +804,7 @@ td{border-bottom:1px solid #e2e8f0}
   ${[
     {v:data.length,l:'Total jobs',c:'#0ea5e9'},
     {v:comp,l:'Completed',c:'#22c55e'},
-    {v:rate+'%',l:'Completion rate',c:'#6ebe2a'},
+    {v:rate+'%',l:'Completion rate',c:'#2fae6e'},
     {v:active,l:'Active now',c:'#3b82f6'},
     {v:Object.keys(byRoom).length,l:'Rooms tracked',c:'#a78bfa'},
   ].map(k=>`<div class="kpi" style="border-top-color:${k.c}">

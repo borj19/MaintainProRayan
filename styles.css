@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════
-   MaintainPro — Heritage Service UI · v4 2026
-   All class names preserved · token-driven
+   MaintainPro — Heritage Service UI · v5 2026
+   Front-of-house / back-of-house · token-driven
    Fonts: Geist (UI) · Geist Mono (data) · Instrument Serif (display)
 ═══════════════════════════════════════════════ */
 @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap');
@@ -55,6 +55,15 @@
 
   --glow:     0 0 0 3px rgba(47,174,110,.18);
   --transition: .18s cubic-bezier(.4,0,.2,1);
+
+  /* the permanent dark service rail (same in both themes) */
+  --rail:     #101613;
+  --rail-s:   #18201b;
+  --rail-b:   #1e2722;
+  --rail-b2:  #2a352e;
+  --rail-t0:  #e9efe9;
+  --rail-t1:  #9dafa2;
+  --rail-t2:  #5e6f63;
 }
 
 /* ═══════════════════════════════════════════════
@@ -95,6 +104,15 @@
   --shadow-lg:0 16px 44px rgba(27,36,30,.14), 0 3px 10px rgba(27,36,30,.08);
   --modal-bg: rgba(20,28,23,.5);
   --glow:     0 0 0 3px rgba(30,122,79,.14);
+
+  /* rail stays dark even in light mode — the back-of-house */
+  --rail:     #101613;
+  --rail-s:   #18201b;
+  --rail-b:   #1e2722;
+  --rail-b2:  #2a352e;
+  --rail-t0:  #e9efe9;
+  --rail-t1:  #9dafa2;
+  --rail-t2:  #5e6f63;
 }
 
 /* ═══════════════════════════════════════════════
@@ -3671,187 +3689,315 @@ select option{background:var(--bg)!important;color:var(--t0)!important}
 
 /* ═══════════════════════════════════════════════════════════════════
    ╔═══════════════════════════════════════════════════════════════╗
-   ║  V4 — HERITAGE SERVICE REFINEMENT (2026)                      ║
-   ║  Evergreen + brass · Instrument Serif display · Geist UI      ║
-   ║  Loaded last — wins the cascade. No class names changed.      ║
+   ║  V5 — HERITAGE SERVICE  ·  front-of-house / back-of-house     ║
+   ║  Loaded last. No class names changed. Token-driven.           ║
    ╚═══════════════════════════════════════════════════════════════╝
 ═══════════════════════════════════════════════════════════════════ */
 
-/* ── 1 · Global rhythm ──────────────────────────────────────────── */
-html,body{font-size:14px;line-height:1.6}
+/* ── 1 · Global rhythm & type ───────────────────────────────────── */
+html,body{font-size:14px;line-height:1.6;font-family:var(--font)}
 #body{padding:26px 30px 40px}
-@media(max-width:768px){#body{padding:16px 14px 90px}}
 
-/* ── 2 · Display typography — the serif voice ───────────────────── */
-/* Page title in the topbar: engraved-plaque serif */
-#pg-ttl{
-  font-family:var(--font-serif);
-  font-size:19px;font-weight:400;
-  letter-spacing:.005em;
-  color:var(--t0);
-}
-/* Hero greeting */
-.hero-text{
-  font-family:var(--font-serif);
-  font-weight:400;
-  font-size:clamp(24px,3.2vw,34px);
-  letter-spacing:.002em;
-}
+/* Display serif voice */
+#pg-ttl{font-family:var(--font-serif);font-size:20px;font-weight:400;letter-spacing:.005em;color:var(--t0)}
+.hero-text{font-family:var(--font-serif);font-weight:400;font-size:clamp(22px,3vw,30px);letter-spacing:.002em}
 .hero-text strong{font-weight:400;font-style:italic;color:var(--t0)}
-/* Card titles stay sans but calmer */
-.card-t{font-size:14px;font-weight:600;letter-spacing:-.01em}
+.card-t{font-size:13.5px;font-weight:600;letter-spacing:-.01em;color:var(--t0)}
+.card-badge{font-family:var(--mono);font-size:10px;color:var(--t2);font-weight:400}
 
-/* The brass hairline — signature rule under the hero */
-#d-hero{border-color:var(--b0)}
-#d-hero::after{
-  content:'';position:absolute;left:26px;right:26px;bottom:0;height:1px;
-  background:linear-gradient(90deg,var(--brass) 0%,transparent 60%);
-  opacity:.55;pointer-events:none;
-}
-.hero-bg{
-  background:
-    radial-gradient(circle at 12% 15%, color-mix(in srgb, var(--g) 9%, transparent), transparent 52%),
-    radial-gradient(circle at 88% 85%, color-mix(in srgb, var(--brass) 7%, transparent), transparent 55%);
-}
-.hero-role{color:var(--brass);font-weight:600}
+/* Mono ledger data */
+.kpi-val{font-family:var(--mono);font-weight:500;letter-spacing:-.02em}
+td,.kpi-val{font-variant-numeric:tabular-nums}
 
-/* Section eyebrows pick up quiet brass */
-.nav-sec-label,.fsec-t{color:color-mix(in srgb, var(--brass) 55%, var(--t3));letter-spacing:.14em}
+/* Section eyebrows in quiet brass */
+.nav-sec-label{color:color-mix(in srgb, var(--brass) 50%, var(--t3));letter-spacing:.14em}
 
-/* ── 3 · Ledger data — mono numerals everywhere ─────────────────── */
-.kpi-val{font-family:var(--mono);font-weight:500;font-size:32px;letter-spacing:-.02em}
-.tb-date,.pag-info,.card-badge{font-family:var(--mono)}
-td,.kpi-val,.tb-date{font-variant-numeric:tabular-nums}
+/* ── 2 · The service rail (sidebar) — always dark ───────────────── */
+#sb{background:var(--rail);border-right:1px solid var(--rail-b)}
+#sb .brand-name{font-family:var(--font-serif);font-size:16.5px;font-weight:400;letter-spacing:.01em;color:var(--rail-t0)}
+#sb .brand-sub{color:color-mix(in srgb, var(--brass) 70%, var(--rail-t2));letter-spacing:.16em;font-size:8.5px}
+.brand-ico{border-radius:9px;background:linear-gradient(150deg,var(--g) 0%,color-mix(in srgb, var(--g) 65%, #0c2a1b) 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.16)}
+#sb .nav-btn{padding:9px 11px;border-radius:9px;font-size:13px;gap:11px;color:var(--rail-t1)}
+#sb .nav-btn:hover{background:var(--rail-s);color:var(--rail-t0)}
+#sb .nav-btn.on{background:var(--rail-s);color:var(--rail-t0);box-shadow:inset 2px 0 0 var(--brass)}
+#sb .nav-btn.on::before{display:none}
+#sb .nav-btn svg{color:inherit}
+#sb .nav-pill{font-family:var(--mono);font-weight:500;background:var(--rail-b);color:var(--rail-t1);border-radius:99px}
+#sb .nav-btn.on .nav-pill{background:var(--brass2);color:var(--brass)}
+#sb .user-row,#sb .user-card{border-top:1px solid var(--rail-b)}
+#sb .user-name{color:var(--rail-t0)}
+#sb .user-role,#sb .user-info{color:color-mix(in srgb, var(--brass) 65%, var(--rail-t2))}
+#sb .user-av,#sb .av{box-shadow:0 0 0 2px var(--rail), 0 0 0 3.5px color-mix(in srgb, var(--brass) 55%, transparent)}
+#sb .logout-btn{color:var(--rail-t2)}
+#sb .logout-btn:hover{color:var(--red);background:var(--rail-s)}
+#sb .nav-sec-label{color:var(--rail-t2)}
 
-/* ── 4 · Sidebar ────────────────────────────────────────────────── */
-#sb{background:var(--s0)}
-.brand-ico{
-  border-radius:10px;
-  background:linear-gradient(150deg,var(--g) 0%,color-mix(in srgb, var(--g) 70%, #0c2a1b) 100%);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.18), 0 3px 10px color-mix(in srgb, var(--g) 30%, transparent);
-}
-.brand-name{font-family:var(--font-serif);font-size:16.5px;font-weight:400;letter-spacing:.01em}
-.brand-sub{color:color-mix(in srgb, var(--brass) 60%, var(--t2));letter-spacing:.16em;font-size:8.5px}
-.nav-btn{padding:9.5px 11px;border-radius:9px;font-size:13px;gap:11px}
-.nav-btn.on{
-  background:linear-gradient(90deg,var(--g3),transparent 85%);
-  box-shadow:inset 1px 0 0 var(--g);
-}
-.nav-btn.on::before{width:2.5px;top:6px;bottom:6px}
-.nav-pill{font-family:var(--mono);font-weight:500}
-.user-row{border-radius:10px}
-.user-av{box-shadow:0 0 0 2px var(--s0), 0 0 0 3.5px color-mix(in srgb, var(--brass) 55%, transparent)}
-
-/* ── 5 · Topbar ─────────────────────────────────────────────────── */
-#topbar{
-  background:color-mix(in srgb, var(--s0) 88%, transparent);
-  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
-  padding:0 24px;
-}
+/* ── 3 · Topbar ─────────────────────────────────────────────────── */
+#topbar{background:color-mix(in srgb, var(--s0) 86%, transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);padding:0 24px;border-bottom:1px solid var(--b0)}
 .search-wrap input{border-radius:9px;background:var(--s1)}
-.tb-date{border-radius:8px;font-size:11px}
+.tb-date{border-radius:8px;font-family:var(--mono);font-size:11px}
 
-/* ── 6 · Buttons — consistent height, quiet depth ───────────────── */
-.btn{border-radius:9px;padding:0 16px;height:36px;font-size:12.5px}
+/* ── 4 · Buttons ────────────────────────────────────────────────── */
+.btn{border-radius:9px;padding:0 15px;height:36px;font-size:12.5px;font-weight:500}
 .btn-sm{height:30px;padding:0 12px;font-size:11.5px}
 .btn-xs{height:24px;padding:0 9px;font-size:11px}
-.btn.btn-g,.auth-btn{
-  background:var(--g) !important;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.16), 0 1px 2px rgba(0,0,0,.2), 0 3px 10px color-mix(in srgb, var(--g) 28%, transparent);
-  color:#fff;
-}
-.btn.btn-g:hover,.auth-btn:hover{
-  background:var(--g2) !important;
-  transform:translateY(-1px);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.16), 0 2px 4px rgba(0,0,0,.2), 0 6px 16px color-mix(in srgb, var(--g) 36%, transparent);
-}
-.btn.btn-g:active,.auth-btn:active{transform:translateY(0);filter:brightness(.96)}
+.btn.btn-g,.auth-btn{background:var(--g);color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.16), 0 2px 8px color-mix(in srgb, var(--g) 26%, transparent)}
+.btn.btn-g:hover,.auth-btn:hover{background:var(--g2);transform:translateY(-1px);box-shadow:inset 0 1px 0 rgba(255,255,255,.16), 0 5px 14px color-mix(in srgb, var(--g) 34%, transparent)}
+.btn.btn-g:active,.auth-btn:active{transform:translateY(0)}
 .btn-o{border-radius:9px}
 .btn-o:hover{border-color:var(--b3);background:var(--s2);color:var(--t0)}
+.btn-r{color:var(--red)}
 
-/* ── 7 · KPI cards — calmer, ledger-like ────────────────────────── */
-.kpi{border-radius:var(--r2);padding:18px 20px 16px}
+/* ── 5 · Cards & KPIs ───────────────────────────────────────────── */
+.card{border-radius:var(--r2);border:1px solid var(--b0);background:var(--s0)}
+.kpi{border-radius:var(--r2);padding:17px 19px 15px}
 .kpi:hover{transform:translateY(-2px);border-color:var(--b2)}
-.kpi:hover .kpi-val{transform:none}
-.kpi-bar{height:2px !important;opacity:.9}
-.kpi-bar::after{animation:none;background:none}
-.kpi-lbl{font-size:9.5px;letter-spacing:.12em;margin-bottom:10px;color:var(--t2)}
+.kpi-bar{height:2px !important;opacity:.95}
+.kpi-bar::after{animation:none !important;background:none !important}
+.kpi-lbl{font-size:9.5px;letter-spacing:.12em;margin-bottom:9px;color:var(--t2);text-transform:uppercase}
+.kpi-val{font-size:30px}
 .kpi-sub{font-size:11px;color:var(--t3)}
 
-/* ── 8 · Tables — scannable ledger ──────────────────────────────── */
-.tbl-wrap{border-radius:var(--r2);background:var(--s1)}
-thead th{
-  font-family:var(--mono);font-size:9.5px;font-weight:500;
-  letter-spacing:.11em;padding:11px 12px;
-  background:var(--s2);color:var(--t2);
-  position:sticky;top:0;z-index:2;
-}
-tbody td{padding:11.5px 12px;font-size:12.5px}
-tbody tr{transition:background .12s ease, box-shadow .12s ease}
-tbody tr:hover{background:var(--g3);box-shadow:inset 2px 0 0 var(--g)}
+/* ── 6 · Dashboard hero — paper with brass hairline ─────────────── */
+#d-hero{border:1px solid var(--b0);border-radius:var(--r2);position:relative;overflow:hidden}
+#d-hero::after{content:'';position:absolute;left:24px;right:24px;bottom:0;height:1px;background:linear-gradient(90deg,var(--brass) 0%,transparent 58%);opacity:.5}
+.hero-bg{background:radial-gradient(circle at 12% 12%, color-mix(in srgb, var(--g) 8%, transparent), transparent 52%),radial-gradient(circle at 88% 88%, color-mix(in srgb, var(--brass) 6%, transparent), transparent 55%)}
+.hero-role{color:var(--brass);font-weight:600}
 
-/* ── 9 · Badges — soft pills with breathing room ────────────────── */
-.badge{border-radius:99px;padding:3.5px 10px;font-weight:600;font-size:10.5px;letter-spacing:.02em}
+/* ── 7 · CENTERPIECE bento — pulse + queue ──────────────────────── */
+.bento-pulse{display:grid;grid-template-columns:1.4fr 1fr;gap:14px;margin-bottom:14px}
+.bento-pulse .card{padding:15px 17px}
+
+/* property pulse heatmap */
+.pulse-grid{display:flex;flex-direction:column;gap:3px}
+.pulse-row{display:flex;align-items:center;gap:7px}
+.pulse-floor{font-family:var(--mono);font-size:9px;color:var(--t3);width:26px;flex-shrink:0;text-align:right}
+.pulse-cells{display:flex;gap:2.5px;flex-wrap:nowrap}
+.pulse-cell{width:11px;height:11px;border-radius:2.5px;cursor:pointer;transition:transform .12s ease}
+.pulse-cell:hover{transform:scale(1.45);box-shadow:0 0 0 1.5px var(--s0),0 0 0 3px var(--brass)}
+.pulse-legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;padding-top:11px;border-top:1px solid var(--b0)}
+.pulse-leg-i{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--t2)}
+.pulse-leg-sw{width:9px;height:9px;border-radius:2.5px}
+
+/* assignment queue */
+.queue-i{display:flex;align-items:center;gap:9px;padding:9px 2px;border-bottom:1px solid var(--b0);cursor:pointer;transition:background .12s ease}
+.queue-i:last-child{border-bottom:none}
+.queue-i:hover{background:var(--g3)}
+.queue-room{font-family:var(--mono);font-size:11.5px;color:var(--t0);width:70px;flex-shrink:0}
+.queue-body{flex:1;min-width:0}
+.queue-txt{font-size:11.5px;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.queue-sub{font-size:10px;color:var(--t3);margin-top:1px}
+.queue-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.queue-assign{font-size:10.5px;font-weight:600;color:var(--g);background:transparent;border:1px solid color-mix(in srgb, var(--g) 35%, transparent);border-radius:7px;padding:3px 10px;cursor:pointer;flex-shrink:0;transition:all .12s ease}
+.queue-assign:hover{background:var(--g);color:#fff}
+.queue-empty{display:flex;align-items:center;gap:8px;padding:20px 4px;color:var(--t2);font-size:12px}
+.queue-empty-ico{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--g3);color:var(--g);font-size:12px}
+
+/* ── 8 · Ledger table ───────────────────────────────────────────── */
+.tbl-wrap{border-radius:var(--r2);background:var(--s1);border:1px solid var(--b0)}
+.tbl-ledger thead th{font-family:var(--mono);font-size:9.5px;font-weight:500;letter-spacing:.11em;text-transform:uppercase;padding:11px 12px;background:var(--s2);color:var(--t2);position:sticky;top:0;z-index:2;cursor:pointer;white-space:nowrap}
+.tbl-ledger thead th:hover{color:var(--t0)}
+.tbl-ledger .t-chk-col{width:38px;cursor:default;padding-right:0}
+.t-chk-col input,.td-chk input{width:15px;height:15px;accent-color:var(--g);cursor:pointer}
+.td-chk{width:38px;padding-right:0}
+.tbl-ledger tbody td{padding:10px 12px;font-size:12.5px;vertical-align:middle;border-bottom:1px solid var(--b0)}
+.tbl-ledger tbody tr{transition:background .12s ease}
+.tbl-ledger tbody tr:not(.t-daygroup):hover{background:var(--g3);box-shadow:inset 3px 0 0 var(--pedge,var(--g))}
+.tbl-ledger tbody tr.row-selected{background:var(--g3)}
+
+/* day group separators */
+tr.t-daygroup td{background:var(--s2);padding:6px 12px !important;border-bottom:1px solid var(--b0)}
+.t-dg-lbl{font-size:10.5px;font-weight:600;color:var(--t0);margin-right:8px}
+.t-dg-cnt{font-family:var(--mono);font-size:9px;color:var(--t3)}
+
+/* room cell */
+.td-room-loc{display:block;font-family:var(--mono);font-size:11.5px;color:var(--t0)}
+.td-room-area{display:block;font-size:9.5px;color:var(--t3)}
+/* work cell */
+.td-work-t{display:block;font-size:11.5px;font-weight:500;color:var(--t0);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.td-work-s{display:block;font-size:9.5px;color:var(--t3)}
+/* details cell */
+.td-det{color:var(--t1);max-width:280px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.td-req{display:block;font-size:9.5px;color:var(--t3);margin-top:1px}
+/* handler chip */
+.hd-chip{display:inline-flex;align-items:center;gap:6px;min-width:0}
+.hd-av{width:19px;height:19px;border-radius:50%;background:color-mix(in srgb, var(--av) 16%, transparent);color:var(--av);font-size:8px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+.hd-nm{font-size:11px;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hd-unassigned{font-size:10.5px;font-style:italic;color:var(--t3)}
+/* priority tick */
+.pri-tick{font-size:10.5px;font-weight:600}
+/* row actions */
+.td-act{text-align:right;white-space:nowrap}
+.row-kebab{background:transparent;border:none;color:var(--t3);cursor:pointer;padding:5px;border-radius:7px;vertical-align:middle}
+.row-kebab:hover{background:var(--s2);color:var(--t0)}
+.row-claim{margin-left:4px}
+.tbl-empty{text-align:center;padding:44px 20px !important;color:var(--t2)}
+.tbl-empty-ico{font-size:24px;color:var(--t3);margin-bottom:8px}
+
+/* row action menu (popover) */
+.row-menu{position:fixed;z-index:9999;background:var(--s0);border:1px solid var(--b1);border-radius:10px;box-shadow:var(--shadow-lg);padding:5px;min-width:160px;animation:rmIn .12s ease}
+@keyframes rmIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+.row-menu button{display:flex;align-items:center;gap:9px;width:100%;text-align:left;background:transparent;border:none;border-radius:7px;padding:8px 10px;font-size:12.5px;color:var(--t1);cursor:pointer;font-family:var(--font)}
+.row-menu button:hover{background:var(--s2);color:var(--t0)}
+.row-menu .rm-danger{color:var(--red)}
+.row-menu .rm-danger:hover{background:color-mix(in srgb, var(--red) 12%, transparent)}
+.row-menu .rm-ico{width:15px;text-align:center;opacity:.7}
+
+/* ── 9 · Badges — soft pills ────────────────────────────────────── */
+.badge{border-radius:99px;padding:3px 10px;font-weight:600;font-size:10.5px;letter-spacing:.01em}
 .badge::before{width:5px;height:5px}
-.b-done{background:color-mix(in srgb, var(--g) 13%, transparent);color:var(--g2)}
-[data-theme="light"] .b-done{color:var(--g)}
+.b-done{background:color-mix(in srgb, var(--g) 14%, transparent);color:var(--g)}
 .b-done::before{background:var(--g)}
-.b-prog{background:color-mix(in srgb, var(--blue) 13%, transparent);color:var(--blue)}
-.b-cont{background:color-mix(in srgb, var(--amber) 13%, transparent);color:var(--amber)}
-.b-pend{background:color-mix(in srgb, var(--purple) 13%, transparent);color:var(--purple)}
-.b-low{background:color-mix(in srgb, var(--t2) 13%, transparent);color:var(--t1)}
-.b-med{background:color-mix(in srgb, var(--blue) 13%, transparent);color:var(--blue)}
-.b-hi{background:color-mix(in srgb, var(--amber) 13%, transparent);color:var(--amber)}
-.b-urg{background:color-mix(in srgb, var(--red) 13%, transparent);color:var(--red)}
-.role-badge{border-radius:99px;padding:2.5px 9px}
+.b-prog{background:color-mix(in srgb, var(--blue) 14%, transparent);color:var(--blue)}
+.b-prog::before{background:var(--blue)}
+.b-cont{background:color-mix(in srgb, var(--amber) 14%, transparent);color:var(--amber)}
+.b-cont::before{background:var(--amber)}
+.b-pend{background:color-mix(in srgb, var(--purple) 14%, transparent);color:var(--purple)}
+.b-pend::before{background:var(--purple)}
+.b-low{background:color-mix(in srgb, var(--t2) 14%, transparent);color:var(--t1)}
+.b-med{background:color-mix(in srgb, var(--blue) 14%, transparent);color:var(--blue)}
+.b-hi{background:color-mix(in srgb, var(--amber) 14%, transparent);color:var(--amber)}
+.b-urg{background:color-mix(in srgb, var(--red) 14%, transparent);color:var(--red)}
 
-/* ── 10 · Forms & inputs ────────────────────────────────────────── */
+/* ── 10 · Service docket (task detail modal) ────────────────────── */
+#m-det .mhd{align-items:flex-start;gap:12px;padding:20px 24px 16px}
+.docket-head{flex:1;min-width:0}
+.docket-no{font-family:var(--mono);font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:var(--brass);margin-bottom:4px}
+.docket-title{font-family:var(--font-serif);font-size:21px;font-weight:400;color:var(--t0);line-height:1.2}
+.docket-sub{font-style:italic;font-size:16px;color:var(--t2)}
+.docket-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px 18px;padding-bottom:16px;border-bottom:1px solid var(--b0)}
+.docket-grid .dki-full{grid-column:1/-1}
+.dkl{font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--t3);margin-bottom:3px}
+.dkv{font-size:12.5px;color:var(--t0)}
+.dkv-mut{color:var(--t3);font-size:11px}
+.docket-tl{padding-top:16px}
+.tl-row{display:flex;gap:11px}
+.tl-rail{display:flex;flex-direction:column;align-items:center}
+.tl-dot{width:9px;height:9px;border-radius:50%;margin-top:3px;flex-shrink:0}
+.tl-line{width:1px;flex:1;background:var(--b1);margin:2px 0}
+.tl-body{padding-bottom:14px}
+.tl-t{font-size:12px;color:var(--t0)}
+.tl-d{font-family:var(--mono);font-size:10px;color:var(--t3);margin-top:2px}
+.tl-sub{color:var(--brass)}
+.tl-pending .tl-t{color:var(--t3);font-style:italic}
+
+/* ── 11 · Forms ─────────────────────────────────────────────────── */
 .fi,.fbar input,.fbar select,.auth-inp,.auth-select{border-radius:9px}
-.fi{padding:10px 13px;font-size:13.5px}
+.fi{padding:10px 13px;font-size:13px}
 .fi:focus,.fbar input:focus,.fbar select:focus{background:var(--s1)}
-.fl{font-size:10px;letter-spacing:.09em;color:var(--t2)}
+.fl{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--t2)}
 .fbar{border-radius:var(--r2);padding:12px 14px;gap:8px}
 .dash-filter{border-radius:var(--r2)}
-.dash-filter-btn.on{box-shadow:0 2px 8px color-mix(in srgb, var(--g) 28%, transparent)}
+.dash-filter-btn.on{box-shadow:0 2px 8px color-mix(in srgb, var(--g) 26%, transparent)}
 
-/* ── 11 · Modals — lifted, layered ──────────────────────────────── */
-.modal{border-radius:18px;border-color:var(--b1)}
+/* ── 12 · Modals ────────────────────────────────────────────────── */
+.modal{border-radius:18px;border:1px solid var(--b1)}
 .mhd{padding:20px 24px 16px}
-.mt{font-family:var(--font-serif);font-size:18px;font-weight:400;letter-spacing:.003em}
-.mbd{padding:24px}
+.mt{font-family:var(--font-serif);font-size:18px;font-weight:400}
+.mbd{padding:22px 24px}
 .mft{padding:16px 24px;border-radius:0 0 18px 18px}
 .mcls{border-radius:9px}
 .mov{backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
 
-/* ── 12 · Toasts & notifications ────────────────────────────────── */
+/* ── 13 · Bulk action tray — dark service bar ───────────────────── */
+.bulk-bar,#bulk-bar{background:var(--rail) !important;border:1px solid var(--rail-b2) !important;border-radius:11px !important;box-shadow:var(--shadow-lg)}
+.bulk-bar *,#bulk-bar *{color:var(--rail-t0)}
+.bulk-bar .bulk-count,#bulk-bar .bulk-count{font-family:var(--mono);color:var(--brass) !important}
+
+/* ── 14 · Toasts, pagination, scrollbars ────────────────────────── */
 .toast{border-radius:13px;font-weight:500;box-shadow:var(--shadow-lg)}
-
-/* ── 13 · Pagination ────────────────────────────────────────────── */
-.pag button{border-radius:9px;height:30px;padding:0 13px}
-
-/* ── 14 · Scrollbars — slimmer ──────────────────────────────────── */
+.pag button{border-radius:9px;height:30px;padding:0 13px;font-family:var(--mono)}
 ::-webkit-scrollbar{width:7px;height:7px}
-::-webkit-scrollbar-thumb{background:var(--b1)}
+::-webkit-scrollbar-thumb{background:var(--b1);border-radius:99px}
 ::-webkit-scrollbar-thumb:hover{background:var(--b2)}
 
-/* ── 15 · Accessibility floor ───────────────────────────────────── */
+/* ── 15 · Auth screen — the front desk ──────────────────────────── */
+.auth-card{border-radius:18px}
+.auth-brand-text .name{font-family:var(--font-serif);font-size:24px;font-weight:400;letter-spacing:.004em}
+.auth-brand-text .sub{color:color-mix(in srgb, var(--brass) 62%, var(--t2));text-transform:uppercase;font-size:9.5px;letter-spacing:.15em;margin-top:3px}
+.auth-lbl{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--t2)}
+.auth-inp{border-radius:9px;padding:11px 13px}
+.auth-btn{border-radius:9px;height:42px;font-size:13px}
+#auth-screen{background:var(--bg)}
+.auth-card::before{content:'';position:absolute;top:0;left:24px;right:24px;height:1px;background:linear-gradient(90deg,transparent,var(--brass) 50%,transparent);opacity:.55}
+.auth-card{position:relative;overflow:hidden}
+
+/* ── 16 · Accessibility floor ───────────────────────────────────── */
 :focus-visible{outline:none;box-shadow:var(--focus-ring)}
 @media (prefers-reduced-motion: reduce){
-  *,*::before,*::after{
-    animation-duration:.01ms !important;
-    animation-iteration-count:1 !important;
-    transition-duration:.01ms !important;
-    scroll-behavior:auto !important;
-  }
+  *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important;scroll-behavior:auto !important}
 }
 
-/* ── 16 · Auth screen — the front desk ──────────────────────────── */
-.auth-brand-text .name{font-family:var(--font-serif);font-size:24px;font-weight:400;letter-spacing:.004em}
-.auth-brand-text .sub{color:color-mix(in srgb, var(--brass) 60%, var(--t2));text-transform:uppercase;font-size:9.5px;letter-spacing:.16em;margin-top:3px}
-.auth-card{border-radius:18px}
+/* ── 17 · Light-mode tuning ─────────────────────────────────────── */
+[data-theme="light"] .kpi,[data-theme="light"] .card{box-shadow:0 1px 2px rgba(27,36,30,.04)}
+[data-theme="light"] #topbar{background:color-mix(in srgb, #ffffff 84%, transparent)}
+[data-theme="light"] .pulse-cell[style*="--s3"]{border:1px solid var(--b0)}
 
-/* ── 17 · Light theme tuning ────────────────────────────────────── */
-[data-theme="light"] tbody tr:hover{background:var(--g3)}
-[data-theme="light"] .kpi,
-[data-theme="light"] .card{box-shadow:0 1px 2px rgba(27,36,30,.04)}
-[data-theme="light"] #topbar{background:color-mix(in srgb, #ffffff 86%, transparent)}
+/* ═══════════════════════════════════════════════════════════════════
+   V5 — MOBILE (≤768px)  ·  ledger becomes cards, bento stacks
+═══════════════════════════════════════════════════════════════════ */
+@media(max-width:768px){
+  #body{padding:16px 13px 84px}
+  #pg-ttl{font-family:var(--font-serif);font-size:17px;font-weight:400}
+
+  /* bento all single-column */
+  .bento-pulse{grid-template-columns:1fr;gap:12px}
+  .pulse-cells{flex-wrap:wrap}
+  .pulse-cell{width:13px;height:13px}
+
+  /* KPIs 2-up */
+  .kpi-grid{grid-template-columns:1fr 1fr !important}
+  .kpi-val{font-size:24px}
+
+  /* ── Ledger table → card list on mobile ── */
+  .tbl-wrap{overflow:visible;border:none;background:transparent}
+  .tbl-ledger{min-width:0;width:100%}
+  .tbl-ledger thead{display:none}
+  .tbl-ledger tbody,.tbl-ledger tr,.tbl-ledger td{display:block;width:100%;box-sizing:border-box}
+  .tbl-ledger tbody tr:not(.t-daygroup){
+    position:relative;background:var(--s0);border:1px solid var(--b0);
+    border-left:3px solid var(--pedge,var(--g));
+    border-radius:var(--r2);padding:12px 14px 12px 16px;margin-bottom:10px;
+  }
+  .tbl-ledger tbody tr:not(.t-daygroup):hover{box-shadow:none}
+  .tbl-ledger tbody td{padding:0;border:none;font-size:13px}
+  /* checkbox floats top-right */
+  .tbl-ledger .td-chk{position:absolute;top:12px;right:12px;width:auto}
+  /* room becomes the card title */
+  .td-room{margin-bottom:8px}
+  .td-room-loc{font-size:15px}
+  .td-room-area{display:inline;font-size:11px;margin-left:8px}
+  /* work + details inline-labelled */
+  .td-work{margin-bottom:6px}
+  .td-work-t{display:inline;font-size:12.5px}
+  .td-work-s{display:inline;margin-left:6px}
+  .td-det{white-space:normal;max-width:none;margin-bottom:10px;font-size:12px}
+  .td-req{display:inline;margin-left:6px}
+  /* handler + status + priority on one flex row */
+  .td-hand,.td-stat,.td-pri{display:inline-flex !important;align-items:center;margin-right:10px;margin-bottom:2px}
+  .td-pri{margin-right:0}
+  /* actions row pinned bottom-right cluster */
+  .td-act{position:absolute;bottom:10px;right:12px;text-align:right}
+
+  /* day group as full-width chip */
+  tr.t-daygroup{display:block !important;background:transparent;border:none;padding:6px 2px 4px !important;margin-top:4px}
+  tr.t-daygroup td{background:transparent;padding:0 !important;border:none}
+
+  /* docket grid single column on small screens */
+  .docket-grid{grid-template-columns:1fr 1fr;gap:10px 14px}
+  .docket-title{font-size:18px}
+  .docket-sub{font-size:14px}
+
+  /* bulk tray spans bottom safely above nav */
+  #bulk-bar,.bulk-bar{left:8px !important;right:8px !important;bottom:70px !important;flex-wrap:wrap}
+
+  /* auth */
+  .auth-card{padding:26px 22px;border-radius:18px}
+  .auth-brand-text .name{font-size:21px}
+}
+
+@media(max-width:420px){
+  .kpi-grid{grid-template-columns:1fr !important}
+  .docket-grid{grid-template-columns:1fr}
+  .pulse-floor{width:22px;font-size:8.5px}
+}

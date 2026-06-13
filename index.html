@@ -325,12 +325,25 @@
       <button class="dash-filter-btn" id="df-today" onclick="setDashFilter('today',this)">Today</button>
     </div>
 
-    <!-- ══ BENTO GRID — KPIs row ══ -->
+    <!-- ══ KPIs row ══ -->
     <div class="bento bento-kpis">
       <div class="kpi-grid" id="d-kpis"></div>
     </div>
 
-    <!-- ══ BENTO GRID — Charts (asymmetric: 2/3 + 1/3) ══ -->
+    <!-- ══ CENTERPIECE — property pulse + assignment queue ══ -->
+    <div class="bento bento-pulse">
+      <div class="card bento-pulse-main">
+        <div class="card-hd"><span class="card-t">Property pulse</span><span class="card-badge">last service per room</span></div>
+        <div id="d-pulse"></div>
+        <div class="pulse-legend" id="d-pulse-leg"></div>
+      </div>
+      <div class="card bento-queue">
+        <div class="card-hd"><span class="card-t">Needs assignment</span><span class="card-badge" id="d-queue-cnt"></span></div>
+        <div id="d-queue"></div>
+      </div>
+    </div>
+
+    <!-- ══ Charts (asymmetric: 2/3 + 1/3) ══ -->
     <div class="bento bento-charts">
       <div class="card bento-chart-main">
         <div class="card-hd"><span class="card-t">Daily job count</span><span class="card-badge" id="d-wk-lbl"></span></div>
@@ -344,7 +357,7 @@
       </div>
     </div>
 
-    <!-- ══ BENTO GRID — Bottom section (activity featured) ══ -->
+    <!-- ══ Bottom section (activity featured) ══ -->
     <div class="bento bento-bottom">
       <div class="card bento-activity">
         <div class="card-hd"><span class="card-t">Recent activity</span></div>
@@ -377,20 +390,16 @@
       </div>
     </div>
     <div class="tbl-wrap">
-      <table>
+      <table class="tbl-ledger">
         <thead><tr>
-          <th class="t-chk-col" style="width:34px;padding-right:0"><input type="checkbox" id="t-chk-all" onclick="toggleSelectAllVisible(this.checked)" style="width:16px;height:16px;accent-color:var(--g);cursor:pointer" title="Select all on this page"></th>
-          <th style="width:76px" onclick="srt('date')">Date ↕</th>
-          <th style="width:95px" onclick="srt('requestor')">Requestor ↕</th>
-          <th style="width:105px" onclick="srt('handler')">Handler ↕</th>
-          <th style="width:115px" onclick="srt('workType')">Work type ↕</th>
-          <th style="width:80px">Sub type</th>
-          <th style="width:72px" onclick="srt('area')">Area ↕</th>
-          <th style="width:80px">Location</th>
-          <th>Details</th>
-          <th style="width:112px" onclick="srt('status')">Status ↕</th>
-          <th style="width:68px" onclick="srt('priority')">Priority ↕</th>
-          <th style="width:86px">Actions</th>
+          <th class="t-chk-col"><input type="checkbox" id="t-chk-all" onclick="toggleSelectAllVisible(this.checked)" title="Select all on this page"></th>
+          <th style="width:118px" onclick="srt('location')">Room ↕</th>
+          <th style="width:132px" onclick="srt('workType')">Work ↕</th>
+          <th onclick="srt('details')">Details</th>
+          <th style="width:140px" onclick="srt('handler')">Handler ↕</th>
+          <th style="width:118px" onclick="srt('status')">Status ↕</th>
+          <th style="width:78px" onclick="srt('priority')">Priority ↕</th>
+          <th style="width:54px"></th>
         </tr></thead>
         <tbody id="t-body"></tbody>
       </table>
