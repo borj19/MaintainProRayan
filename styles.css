@@ -3709,8 +3709,6 @@ select option{background:var(--bg)!important;color:var(--t0)!important}
 /* ── 1 · Global rhythm & type ───────────────────────────────────── */
 html,body{font-size:14px;line-height:1.6;font-family:var(--font)}
 #body{padding:26px 30px 40px}
-/* keep content readable & dense on ultra-wide monitors instead of sprawling */
-#body>.page{max-width:1640px;margin-inline:auto}
 
 /* Display serif voice */
 #pg-ttl{font-family:var(--font-serif);font-size:20px;font-weight:400;letter-spacing:.005em;color:var(--t0)}
@@ -3779,16 +3777,16 @@ td,.kpi-val{font-variant-numeric:tabular-nums}
 .hero-role{color:var(--brass);font-weight:600}
 
 /* ── 7 · CENTERPIECE bento — pulse + queue ──────────────────────── */
-.bento-pulse{display:grid;grid-template-columns:1.4fr 1fr;gap:14px;margin-bottom:14px}
+.bento-pulse{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
 .bento-pulse .card{padding:15px 17px}
 
 /* property pulse heatmap */
-.pulse-grid{display:flex;flex-direction:column;gap:4px}
-.pulse-row{display:flex;align-items:center;gap:9px}
+.pulse-grid{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(6,auto);grid-auto-flow:column;gap:5px 26px;align-content:start}
+.pulse-row{display:flex;align-items:center;gap:8px}
 .pulse-floor{font-family:var(--mono);font-size:9.5px;color:var(--t3);width:26px;flex-shrink:0;text-align:right}
-.pulse-cells{display:flex;gap:4px;flex:1;min-width:0}
-.pulse-cell{flex:1;aspect-ratio:1/1;border-radius:3px;cursor:pointer;transition:transform .12s ease}
-.pulse-cell:hover{transform:scale(1.35);box-shadow:0 0 0 1.5px var(--s0),0 0 0 3px var(--brass)}
+.pulse-cells{display:flex;gap:3px;flex-wrap:nowrap}
+.pulse-cell{width:13px;height:13px;border-radius:3px;cursor:pointer;flex-shrink:0;transition:transform .12s ease}
+.pulse-cell:hover{transform:scale(1.4);box-shadow:0 0 0 1.5px var(--s0),0 0 0 3px var(--brass);position:relative;z-index:2}
 .pulse-legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;padding-top:11px;border-top:1px solid var(--b0)}
 .pulse-leg-i{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--t2)}
 .pulse-leg-sw{width:9px;height:9px;border-radius:2.5px}
@@ -3963,8 +3961,9 @@ tr.t-daygroup td{background:var(--s2);padding:6px 12px !important;border-bottom:
 
   /* bento all single-column */
   .bento-pulse{grid-template-columns:1fr;gap:12px}
+  .pulse-grid{grid-template-columns:1fr;grid-template-rows:none;grid-auto-flow:row;gap:5px}
   .pulse-cells{flex-wrap:wrap}
-  .pulse-cell{width:13px;height:13px}
+  .pulse-cell{width:14px;height:14px}
 
   /* KPIs 2-up */
   .kpi-grid{grid-template-columns:1fr 1fr !important}
