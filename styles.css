@@ -4036,3 +4036,78 @@ tr.t-daygroup td{background:var(--s2);padding:6px 12px !important;border-bottom:
   .docket-grid{grid-template-columns:1fr}
   .pulse-floor{width:22px;font-size:8.5px}
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   ╔═══════════════════════════════════════════════════════════════╗
+   ║  V6 — BRASS & HOSPITALITY  ·  warmer, more luxurious polish    ║
+   ║  Loaded last — wins the cascade. No class names changed.      ║
+   ╚═══════════════════════════════════════════════════════════════╝
+═══════════════════════════════════════════════════════════════════ */
+
+/* ── 1 · KPI hero numbers → display serif (the luxury signal) ───── */
+.kpi-val{
+  font-family:var(--font-serif) !important;
+  font-weight:400 !important;
+  font-size:38px !important;
+  line-height:1.05 !important;
+  letter-spacing:0 !important;
+  font-variant-numeric:lining-nums;
+  color:var(--t0);
+}
+.kpi:hover .kpi-val{transform:none !important}
+.kpi-lbl{
+  font-size:9px !important;
+  letter-spacing:.18em !important;
+  font-weight:500;
+  color:var(--t2);
+  margin-bottom:11px !important;
+}
+.kpi-sub{font-size:10.5px !important;color:var(--t3) !important;margin-top:9px !important;letter-spacing:.01em}
+.kpi{padding:18px 20px 17px !important}
+/* a refined brass hairline accent on each KPI instead of the loud colour bar */
+.kpi-bar{display:block !important;height:1px !important;background:linear-gradient(90deg,var(--brass),transparent 70%) !important;opacity:.6 !important;margin-bottom:14px}
+.kpi-bar::after{display:none !important}
+@media(max-width:768px){ .kpi-val{font-size:30px !important} }
+@media(max-width:480px){ .kpi-val{font-size:27px !important} }
+
+/* ── 2 · More brass — eyebrows, hairlines, accents ──────────────── */
+/* section eyebrows lean fully into brass */
+.nav-sec-label{color:color-mix(in srgb, var(--brass) 72%, var(--rail-t2)) !important;letter-spacing:.18em !important}
+#sb .brand-sub{color:var(--brass) !important;letter-spacing:.2em !important}
+.fsec-t{color:color-mix(in srgb, var(--brass) 62%, var(--t2)) !important;letter-spacing:.13em}
+/* card title eyebrows get a tiny brass tick */
+.card-hd{position:relative}
+/* page title underline hairline in brass */
+#pg-ttl{position:relative;padding-bottom:0}
+/* table day-group label carries a brass accent */
+.t-dg-lbl{color:var(--t0)}
+.t-dg-cnt{color:color-mix(in srgb, var(--brass) 55%, var(--t3)) !important}
+/* the "New request" primary CTA gets a subtle brass ring on hover for warmth */
+.btn.btn-g:hover{box-shadow:inset 0 1px 0 rgba(255,255,255,.16), 0 0 0 1px color-mix(in srgb,var(--brass) 40%,transparent), 0 6px 16px color-mix(in srgb, var(--g) 32%, transparent)}
+/* avatar rings warm to brass everywhere, not just sidebar */
+.hd-av{box-shadow:0 0 0 1.5px color-mix(in srgb,var(--brass) 30%,transparent)}
+/* filter "Clear" + export buttons get warmer hover */
+.btn-o:hover{border-color:color-mix(in srgb,var(--brass) 35%,var(--b3)) !important}
+
+/* ── 3 · Warmer surfaces & depth (hospitality) ──────────────────── */
+/* KPI + cards get a barely-there warm top sheen */
+.kpi,.card{
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--brass) 3%, var(--s0)) 0%, var(--s0) 40%);
+}
+[data-theme="dark"] .kpi,[data-theme="dark"] .card{
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--brass) 5%, var(--s0)) 0%, var(--s0) 42%);
+}
+/* topbar + table header pick up a whisper of warmth */
+thead th{background:color-mix(in srgb, var(--brass) 4%, var(--s2)) !important}
+tr.t-daygroup td{background:color-mix(in srgb, var(--brass) 5%, var(--s2)) !important}
+
+/* ── 4 · Serif moments expanded (more editorial warmth) ─────────── */
+/* KPI labels stay sans; but card titles get a touch more presence */
+.card-t{font-size:14px;font-weight:600;letter-spacing:-.005em}
+/* modal/docket titles already serif — warm the docket number to brass */
+.docket-no{color:var(--brass) !important;letter-spacing:.14em}
+
+/* ── 5 · Status pills — slightly richer, warmer borders ─────────── */
+.badge{border:1px solid color-mix(in srgb, currentColor 18%, transparent)}
