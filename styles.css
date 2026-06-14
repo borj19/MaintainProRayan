@@ -3737,8 +3737,17 @@ td,.kpi-val{font-variant-numeric:tabular-nums}
 #sb .nav-pill{font-family:var(--mono);font-weight:500;background:var(--rail-b);color:var(--rail-t1);border-radius:99px}
 #sb .nav-btn.on .nav-pill{background:var(--brass2);color:var(--brass)}
 #sb .user-row,#sb .user-card{border-top:1px solid var(--rail-b)}
+/* user card sits ON the dark rail → it must be dark too, with light legible text */
+#sb .user-card{background:var(--rail-s);border:1px solid var(--rail-b2)}
+#sb .user-card:hover{border-color:var(--rail-b2);background:var(--rail-b)}
+#sb .user-card-name{color:var(--rail-t0)}
+#sb .user-card-meta{color:color-mix(in srgb, var(--brass) 65%, var(--rail-t2))}
+#sb .user-row{background:var(--rail-s);border:1px solid var(--rail-b2)}
+#sb .user-row:hover{background:var(--rail-b)}
 #sb .user-name{color:var(--rail-t0)}
 #sb .user-role,#sb .user-info{color:color-mix(in srgb, var(--brass) 65%, var(--rail-t2))}
+#sb .logout-btn{color:var(--rail-t2)}
+#sb .logout-btn:hover{color:var(--red);background:var(--rail-b)}
 #sb .user-av,#sb .av{box-shadow:0 0 0 2px var(--rail), 0 0 0 3.5px color-mix(in srgb, var(--brass) 55%, transparent)}
 #sb .logout-btn{color:var(--rail-t2)}
 #sb .logout-btn:hover{color:var(--red);background:var(--rail-s)}
@@ -3974,10 +3983,10 @@ tr.t-daygroup td{background:var(--s2);padding:6px 12px !important;border-bottom:
   .kpi-val{font-size:24px}
 
   /* ── Ledger table → card list on mobile ── */
-  .tbl-wrap{overflow:visible;border:none;background:transparent}
-  .tbl-ledger{min-width:0;width:100%}
+  .tbl-wrap{overflow:visible;border:none;background:transparent;width:100%}
+  .tbl-wrap table.tbl-ledger,.tbl-ledger{min-width:0 !important;width:100% !important;max-width:100% !important;table-layout:fixed;display:block}
   .tbl-ledger thead{display:none}
-  .tbl-ledger tbody,.tbl-ledger tr,.tbl-ledger td{display:block;width:100%;box-sizing:border-box}
+  .tbl-ledger tbody,.tbl-ledger tr,.tbl-ledger td{display:block;width:100%;box-sizing:border-box;max-width:100%}
   .tbl-ledger .t-spacer{display:none !important}
   .tbl-ledger tbody tr:not(.t-daygroup){
     position:relative;background:var(--s0);border:1px solid var(--b0);
