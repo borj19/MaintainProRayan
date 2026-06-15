@@ -4317,3 +4317,51 @@ thead th{background:color-mix(in srgb,var(--g) 4%,var(--s2)) !important}
   #auth-screen .auth-inp{font-size:15px;padding:13px 14px}
   .auth-h{font-size:24px}
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   V7b — FIXES: logo visibility · mobile modal scroll · charts · rooms
+═══════════════════════════════════════════════════════════════════ */
+
+/* ── 1 · Sidebar logo — must read on the dark rail in BOTH themes ── */
+#sb .logo-mark .logo-sq[fill="none"],
+#sb .logo-mark rect[stroke]{stroke:var(--rail-t1) !important}
+#sb .logo-mark .logo-sq-tr,
+#sb .logo-mark rect[fill="var(--g)"]{fill:var(--g) !important}
+/* brand-ico container shows the mark cleanly */
+#sb .brand-ico .logo-mark{filter:none}
+/* the small accent dot */
+#sb .logo-mark circle{fill:#fff !important;opacity:.9}
+
+/* loading-screen logo too */
+.ls-logo .logo-mark rect[stroke]{stroke:var(--t2) !important}
+.ls-logo .logo-mark rect[fill="var(--g)"]{fill:var(--g) !important}
+
+/* ── 2 · Mobile modal — guarantee scroll to all fields & footer ──── */
+@media(max-width:768px){
+  .mov.open{align-items:stretch;padding:0;overflow:hidden}
+  .modal{
+    max-height:100dvh !important;height:auto;
+    max-width:100% !important;width:100%;
+    border-radius:18px 18px 0 0 !important;
+    margin-top:auto;            /* sit at the bottom */
+    display:flex;flex-direction:column;
+    overflow:hidden;            /* children scroll, not the shell */
+  }
+  .mhd{flex-shrink:0}
+  .mbd{flex:1 1 auto;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding-bottom:18px}
+  .mft{flex-shrink:0;position:sticky;bottom:0}
+  /* when keyboard is open the dvh unit keeps footer reachable */
+}
+
+/* ── 3 · Rooms board / any wide table on mobile → horizontal scroll ─ */
+@media(max-width:768px){
+  /* generic wide tables (in-progress full list, rooms board grids) scroll sideways */
+  .tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  /* the ledger is the exception — it becomes cards (handled elsewhere) */
+  .tbl-wrap .tbl-ledger{overflow:visible}
+  /* rooms board grid wrapper (inline overflow-x:auto) → enable momentum scroll */
+  #page-rooms [style*="overflow-x"],#rooms-grid{-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y}
+  /* make sure the page body never clips the horizontal scroller */
+  #body{overflow-x:hidden}
+  #page-rooms{overflow-x:visible}
+}

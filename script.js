@@ -593,8 +593,8 @@ const AUTO_ASSIGN={
   Appliances:'Terry Allen',Cleaning:'Terry Allen',Other:'Terry Allen'
 };
 
-const WTC={Flooring:'#2fae6e',Plumbing_Hydraulics_Services:'#3ec1cf',Door_Hardware:'#e5a33b',Beds:'#e2605b',Electrical_Works:'#a87bd0',Fixtures_Furnishings_Fittings:'#fb923c',Painting:'#f472b6',Pest_Control:'#34d399',AC:'#5b9de8',Other:'#667550'};
-const PAL=['#2fae6e','#3ec1cf','#e5a33b','#e2605b','#a87bd0','#fb923c','#f472b6','#34d399','#5b9de8'];
+const WTC={Flooring:'#3fb27a',Plumbing_Hydraulics_Services:'#46c7d4',Door_Hardware:'#d4a24e',Beds:'#e0635d',Electrical_Works:'#a87bd0',Fixtures_Furnishings_Fittings:'#e0883c',Painting:'#e8739e',Pest_Control:'#5bb98c',AC:'#5b9de8',Cleaning:'#5bb98c',Telephone:'#8a9099',Television:'#b08fd9',Lift:'#caa56a',Safe:'#3f9b8c',Preventive_Maintenance:'#6aa9c4',Other:'#8a9099'};
+const PAL=['#d4a24e','#46c7d4','#3fb27a','#e0883c','#a87bd0','#5b9de8','#e0635d','#e8739e','#5bb98c'];
 function wc(k){return WTC[k]||PAL[Object.keys(SUBTYPES).indexOf(k)%PAL.length]||'#667550'}
 
 // ═══════════════════════════════════════════════
