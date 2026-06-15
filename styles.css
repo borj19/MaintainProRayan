@@ -1,9 +1,9 @@
 /* ═══════════════════════════════════════════════
    MaintainPro — Heritage Service UI · v5 2026
    Front-of-house / back-of-house · token-driven
-   Fonts: Geist (UI) · Geist Mono (data) · Instrument Serif (display)
+   Fonts: Space Grotesk (UI+display) · Spline Sans Mono (data)
 ═══════════════════════════════════════════════ */
-@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Spline+Sans+Mono:wght@400;500&display=swap');
 
 /* ═══════════════════════════════════════════════
    DESIGN TOKENS — DARK (default)
@@ -45,9 +45,9 @@
   --sw:       240px;
   --th:       56px;
 
-  --font:     'Geist', system-ui, -apple-system, sans-serif;
-  --mono:     'Geist Mono', 'JetBrains Mono', monospace;
-  --font-serif: 'Instrument Serif', 'Tiempos Text', Georgia, serif;
+  --font:     'Space Grotesk', system-ui, -apple-system, sans-serif;
+  --mono:     'Spline Sans Mono', 'JetBrains Mono', monospace;
+  --font-serif: 'Space Grotesk', system-ui, sans-serif;
 
   --shadow:   0 2px 12px rgba(0,0,0,.45), 0 1px 3px rgba(0,0,0,.35);
   --shadow-lg:0 16px 48px rgba(0,0,0,.55), 0 4px 12px rgba(0,0,0,.35);
@@ -2983,12 +2983,12 @@ input.t-chk{cursor:pointer}
 /* ═══════════════════════════════════════════════════════════════════
    ╔═══════════════════════════════════════════════════════════════╗
    ║  PHASE 1 — FRONTIER GLASS REDESIGN  (override layer)          ║
-   ║  Instrument Serif + Geist + Geist Mono · restrained glass     ║
+   ║  Space Grotesk + Spline Sans Mono · Modern Midnight           ║
    ║  Appended last so it wins the cascade. All existing var names ║
    ║  and class names preserved; theme toggle keeps working.       ║
    ╚═══════════════════════════════════════════════════════════════╝
 ═══════════════════════════════════════════════════════════════════ */
-@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Spline+Sans+Mono:wght@400;500&display=swap');
 
 /* ── TOKEN OVERRIDES — DARK · V5 palette wins, glass utilities kept ── */
 :root,[data-theme="dark"]{
@@ -3022,9 +3022,9 @@ input.t-chk{cursor:pointer}
   --t2:       #75897c;
   --t3:       #4c5c51;
 
-  --font:       'Geist', system-ui, -apple-system, sans-serif;
-  --mono:       'Geist Mono', 'JetBrains Mono', ui-monospace, monospace;
-  --font-serif: 'Instrument Serif', Georgia, 'Times New Roman', serif;
+  --font:       'Space Grotesk', system-ui, -apple-system, sans-serif;
+  --mono:       'Spline Sans Mono', 'JetBrains Mono', ui-monospace, monospace;
+  --font-serif: 'Space Grotesk', system-ui, sans-serif;
 
   --shadow:   0 2px 12px rgba(0,0,0,.45), 0 1px 3px rgba(0,0,0,.35);
   --shadow-lg:0 16px 48px rgba(0,0,0,.55), 0 4px 12px rgba(0,0,0,.35);
@@ -4046,12 +4046,12 @@ tr.t-daygroup td{background:var(--s2);padding:6px 12px !important;border-bottom:
 
 /* ── 1 · KPI hero numbers → display serif (the luxury signal) ───── */
 .kpi-val{
-  font-family:var(--font-serif) !important;
-  font-weight:400 !important;
-  font-size:38px !important;
-  line-height:1.05 !important;
-  letter-spacing:0 !important;
-  font-variant-numeric:lining-nums;
+  font-family:var(--font) !important;
+  font-weight:700 !important;
+  font-size:36px !important;
+  line-height:1 !important;
+  letter-spacing:-.04em !important;
+  font-variant-numeric:lining-nums tabular-nums;
   color:var(--t0);
 }
 .kpi:hover .kpi-val{transform:none !important}
@@ -4111,3 +4111,209 @@ tr.t-daygroup td{background:color-mix(in srgb, var(--brass) 5%, var(--s2)) !impo
 
 /* ── 5 · Status pills — slightly richer, warmer borders ─────────── */
 .badge{border:1px solid color-mix(in srgb, currentColor 18%, transparent)}
+
+/* ═══════════════════════════════════════════════════════════════════
+   ╔═══════════════════════════════════════════════════════════════╗
+   ║  V7 — MODERN MIDNIGHT  ·  ink + amber · Space Grotesk         ║
+   ║  Authoritative palette. Loaded last — wins the cascade.       ║
+   ║  --g is repurposed as the AMBER primary; --success is green.  ║
+   ╚═══════════════════════════════════════════════════════════════╝
+═══════════════════════════════════════════════════════════════════ */
+
+/* ── Palette tokens — DARK (default) ────────────────────────────── */
+:root,[data-theme="dark"]{
+  --bg:#0e1014; --s0:#16181d; --s1:#1a1d23; --s2:#1f232b; --s3:#262a33;
+  --b0:#23262e; --b1:#2c303a; --b2:#373c48; --b3:#474d5b;
+
+  --g:#d4a24e;        /* PRIMARY = amber */
+  --g2:#e3b96f;
+  --g3:rgba(212,162,78,.10);
+  --g4:rgba(212,162,78,.22);
+  --brass:#d4a24e; --brass2:rgba(212,162,78,.16);
+  --success:#3fb27a;  /* green reserved for completed/success */
+
+  --cyan:#46c7d4; --amber:#d4a24e; --red:#e0635d; --blue:#5b9de8; --purple:#a87bd0; --indigo:#7b89d4;
+
+  --t0:#f0f1f4; --t1:#c2c6cf; --t2:#9aa0ab; --t3:#6b7280;
+
+  --shadow:0 2px 14px rgba(0,0,0,.5),0 1px 3px rgba(0,0,0,.4);
+  --shadow-lg:0 18px 50px rgba(0,0,0,.6),0 4px 14px rgba(0,0,0,.4);
+  --modal-bg:rgba(4,6,9,.8);
+  --glow:0 0 0 3px rgba(212,162,78,.2);
+
+  /* dark ink rail (both themes) */
+  --rail:#000000; --rail-s:#16181d; --rail-b:#23262e; --rail-b2:#2e323b;
+  --rail-t0:#f0f1f4; --rail-t1:#9aa0ab; --rail-t2:#5a5f6a;
+
+  --brand-gradient:linear-gradient(135deg,var(--g) 0%,var(--g2) 100%);
+  --brand-gradient-hover:linear-gradient(135deg,var(--g2) 0%,var(--g) 100%);
+  --focus-ring:0 0 0 3px var(--g4);
+}
+
+/* ── Palette tokens — LIGHT ─────────────────────────────────────── */
+[data-theme="light"]{
+  --bg:#f4f5f7; --s0:#ffffff; --s1:#f8f9fb; --s2:#eef0f3; --s3:#e7eaef;
+  --b0:#e4e7ec; --b1:#d6dae1; --b2:#c2c8d2; --b3:#a0a8b5;
+
+  --g:#a9762a;        /* amber, darkened for light-mode contrast */
+  --g2:#c08c38;
+  --g3:rgba(169,118,42,.09);
+  --g4:rgba(169,118,42,.2);
+  --brass:#a9762a; --brass2:rgba(169,118,42,.14);
+  --success:#1f8a57;
+
+  --cyan:#0e7c8a; --amber:#a9762a; --red:#c2483f; --blue:#2f6aa8; --purple:#7647a8; --indigo:#4353a8;
+
+  --t0:#16181d; --t1:#3a3e47; --t2:#5e636e; --t3:#8b919c;
+
+  --shadow:0 1px 6px rgba(20,24,30,.07),0 1px 2px rgba(20,24,30,.05);
+  --shadow-lg:0 16px 44px rgba(20,24,30,.14),0 3px 10px rgba(20,24,30,.08);
+  --modal-bg:rgba(16,18,23,.5);
+  --glow:0 0 0 3px rgba(169,118,42,.16);
+
+  /* rail stays dark ink even in light mode */
+  --rail:#16181d; --rail-s:#22252c; --rail-b:#2e323b; --rail-b2:#383d47;
+  --rail-t0:#f0f1f4; --rail-t1:#9aa0ab; --rail-t2:#6b7280;
+}
+
+/* ── Typography — Space Grotesk everywhere, no serif ────────────── */
+html,body{font-family:var(--font)}
+#pg-ttl,.hero-text,.mt,.docket-title,.brand-name,.auth-brand-text .name,.card-t{
+  font-family:var(--font) !important;
+}
+#pg-ttl{font-weight:600;letter-spacing:-.02em;font-size:20px}
+.hero-text{font-weight:600;letter-spacing:-.03em}
+.hero-text strong{font-weight:600;font-style:normal;color:var(--g)}
+.brand-name{font-weight:700;letter-spacing:-.02em}
+.kpi-val{font-family:var(--font) !important;font-weight:700 !important;letter-spacing:-.04em !important}
+.mt,.docket-title{font-weight:600;letter-spacing:-.02em}
+
+/* ── Success-green remap: only Completed status stays green ─────── */
+.b-done{background:color-mix(in srgb,var(--success) 14%,transparent) !important;color:var(--success) !important;border-color:color-mix(in srgb,var(--success) 25%,transparent) !important}
+.b-done::before{background:var(--success) !important}
+/* completion-rate KPI sub keeps green tone */
+.kpi-sub.ok,.completion-good{color:var(--success) !important}
+
+/* ── Amber primary across buttons & accents ─────────────────────── */
+.btn.btn-g,.auth-btn{background:var(--g) !important;color:#16181d !important;box-shadow:0 2px 10px color-mix(in srgb,var(--g) 28%,transparent) !important}
+[data-theme="light"] .btn.btn-g,[data-theme="light"] .auth-btn{color:#fff !important}
+.btn.btn-g:hover,.auth-btn:hover{background:var(--g2) !important;transform:translateY(-1px)}
+.btn.btn-g svg,.auth-btn svg{color:currentColor}
+
+/* primary nav active edge + brand mark already use --g/--brass → now amber automatically */
+#sb .nav-btn.on{box-shadow:inset 2px 0 0 var(--g)}
+.brand-ico{background:linear-gradient(150deg,var(--g2),var(--g)) !important}
+.brand-ico svg,.brand-ico *{color:#16181d}
+
+/* KPI hairline + card title tick → amber */
+.kpi-bar{background:linear-gradient(90deg,var(--g),transparent 70%) !important}
+.card-t::before{background:var(--g)}
+
+/* hero eyebrow / role / section eyebrows → amber */
+.hero-role,.nav-sec-label,.docket-no,.fsec-t{color:var(--g) !important}
+#sb .brand-sub{color:var(--g2) !important}
+
+/* avatar rings → amber */
+.hd-av,#sb .user-av,.user-av{box-shadow:0 0 0 1.5px color-mix(in srgb,var(--g) 30%,transparent)}
+#sb .user-av{box-shadow:0 0 0 2px var(--rail),0 0 0 3.5px var(--g)}
+
+/* day-group accent, table hover edge → amber */
+.t-dg-cnt{color:var(--g) !important}
+.tbl-ledger tbody tr:not(.t-daygroup):hover{box-shadow:inset 3px 0 0 var(--pedge,var(--g))}
+tr.t-daygroup td{background:color-mix(in srgb,var(--g) 6%,var(--s2)) !important}
+thead th{background:color-mix(in srgb,var(--g) 4%,var(--s2)) !important}
+
+/* queue assign button → amber */
+.queue-assign{color:var(--g) !important;border-color:color-mix(in srgb,var(--g) 35%,transparent) !important}
+.queue-assign:hover{background:var(--g) !important;color:#16181d !important}
+[data-theme="light"] .queue-assign:hover{color:#fff !important}
+
+/* dash filter active → amber */
+.dash-filter-btn.on{background:var(--g) !important;color:#16181d !important;box-shadow:0 2px 8px color-mix(in srgb,var(--g) 28%,transparent) !important}
+[data-theme="light"] .dash-filter-btn.on{color:#fff !important}
+
+/* focus rings → amber */
+:focus-visible{box-shadow:var(--focus-ring)}
+
+/* hero glow → amber/green ambient */
+.hero-bg{background:radial-gradient(520px 300px at 88% -20%,color-mix(in srgb,var(--g) 12%,transparent),transparent 60%) !important}
+#d-hero::after{background:linear-gradient(90deg,var(--g),transparent 55%) !important}
+
+/* bulk bar primary + count brass → amber (already rail-based, just accent) */
+.bulk-bar-inner .bulk-count-badge strong{color:var(--g)}
+
+/* card title weight for Space Grotesk */
+.card-t{font-weight:600;letter-spacing:-.01em}
+
+/* nav-pill active → amber tint */
+#sb .nav-btn.on .nav-pill{background:rgba(212,162,78,.2);color:var(--g2)}
+[data-theme="light"] #sb .nav-btn.on .nav-pill{background:rgba(169,118,42,.2);color:var(--g)}
+
+/* ── V7 · Split-screen login ────────────────────────────────────── */
+#auth-screen{position:fixed;inset:0;z-index:1000;background:var(--bg)}
+.auth-split{display:flex;height:100%;width:100%}
+
+/* left brand panel — always dark ink */
+.auth-brand-panel{
+  flex:1;min-width:0;
+  background:
+    radial-gradient(700px 500px at 20% 8%,rgba(212,162,78,.14),transparent 55%),
+    radial-gradient(600px 600px at 90% 100%,rgba(63,178,122,.08),transparent 55%),
+    #000;
+  display:flex;flex-direction:column;justify-content:space-between;
+  padding:48px 52px;position:relative;overflow:hidden;
+}
+.abp-top{display:flex;align-items:center;gap:13px}
+.abp-ico{width:42px;height:42px;border-radius:11px;background:linear-gradient(150deg,var(--g2),var(--g));display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(212,162,78,.3)}
+.abp-ico svg{width:23px;height:23px;color:#16181d}
+.abp-name{font-family:var(--font);font-size:21px;font-weight:700;color:#f0f1f4;letter-spacing:-.02em}
+.abp-sub{font-family:var(--mono);font-size:9px;letter-spacing:.24em;color:var(--g2);margin-top:2px}
+.abp-mid{max-width:440px}
+.abp-eye{font-family:var(--mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--g2);margin-bottom:18px}
+.abp-head{font-family:var(--font);font-size:40px;font-weight:600;line-height:1.12;color:#f0f1f4;letter-spacing:-.03em}
+.abp-head em{font-style:normal;color:var(--g2)}
+.abp-text{font-size:14px;color:#9aa0ab;margin-top:18px;line-height:1.7;max-width:390px}
+.abp-stats{display:flex;gap:32px;margin-top:34px}
+.abp-stat-v{font-family:var(--font);font-size:26px;font-weight:700;color:#f0f1f4;letter-spacing:-.03em}
+.abp-stat-l{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#6b7280;margin-top:3px}
+.abp-foot{font-family:var(--mono);font-size:10px;color:#5a5f6a;letter-spacing:.04em}
+
+/* right form panel */
+.auth-form-panel{width:480px;flex-shrink:0;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:40px}
+#auth-screen .auth-card{width:100%;max-width:362px;background:none;border:none;box-shadow:none;padding:0;display:block}
+.auth-eye{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--g);margin-bottom:10px}
+.auth-h{font-family:var(--font);font-size:27px;font-weight:600;letter-spacing:-.02em;color:var(--t0);margin-bottom:6px}
+.auth-csub{font-size:13px;color:var(--t2);margin-bottom:26px}
+#auth-screen .auth-fc{margin-bottom:15px}
+#auth-screen .auth-lbl{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--t2);margin-bottom:7px}
+#auth-screen .auth-inp{width:100%;background:var(--s0);border:1px solid var(--b1);border-radius:10px;padding:12px 14px;font-size:14.5px;color:var(--t0);font-family:var(--font)}
+#auth-screen .auth-inp::placeholder{color:var(--t3)}
+#auth-screen .auth-inp:focus{border-color:var(--g);box-shadow:var(--focus-ring);outline:none}
+.auth-row{display:flex;align-items:center;justify-content:space-between;margin:6px 0 22px}
+#auth-screen .auth-remember{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--t2);cursor:pointer;user-select:none}
+#auth-screen .auth-remember input{width:16px;height:16px;accent-color:var(--g);cursor:pointer;flex-shrink:0}
+#auth-screen .auth-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:8px;border:none;border-radius:10px;padding:13px;font-size:14.5px;font-weight:600;font-family:var(--font);cursor:pointer}
+#auth-screen .auth-btn svg{width:15px;height:15px}
+.auth-note{text-align:center;font-size:12px;color:var(--t3);margin-top:20px}
+#auth-screen .auth-err{display:none;background:color-mix(in srgb,var(--red) 12%,transparent);border:1px solid color-mix(in srgb,var(--red) 30%,transparent);color:var(--red);font-size:12.5px;border-radius:9px;padding:10px 12px;margin-bottom:16px}
+#auth-screen .auth-err.show{display:block}
+
+/* login mobile — stack brand band on top */
+@media(max-width:768px){
+  .auth-split{flex-direction:column;height:auto;min-height:100%}
+  .auth-brand-panel{flex:none;justify-content:flex-start;gap:22px;padding:34px 26px 30px;
+    background:
+      radial-gradient(420px 300px at 18% 0%,rgba(212,162,78,.18),transparent 58%),
+      radial-gradient(360px 360px at 100% 100%,rgba(63,178,122,.1),transparent 55%),
+      #000;}
+  .abp-mid{max-width:none}
+  .abp-head{font-size:26px}
+  .abp-text{display:none}
+  .abp-stats{gap:24px;margin-top:20px}
+  .abp-stat-v{font-size:20px}
+  .abp-foot{display:none}
+  .auth-form-panel{width:100%;padding:30px 26px 44px;align-items:flex-start}
+  #auth-screen .auth-card{max-width:none}
+  #auth-screen .auth-inp{font-size:15px;padding:13px 14px}
+  .auth-h{font-size:24px}
+}
